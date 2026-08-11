@@ -45,7 +45,7 @@ describe("offline library discovery", () => {
     expect(
       filterLibraryArticles(builtInLibrary, state, {
         ...DEFAULT_FILTERS,
-        query: "hieu truoc"
+        query: "khong voi tung chu"
       }).map((article) => article.id)
     ).toEqual(["hsk3-understand-first"]);
   });
@@ -114,9 +114,9 @@ describe("offline library discovery", () => {
 
   it("reports stable counts for every supported level", () => {
     expect(countArticlesByLevel(builtInLibrary)).toEqual({
-      "HSK 1": 1,
-      "HSK 2": 1,
-      "HSK 3": 1
+      "HSK 1": 3,
+      "HSK 2": 3,
+      "HSK 3": 3
     });
   });
 });

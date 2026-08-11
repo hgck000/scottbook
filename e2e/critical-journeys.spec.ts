@@ -284,7 +284,7 @@ test("searches and filters the authored offline library", async ({ page }) => {
   ).toBeVisible();
   await expect(
     page.locator(".discovery-results [role='status']")
-  ).toContainText("1 bài phù hợp");
+  ).toContainText("3 bài phù hợp");
 
   await page
     .getByRole("button", {
@@ -309,7 +309,40 @@ test("searches and filters the authored offline library", async ({ page }) => {
   ).toBeVisible();
   await expect(
     page.locator(".discovery-results [role='status']")
-  ).toContainText("3 bài phù hợp");
+  ).toContainText("9 bài phù hợp");
+  expect(pageErrors).toEqual([]);
+});
+
+test("reads a newly authored article from the expanded content pack", async ({
+  page
+}) => {
+  const pageErrors = collectPageErrors(page);
+  await page.goto("/");
+  await dismissInstallNotice(page);
+
+  const search = page.getByRole("searchbox", {
+    name: "Tìm trong thư viện offline"
+  });
+  await search.fill("tien bo");
+  await page
+    .getByRole("button", { name: "Mở bài Mỗi ngày tiến bộ một chút" })
+    .click();
+
+  await expect(
+    page.getByRole("heading", { name: "每天进步一点" })
+  ).toBeVisible();
+  const firstToken = page.locator("[data-reader-token]").first();
+  await expect(firstToken).toHaveAccessibleName(/为了; mở pinyin/);
+  await firstToken.click();
+  await expect(page.getByText("wèile", { exact: true })).toBeVisible();
+  await firstToken.click();
+  await expect(page.getByText("để, nhằm", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText(
+      "Để nâng cao trình độ tiếng Trung, tôi lập cho mình một kế hoạch học tập đơn giản.",
+      { exact: true }
+    )
+  ).toBeVisible();
   expect(pageErrors).toEqual([]);
 });
 

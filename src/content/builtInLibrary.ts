@@ -1,18 +1,10 @@
 import type { BuiltInArticle } from "./types";
-import { getAuthoredCharacters } from "./characterAnnotations";
-
-const punctuation = (id: string, hanzi: string) =>
-  ({ id, kind: "punctuation", hanzi }) as const;
-
-const word = (id: string, hanzi: string, pinyin: string, meaning: string) =>
-  ({
-    id,
-    kind: "word",
-    hanzi,
-    pinyin,
-    meaning,
-    characters: getAuthoredCharacters(hanzi, pinyin, meaning)
-  }) as const;
+import { punctuation, word } from "./articleTokens";
+import {
+  additionalHsk1Articles,
+  additionalHsk2Articles,
+  additionalHsk3Articles
+} from "./additionalArticles";
 
 /**
  * ScottBook reference content is deliberately authored as annotated data.
@@ -94,6 +86,7 @@ export const builtInLibrary = [
       }
     ]
   },
+  ...additionalHsk1Articles,
   {
     id: "hsk2-weekend-plan",
     title: "周末的计划",
@@ -186,6 +179,7 @@ export const builtInLibrary = [
       }
     ]
   },
+  ...additionalHsk2Articles,
   {
     id: "hsk3-understand-first",
     title: "先理解，再翻译",
@@ -284,5 +278,6 @@ export const builtInLibrary = [
         ]
       }
     ]
-  }
+  },
+  ...additionalHsk3Articles
 ] as const satisfies readonly BuiltInArticle[];
