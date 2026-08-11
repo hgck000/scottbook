@@ -7,8 +7,18 @@ import type {
 } from "./content/types";
 import {
   createScottBookBackup,
-  downloadScottBookBackup
+  downloadScottBookBackup,
+  type ScottBookBackup,
+  type ScottBookBackupData
 } from "./features/backup/exportBackup";
+import {
+  applyScottBookRestore,
+  getBackupFileSizeError,
+  loadScottBookRestoreUndo,
+  parseScottBookBackupText,
+  undoLastScottBookRestore,
+  type ScottBookBackupPreview
+} from "./features/backup/restoreBackup";
 import {
   advanceAssistance,
   type AssistanceSelection
@@ -27,13 +37,20 @@ import {
   type ReadingHistoryEntry
 } from "./features/library/readingState";
 import {
+  MAX_READER_FONT_SIZE,
+  MIN_READER_FONT_SIZE,
+  READER_FONT_SIZE_STORAGE_KEY,
+  READER_THEME_STORAGE_KEY,
+  isReaderFontSize,
+  isReaderTheme,
+  type ReaderTheme
+} from "./features/preferences/readerPreferences";
+import {
   pwaStatusStore,
   usePwaStatus,
   type PwaStatusSnapshot,
   type StoragePersistence
 } from "./features/pwa/pwaStatus";
-
-type Theme = "paper" | "night";
 
 type Route =
   | { name: "library" }
@@ -49,12 +66,17 @@ function parseRoute(): Route {
     : { name: "library" };
 }
 
-function useStoredState<T>(key: string, initial: T) {
+function useStoredState<T>(
+  key: string,
+  initial: T,
+  isValid: (value: unknown) => value is T
+) {
   const [value, setValue] = useState<T>(() => {
     try {
       const stored = window.localStorage.getItem(key);
       if (stored === null) return initial;
-      return JSON.parse(stored) as T;
+      const candidate: unknown = JSON.parse(stored);
+      return isValid(candidate) ? candidate : initial;
     } catch {
       return initial;
     }
@@ -113,10 +135,15 @@ function ChevronIcon() {
 function App() {
   const pwaStatus = usePwaStatus();
   const [route, setRoute] = useState<Route>(parseRoute);
-  const [theme, setTheme] = useStoredState<Theme>("scottbook.theme", "paper");
+  const [theme, setTheme] = useStoredState<ReaderTheme>(
+    READER_THEME_STORAGE_KEY,
+    "paper",
+    isReaderTheme
+  );
   const [fontSize, setFontSize] = useStoredState<number>(
-    "scottbook.readerFontSize",
-    25
+    READER_FONT_SIZE_STORAGE_KEY,
+    25,
+    isReaderFontSize
   );
   const [libraryState, setLibraryState] = useState<LibraryState>(() =>
     loadLibraryState(window.localStorage)
@@ -175,6 +202,12 @@ function App() {
     setLibraryState((current) => resetArticleProgress(current, articleId));
   }, []);
 
+  const replaceLocalData = useCallback((data: ScottBookBackupData) => {
+    setLibraryState(data.libraryState);
+    setTheme(data.preferences.theme);
+    setFontSize(data.preferences.fontSize);
+  }, [setFontSize, setTheme]);
+
   const goHome = () => {
     window.location.hash = "/";
   };
@@ -225,6 +258,7 @@ function App() {
         openArticle={openArticle}
         resetProgress={resetProgress}
         storagePersistence={pwaStatus.storagePersistence}
+        replaceLocalData={replaceLocalData}
       />
     );
   } else {
@@ -418,7 +452,7 @@ function LibraryScreen({
   libraryState,
   toggleFavorite
 }: {
-  theme: Theme;
+  theme: ReaderTheme;
   toggleTheme: () => void;
   openArticle: (articleId: string) => void;
   libraryState: LibraryState;
@@ -582,15 +616,17 @@ function ReviewScreen({
   libraryState,
   openArticle,
   resetProgress,
-  storagePersistence
+  storagePersistence,
+  replaceLocalData
 }: {
-  theme: Theme;
+  theme: ReaderTheme;
   fontSize: number;
   toggleTheme: () => void;
   libraryState: LibraryState;
   openArticle: (articleId: string) => void;
   resetProgress: (articleId: string) => void;
   storagePersistence: StoragePersistence;
+  replaceLocalData: (data: ScottBookBackupData) => void;
 }) {
   const historyItems: Array<{
     article: BuiltInArticle;
@@ -657,6 +693,7 @@ function ReviewScreen({
           theme={theme}
           fontSize={fontSize}
           storagePersistence={storagePersistence}
+          replaceLocalData={replaceLocalData}
         />
 
         <section className="history-section" aria-labelledby="history-heading">
@@ -709,17 +746,34 @@ function DataProtectionCard({
   libraryState,
   theme,
   fontSize,
-  storagePersistence
+  storagePersistence,
+  replaceLocalData
 }: {
   libraryState: LibraryState;
-  theme: Theme;
+  theme: ReaderTheme;
   fontSize: number;
   storagePersistence: StoragePersistence;
+  replaceLocalData: (data: ScottBookBackupData) => void;
 }) {
   const [exportStatus, setExportStatus] = useState<
     "idle" | "working" | "done" | "error"
   >("idle");
   const [requestingStorage, setRequestingStorage] = useState(false);
+  const [restoreStatus, setRestoreStatus] = useState<
+    "idle" | "checking" | "applying" | "success" | "undone" | "error"
+  >("idle");
+  const [restoreMessage, setRestoreMessage] = useState(
+    "Chỉ nhận bản sao ScottBook JSON tối đa 2 MB; đây không phải nhập sách TXT/EPUB."
+  );
+  const [pendingRestore, setPendingRestore] = useState<{
+    fileName: string;
+    backup: ScottBookBackup;
+    preview: ScottBookBackupPreview;
+  } | null>(null);
+  const [hasRestoreUndo, setHasRestoreUndo] = useState(
+    () => loadScottBookRestoreUndo(window.localStorage) !== null
+  );
+  const restoreAttemptRef = useRef(0);
 
   const exportBackup = async () => {
     setExportStatus("working");
@@ -741,12 +795,118 @@ function DataProtectionCard({
     setRequestingStorage(false);
   };
 
+  const selectRestoreFile = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.currentTarget.files?.[0];
+    event.currentTarget.value = "";
+    if (!file) return;
+
+    const attempt = ++restoreAttemptRef.current;
+    setPendingRestore(null);
+    const sizeError = getBackupFileSizeError(file.size);
+    if (sizeError) {
+      setRestoreStatus("error");
+      setRestoreMessage(`${sizeError} Dữ liệu hiện tại chưa bị thay đổi.`);
+      return;
+    }
+
+    setRestoreStatus("checking");
+    setRestoreMessage("Đang kiểm tra cấu trúc và checksum SHA-256…");
+    try {
+      const result = await parseScottBookBackupText(await file.text());
+      if (attempt !== restoreAttemptRef.current) return;
+
+      if (!result.ok) {
+        setRestoreStatus("error");
+        setRestoreMessage(`${result.message} Dữ liệu hiện tại chưa bị thay đổi.`);
+        return;
+      }
+
+      setPendingRestore({
+        fileName: file.name,
+        backup: result.backup,
+        preview: result.preview
+      });
+      setRestoreStatus("idle");
+      setRestoreMessage(
+        "File đã vượt qua kiểm tra. Hãy xem bản tóm tắt trước khi xác nhận."
+      );
+    } catch {
+      if (attempt !== restoreAttemptRef.current) return;
+      setRestoreStatus("error");
+      setRestoreMessage(
+        "Không thể đọc hoặc kiểm tra file này. Dữ liệu hiện tại chưa bị thay đổi."
+      );
+    }
+  };
+
+  const cancelRestore = () => {
+    restoreAttemptRef.current += 1;
+    setPendingRestore(null);
+    setRestoreStatus("idle");
+    setRestoreMessage("Đã hủy xem trước; dữ liệu hiện tại chưa bị thay đổi.");
+  };
+
+  const confirmRestore = () => {
+    if (!pendingRestore) return;
+
+    setRestoreStatus("applying");
+    const result = applyScottBookRestore(
+      window.localStorage,
+      {
+        libraryState,
+        preferences: { theme, fontSize }
+      },
+      pendingRestore.backup.data
+    );
+
+    if (!result.ok) {
+      setRestoreStatus("error");
+      setRestoreMessage(result.message);
+      return;
+    }
+
+    replaceLocalData(result.data);
+    setPendingRestore(null);
+    setHasRestoreUndo(true);
+    setRestoreStatus("success");
+    setRestoreMessage(
+      "Đã khôi phục bản sao. Bạn có thể hoàn tác một lần về dữ liệu trước đó."
+    );
+  };
+
+  const undoRestore = () => {
+    setRestoreStatus("applying");
+    const result = undoLastScottBookRestore(window.localStorage, {
+      libraryState,
+      preferences: { theme, fontSize }
+    });
+
+    if (!result.ok) {
+      setRestoreStatus("error");
+      setRestoreMessage(result.message);
+      setHasRestoreUndo(
+        loadScottBookRestoreUndo(window.localStorage) !== null
+      );
+      return;
+    }
+
+    replaceLocalData(result.data);
+    setPendingRestore(null);
+    setHasRestoreUndo(false);
+    setRestoreStatus("undone");
+    setRestoreMessage("Đã hoàn tác và trở về dữ liệu trước lần khôi phục gần nhất.");
+  };
+
   const persistenceLabel = {
     checking: "Đang kiểm tra bộ nhớ",
     available: "Bộ nhớ tiêu chuẩn",
     granted: "Lưu trữ bền vững đã bật",
     unsupported: "Trình duyệt tự quản lý bộ nhớ"
   }[storagePersistence];
+  const restoreBusy =
+    restoreStatus === "checking" || restoreStatus === "applying";
 
   return (
     <section
@@ -759,7 +919,8 @@ function DataProtectionCard({
         <h2 id="protection-heading">Bảo vệ tiến độ trước khi cập nhật</h2>
         <p>
           Mỗi lần ghi, ScottBook giữ lại bản hợp lệ trước đó để tự phục hồi.
-          Bản xuất JSON có checksum SHA-256 để phát hiện file bị sửa hoặc hỏng.
+          Bản xuất JSON có checksum SHA-256; file chỉ được khôi phục sau khi
+          kiểm tra xong và bạn xác nhận bản xem trước.
         </p>
         <div className="protection-statuses">
           <span className={storagePersistence === "granted" ? "granted" : ""}>
@@ -776,7 +937,13 @@ function DataProtectionCard({
             ? "Đã tải bản sao JSON có checksum."
             : exportStatus === "error"
               ? "Chưa thể tạo bản sao. Dữ liệu trong app không bị thay đổi."
-              : "Hiện chỉ xuất bản sao; chưa nhập ngược file vào app."}
+              : "Bản sao chứa tiến độ, yêu thích và tùy chỉnh giao diện."}
+        </p>
+        <p
+          className={`restore-feedback${restoreStatus === "error" ? " error" : ""}${restoreStatus === "success" || restoreStatus === "undone" ? " success" : ""}`}
+          aria-live="polite"
+        >
+          {restoreMessage}
         </p>
       </div>
       <div className="protection-actions">
@@ -798,6 +965,106 @@ function DataProtectionCard({
         >
           {exportStatus === "working" ? "Đang tạo…" : "Tải bản sao JSON"}
         </button>
+        <label
+          className={`restore-file-button${restoreBusy ? " disabled" : ""}`}
+        >
+          <input
+            type="file"
+            accept="application/json,.json"
+            onChange={(event) => void selectRestoreFile(event)}
+            disabled={restoreBusy}
+          />
+          {restoreStatus === "checking"
+            ? "Đang kiểm tra…"
+            : "Chọn bản sao JSON"}
+        </label>
+        {hasRestoreUndo ? (
+          <button
+            className="undo-restore-button"
+            type="button"
+            onClick={undoRestore}
+            disabled={restoreBusy}
+          >
+            Hoàn tác lần khôi phục
+          </button>
+        ) : null}
+      </div>
+      {pendingRestore ? (
+        <RestorePreview
+          fileName={pendingRestore.fileName}
+          preview={pendingRestore.preview}
+          applying={restoreStatus === "applying"}
+          onCancel={cancelRestore}
+          onConfirm={confirmRestore}
+        />
+      ) : null}
+    </section>
+  );
+}
+
+function RestorePreview({
+  fileName,
+  preview,
+  applying,
+  onCancel,
+  onConfirm
+}: {
+  fileName: string;
+  preview: ScottBookBackupPreview;
+  applying: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <section className="restore-preview" aria-labelledby="restore-preview-heading">
+      <div className="restore-preview-heading">
+        <div>
+          <span className="verified-badge">✓ Checksum hợp lệ</span>
+          <h3 id="restore-preview-heading">Xem trước bản khôi phục</h3>
+          <p title={fileName}>{fileName}</p>
+        </div>
+        <p>
+          Xuất {historyDateFormatter.format(new Date(preview.exportedAt))} ·
+          ScottBook {preview.appVersion}
+        </p>
+      </div>
+
+      <div className="restore-preview-stats" aria-label="Dữ liệu trong bản sao">
+        <div><strong>{preview.historyCount}</strong><span>Bài đã mở</span></div>
+        <div><strong>{preview.completedCount}</strong><span>Hoàn thành</span></div>
+        <div><strong>{preview.activeProgressCount}</strong><span>Đang đọc</span></div>
+        <div><strong>{preview.favoriteCount}</strong><span>Yêu thích</span></div>
+      </div>
+
+      <dl className="restore-preferences">
+        <div>
+          <dt>Giao diện</dt>
+          <dd>{preview.theme === "paper" ? "Sáng · giấy" : "Tối"}</dd>
+        </div>
+        <div>
+          <dt>Cỡ chữ</dt>
+          <dd>{preview.fontSize}px</dd>
+        </div>
+      </dl>
+
+      <div className="restore-confirmation">
+        <p>
+          Xác nhận sẽ thay dữ liệu hiện tại bằng bản sao này. ScottBook giữ dữ
+          liệu hiện tại để bạn hoàn tác một lần.
+        </p>
+        <div>
+          <button type="button" onClick={onCancel} disabled={applying}>
+            Hủy
+          </button>
+          <button
+            className="confirm-restore-button"
+            type="button"
+            onClick={onConfirm}
+            disabled={applying}
+          >
+            {applying ? "Đang khôi phục…" : "Xác nhận khôi phục"}
+          </button>
+        </div>
       </div>
     </section>
   );
@@ -1025,7 +1292,7 @@ function ReaderScreen({
   article: BuiltInArticle;
   fontSize: number;
   setFontSize: React.Dispatch<React.SetStateAction<number>>;
-  theme: Theme;
+  theme: ReaderTheme;
   toggleTheme: () => void;
   goHome: () => void;
   isFavorite: boolean;
@@ -1119,7 +1386,8 @@ function ReaderScreen({
     setSelection((current) => advanceAssistance(current, key));
   };
 
-  const clampFontSize = (next: number) => Math.min(38, Math.max(18, next));
+  const clampFontSize = (next: number) =>
+    Math.min(MAX_READER_FONT_SIZE, Math.max(MIN_READER_FONT_SIZE, next));
 
   return (
     <div className="reader-shell">

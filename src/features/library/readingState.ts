@@ -46,7 +46,23 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function isTimestamp(value: unknown): value is number {
-  return typeof value === "number" && Number.isFinite(value) && value >= 0;
+  return (
+    typeof value === "number" &&
+    Number.isSafeInteger(value) &&
+    value >= 0 &&
+    value <= 8_640_000_000_000_000
+  );
+}
+
+function isStorageIdentifier(value: unknown): value is string {
+  return (
+    typeof value === "string" &&
+    value.length > 0 &&
+    value.length <= 200 &&
+    value !== "__proto__" &&
+    value !== "prototype" &&
+    value !== "constructor"
+  );
 }
 
 function isReadingProgress(
@@ -56,9 +72,9 @@ function isReadingProgress(
   if (!isRecord(value)) return false;
 
   return (
+    isStorageIdentifier(articleId) &&
     value.articleId === articleId &&
-    typeof value.sentenceId === "string" &&
-    value.sentenceId.length > 0 &&
+    isStorageIdentifier(value.sentenceId) &&
     typeof value.progressPercent === "number" &&
     Number.isInteger(value.progressPercent) &&
     value.progressPercent >= 0 &&
@@ -74,14 +90,117 @@ function isReadingHistoryEntry(
   if (!isRecord(value)) return false;
 
   return (
+    isStorageIdentifier(articleId) &&
     value.articleId === articleId &&
     isTimestamp(value.firstOpenedAt) &&
     isTimestamp(value.lastOpenedAt) &&
     typeof value.openCount === "number" &&
-    Number.isInteger(value.openCount) &&
+    Number.isSafeInteger(value.openCount) &&
     value.openCount >= 1 &&
     (value.completedAt === null || isTimestamp(value.completedAt))
   );
+}
+
+function hasOnlyKeys(
+  value: Record<string, unknown>,
+  keys: readonly string[]
+): boolean {
+  const actualKeys = Object.keys(value);
+  return (
+    actualKeys.length === keys.length &&
+    keys.every((key) => Object.hasOwn(value, key))
+  );
+}
+
+/**
+ * Validates an external v2 snapshot without repairing or dropping bad fields.
+ * Loading local legacy data remains intentionally tolerant; restoring a file
+ * must be strict so corrupted signed data can never silently replace good data.
+ */
+export function validateLibraryStateSnapshot(
+  value: unknown
+): LibraryState | null {
+  if (!isRecord(value) || value.version !== 2) return null;
+  if (
+    !hasOnlyKeys(value, [
+      "version",
+      "favoriteArticleIds",
+      "progressByArticle",
+      "historyByArticle",
+      "lastOpenedArticleId"
+    ])
+  ) {
+    return null;
+  }
+
+  if (!Array.isArray(value.favoriteArticleIds)) return null;
+  const favoriteArticleIds = value.favoriteArticleIds;
+  if (
+    favoriteArticleIds.some(
+      (articleId) => !isStorageIdentifier(articleId)
+    ) ||
+    new Set(favoriteArticleIds).size !== favoriteArticleIds.length
+  ) {
+    return null;
+  }
+
+  if (!isRecord(value.progressByArticle)) return null;
+  const progressByArticle: Record<string, ReadingProgress> = {};
+  for (const [articleId, progress] of Object.entries(value.progressByArticle)) {
+    if (
+      !isReadingProgress(articleId, progress) ||
+      !hasOnlyKeys(progress, [
+        "articleId",
+        "sentenceId",
+        "progressPercent",
+        "updatedAt"
+      ])
+    ) {
+      return null;
+    }
+    progressByArticle[articleId] = { ...progress };
+  }
+
+  if (!isRecord(value.historyByArticle)) return null;
+  const historyByArticle: Record<string, ReadingHistoryEntry> = {};
+  for (const [articleId, entry] of Object.entries(value.historyByArticle)) {
+    if (
+      !isReadingHistoryEntry(articleId, entry) ||
+      !hasOnlyKeys(entry, [
+        "articleId",
+        "firstOpenedAt",
+        "lastOpenedAt",
+        "openCount",
+        "completedAt"
+      ])
+    ) {
+      return null;
+    }
+    historyByArticle[articleId] = { ...entry };
+  }
+
+  if (
+    Object.keys(progressByArticle).some(
+      (articleId) => historyByArticle[articleId] === undefined
+    )
+  ) {
+    return null;
+  }
+
+  if (
+    value.lastOpenedArticleId !== null &&
+    !isStorageIdentifier(value.lastOpenedArticleId)
+  ) {
+    return null;
+  }
+
+  return {
+    version: 2,
+    favoriteArticleIds: [...favoriteArticleIds],
+    progressByArticle,
+    historyByArticle,
+    lastOpenedArticleId: value.lastOpenedArticleId
+  };
 }
 
 function parseFavorites(value: unknown): string[] {
@@ -91,7 +210,7 @@ function parseFavorites(value: unknown): string[] {
     ...new Set(
       value.filter(
         (articleId): articleId is string =>
-          typeof articleId === "string" && articleId.length > 0
+          isStorageIdentifier(articleId)
       )
     )
   ];
@@ -104,7 +223,10 @@ function parseProgressByArticle(
   if (!isRecord(value)) return progressByArticle;
 
   for (const [articleId, progress] of Object.entries(value)) {
-    if (isReadingProgress(articleId, progress)) {
+    if (
+      isStorageIdentifier(articleId) &&
+      isReadingProgress(articleId, progress)
+    ) {
       progressByArticle[articleId] = progress;
     }
   }
@@ -119,7 +241,10 @@ function parseHistoryByArticle(
   if (!isRecord(value)) return historyByArticle;
 
   for (const [articleId, entry] of Object.entries(value)) {
-    if (isReadingHistoryEntry(articleId, entry)) {
+    if (
+      isStorageIdentifier(articleId) &&
+      isReadingHistoryEntry(articleId, entry)
+    ) {
       historyByArticle[articleId] = entry;
     }
   }

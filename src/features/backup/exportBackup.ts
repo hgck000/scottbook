@@ -1,10 +1,8 @@
 import packageMetadata from "../../../package.json";
 import type { LibraryState } from "../library/readingState";
+import type { ReaderPreferences } from "../preferences/readerPreferences";
 
-export type ReaderPreferences = {
-  theme: "paper" | "night";
-  fontSize: number;
-};
+export type { ReaderPreferences } from "../preferences/readerPreferences";
 
 export type ScottBookBackupData = {
   libraryState: LibraryState;
