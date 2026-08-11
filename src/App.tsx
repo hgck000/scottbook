@@ -13,20 +13,26 @@ import {
   getArticleSentenceIds,
   getSentenceProgressPercent,
   loadLibraryState,
+  markArticleCompleted,
   markArticleOpened,
   persistLibraryState,
+  resetArticleProgress,
   toggleFavoriteArticle,
   updateReadingProgress,
-  type LibraryState
+  type LibraryState,
+  type ReadingHistoryEntry
 } from "./features/library/readingState";
 
 type Theme = "paper" | "night";
 
 type Route =
   | { name: "library" }
+  | { name: "review" }
   | { name: "reader"; articleId: string };
 
 function parseRoute(): Route {
+  if (window.location.hash === "#/review") return { name: "review" };
+
   const match = window.location.hash.match(/^#\/read\/(.+)$/);
   return match?.[1]
     ? { name: "reader", articleId: decodeURIComponent(match[1]) }
@@ -116,7 +122,9 @@ function App() {
   }, [libraryState]);
 
   const openArticle = (articleId: string) => {
-    setLibraryState((current) => markArticleOpened(current, articleId));
+    setLibraryState((current) =>
+      markArticleOpened(current, articleId, Date.now())
+    );
     window.location.hash = `/read/${encodeURIComponent(articleId)}`;
   };
 
@@ -137,6 +145,24 @@ function App() {
     },
     []
   );
+
+  const completeArticle = useCallback(
+    (articleId: string, lastSentenceId: string) => {
+      setLibraryState((current) =>
+        markArticleCompleted(
+          current,
+          articleId,
+          lastSentenceId,
+          Date.now()
+        )
+      );
+    },
+    []
+  );
+
+  const resetProgress = useCallback((articleId: string) => {
+    setLibraryState((current) => resetArticleProgress(current, articleId));
+  }, []);
 
   const goHome = () => {
     window.location.hash = "/";
@@ -166,9 +192,27 @@ function App() {
         resumeSentenceId={readingProgress?.sentenceId}
         progressPercent={readingProgress?.progressPercent ?? 0}
         saveReadingPosition={saveReadingPosition}
+        isCompleted={Boolean(
+          libraryState.historyByArticle[article.id]?.completedAt
+        )}
+        completeArticle={() => {
+          const sentenceIds = getArticleSentenceIds(article);
+          const lastSentenceId = sentenceIds.at(-1);
+          if (lastSentenceId) completeArticle(article.id, lastSentenceId);
+        }}
       />
     ) : (
       <NotFound goHome={goHome} />
+    );
+  } else if (route.name === "review") {
+    content = (
+      <ReviewScreen
+        theme={theme}
+        toggleTheme={toggleTheme}
+        libraryState={libraryState}
+        openArticle={openArticle}
+        resetProgress={resetProgress}
+      />
     );
   } else {
     content = (
@@ -193,6 +237,74 @@ function Brand() {
       </span>
       <span>ScottBook</span>
     </a>
+  );
+}
+
+function Sidebar({
+  active,
+  historyCount
+}: {
+  active: "library" | "review";
+  historyCount: number;
+}) {
+  return (
+    <aside className="sidebar">
+      <Brand />
+      <nav className="side-nav" aria-label="Điều hướng chính">
+        <a
+          className={`nav-item${active === "library" ? " active" : ""}`}
+          href="#/"
+          aria-current={active === "library" ? "page" : undefined}
+        >
+          <span aria-hidden="true">▤</span>
+          Thư viện
+        </a>
+        <a
+          className={`nav-item${active === "review" ? " active" : ""}`}
+          href="#/review"
+          aria-current={active === "review" ? "page" : undefined}
+        >
+          <span aria-hidden="true">◎</span>
+          Ôn lại
+          {historyCount > 0 ? <small>{historyCount}</small> : null}
+        </a>
+      </nav>
+      <div className="sidebar-note">
+        <span className="status-dot" />
+        <strong>Hoàn toàn offline</strong>
+        <p>Nội dung và lịch sử đọc chỉ nằm trên thiết bị này.</p>
+      </div>
+    </aside>
+  );
+}
+
+function MobileNavigation({
+  active,
+  historyCount
+}: {
+  active: "library" | "review";
+  historyCount: number;
+}) {
+  return (
+    <nav className="mobile-tabbar" aria-label="Điều hướng chính trên điện thoại">
+      <a
+        className={active === "library" ? "active" : ""}
+        href="#/"
+        aria-current={active === "library" ? "page" : undefined}
+      >
+        <span aria-hidden="true">▤</span>
+        Thư viện
+      </a>
+      <a
+        className={active === "review" ? "active" : ""}
+        href="#/review"
+        aria-current={active === "review" ? "page" : undefined}
+      >
+        <span aria-hidden="true">◎</span>
+        Ôn lại
+        {historyCount > 0 ? <small>{historyCount}</small> : null}
+      </a>
+    </nav>
   );
 }
 
@@ -224,28 +336,13 @@ function LibraryScreen({
   const continueProgress = continueArticle
     ? libraryState.progressByArticle[continueArticle.id]
     : undefined;
+  const historyCount = builtInLibrary.filter(
+    (article) => libraryState.historyByArticle[article.id]
+  ).length;
 
   return (
     <div className="app-shell">
-      <aside className="sidebar">
-        <Brand />
-        <nav className="side-nav" aria-label="Điều hướng chính">
-          <a className="nav-item active" href="#/">
-            <span aria-hidden="true">▤</span>
-            Thư viện
-          </a>
-          <button className="nav-item" type="button" disabled>
-            <span aria-hidden="true">◎</span>
-            Ôn lại
-            <small>Sau</small>
-          </button>
-        </nav>
-        <div className="sidebar-note">
-          <span className="status-dot" />
-          <strong>Hoàn toàn offline</strong>
-          <p>Ba bài mẫu đã có sẵn pinyin và nghĩa tiếng Việt.</p>
-        </div>
-      </aside>
+      <Sidebar active="library" historyCount={historyCount} />
 
       <main className="library-page">
         <header className="topbar">
@@ -282,6 +379,9 @@ function LibraryScreen({
           <ContinueReadingCard
             article={continueArticle}
             progressPercent={continueProgress?.progressPercent ?? 0}
+            isCompleted={Boolean(
+              libraryState.historyByArticle[continueArticle.id]?.completedAt
+            )}
             onOpen={() => openArticle(continueArticle.id)}
           />
         ) : null}
@@ -328,6 +428,9 @@ function LibraryScreen({
                     libraryState.progressByArticle[article.id]
                       ?.progressPercent ?? 0
                   }
+                  isCompleted={Boolean(
+                    libraryState.historyByArticle[article.id]?.completedAt
+                  )}
                 />
               ))}
             </div>
@@ -356,7 +459,210 @@ function LibraryScreen({
           <span className="research-pill">Đang nghiên cứu</span>
         </section>
       </main>
+      <MobileNavigation active="library" historyCount={historyCount} />
     </div>
+  );
+}
+
+const historyDateFormatter = new Intl.DateTimeFormat("vi-VN", {
+  day: "2-digit",
+  month: "2-digit",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit"
+});
+
+function ReviewScreen({
+  theme,
+  toggleTheme,
+  libraryState,
+  openArticle,
+  resetProgress
+}: {
+  theme: Theme;
+  toggleTheme: () => void;
+  libraryState: LibraryState;
+  openArticle: (articleId: string) => void;
+  resetProgress: (articleId: string) => void;
+}) {
+  const historyItems: Array<{
+    article: BuiltInArticle;
+    entry: ReadingHistoryEntry;
+  }> = [];
+  for (const article of builtInLibrary) {
+    const entry = libraryState.historyByArticle[article.id];
+    if (entry) historyItems.push({ article, entry });
+  }
+  historyItems.sort(
+    (left, right) => right.entry.lastOpenedAt - left.entry.lastOpenedAt
+  );
+  const completedCount = historyItems.filter(
+    ({ entry }) => entry.completedAt !== null
+  ).length;
+
+  return (
+    <div className="app-shell">
+      <Sidebar active="review" historyCount={historyItems.length} />
+
+      <main className="library-page review-page">
+        <header className="topbar">
+          <div className="mobile-brand">
+            <Brand />
+          </div>
+          <p className="eyebrow">Lịch sử trên thiết bị</p>
+          <button
+            className="icon-button theme-button"
+            type="button"
+            onClick={toggleTheme}
+            aria-label={
+              theme === "paper"
+                ? "Bật giao diện tối"
+                : "Bật giao diện sáng"
+            }
+          >
+            {theme === "paper" ? "☾" : "☀"}
+          </button>
+        </header>
+
+        <section className="review-hero">
+          <div>
+            <span className="hero-stamp">本地记录 · Lưu trên máy</span>
+            <h1>Những bài bạn đã đi qua.</h1>
+            <p>
+              Xem lại tiến độ, quay về câu gần nhất hoặc bắt đầu lại một bài.
+              Không dữ liệu nào được gửi lên mạng.
+            </p>
+          </div>
+          <div className="review-stats" aria-label="Tóm tắt lịch sử đọc">
+            <div>
+              <strong>{historyItems.length}</strong>
+              <span>Đã mở</span>
+            </div>
+            <div>
+              <strong>{completedCount}</strong>
+              <span>Hoàn thành</span>
+            </div>
+          </div>
+        </section>
+
+        <section className="history-section" aria-labelledby="history-heading">
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">Ôn lại</p>
+              <h2 id="history-heading">Lịch sử đọc gần đây</h2>
+            </div>
+            <span className="offline-pill">Chỉ trên thiết bị này</span>
+          </div>
+
+          {historyItems.length > 0 ? (
+            <div className="history-list">
+              {historyItems.map(({ article, entry }) => (
+                <HistoryCard
+                  key={article.id}
+                  article={article}
+                  entry={entry}
+                  progressPercent={
+                    libraryState.progressByArticle[article.id]
+                      ?.progressPercent ?? 0
+                  }
+                  onOpen={() => openArticle(article.id)}
+                  onReset={() => {
+                    const confirmed = window.confirm(
+                      `Đặt lại tiến độ “${article.titleTranslation}”? Lịch sử đã mở vẫn được giữ.`
+                    );
+                    if (confirmed) resetProgress(article.id);
+                  }}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="empty-history-state">
+              <span aria-hidden="true">◎</span>
+              <strong>Chưa có lịch sử đọc.</strong>
+              <p>Mở một bài trong thư viện, ScottBook sẽ ghi nhớ ngay trên máy.</p>
+              <a href="#/">Chọn bài đầu tiên</a>
+            </div>
+          )}
+        </section>
+      </main>
+
+      <MobileNavigation active="review" historyCount={historyItems.length} />
+    </div>
+  );
+}
+
+function HistoryCard({
+  article,
+  entry,
+  progressPercent,
+  onOpen,
+  onReset
+}: {
+  article: BuiltInArticle;
+  entry: ReadingHistoryEntry;
+  progressPercent: number;
+  onOpen: () => void;
+  onReset: () => void;
+}) {
+  const isCompleted = entry.completedAt !== null;
+  const displayProgress = isCompleted ? 100 : progressPercent;
+  const canReset = displayProgress > 0;
+
+  return (
+    <article className={`history-card accent-${article.accent}`}>
+      <div className="history-glyph" aria-hidden="true">
+        {article.title.slice(0, 1)}
+      </div>
+      <div className="history-copy">
+        <div className="history-title-row">
+          <div>
+            <span className="level-badge">{article.level}</span>
+            <h3>{article.title}</h3>
+            <p>{article.titlePinyin} · {article.titleTranslation}</p>
+          </div>
+          <span
+            className={`history-status${isCompleted ? " completed" : ""}`}
+          >
+            {isCompleted
+              ? "Đã hoàn thành"
+              : displayProgress > 0
+                ? `Đang đọc · ${displayProgress}%`
+                : "Đã mở"}
+          </span>
+        </div>
+        <div
+          className="progress-track"
+          role="progressbar"
+          aria-label={`Tiến độ ${article.titleTranslation}`}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={displayProgress}
+        >
+          <span style={{ width: `${displayProgress}%` }} />
+        </div>
+        <div className="history-footer">
+          <p>
+            Gần nhất {historyDateFormatter.format(entry.lastOpenedAt)} · đã mở{" "}
+            {entry.openCount} lần
+          </p>
+          <div className="history-actions">
+            {canReset ? (
+              <button className="reset-button" type="button" onClick={onReset}>
+                Đặt lại
+              </button>
+            ) : null}
+            <button className="resume-button" type="button" onClick={onOpen}>
+              {isCompleted
+                ? "Đọc lại"
+                : displayProgress > 0
+                  ? "Tiếp tục"
+                  : "Bắt đầu"}
+              <span aria-hidden="true">→</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </article>
   );
 }
 
@@ -366,7 +672,8 @@ function ArticleCard({
   onOpen,
   isFavorite,
   onToggleFavorite,
-  progressPercent
+  progressPercent,
+  isCompleted
 }: {
   article: BuiltInArticle;
   index: number;
@@ -374,6 +681,7 @@ function ArticleCard({
   isFavorite: boolean;
   onToggleFavorite: () => void;
   progressPercent: number;
+  isCompleted: boolean;
 }) {
   const wordCount = article.paragraphs.reduce(
     (total, paragraph) =>
@@ -406,9 +714,13 @@ function ArticleCard({
         {progressPercent > 0 ? (
           <span
             className="card-progress"
-            aria-label={`Đã đọc ${progressPercent}%`}
+            aria-label={
+              isCompleted ? "Đã hoàn thành" : `Đã đọc ${progressPercent}%`
+            }
           >
-            <span className="progress-copy">Đã đọc {progressPercent}%</span>
+            <span className="progress-copy">
+              {isCompleted ? "Đã hoàn thành" : `Đã đọc ${progressPercent}%`}
+            </span>
             <span className="progress-track" aria-hidden="true">
               <span style={{ width: `${progressPercent}%` }} />
             </span>
@@ -441,10 +753,12 @@ function ArticleCard({
 function ContinueReadingCard({
   article,
   progressPercent,
+  isCompleted,
   onOpen
 }: {
   article: BuiltInArticle;
   progressPercent: number;
+  isCompleted: boolean;
   onOpen: () => void;
 }) {
   return (
@@ -459,7 +773,9 @@ function ContinueReadingCard({
         <p className="eyebrow">Đọc tiếp trên thiết bị này</p>
         <h2 id="continue-heading">{article.title}</h2>
         <p>
-          {progressPercent > 0
+          {isCompleted
+            ? "Bạn đã hoàn thành bài này. Có thể đọc lại bất cứ lúc nào."
+            : progressPercent > 0
             ? `ScottBook đã giữ lại vị trí gần nhất · ${progressPercent}% bài đọc.`
             : "Bài vừa mở đã sẵn sàng để bạn tiếp tục."}
         </p>
@@ -468,7 +784,11 @@ function ContinueReadingCard({
         </span>
       </div>
       <button type="button" onClick={onOpen}>
-        {progressPercent > 0 ? "Tiếp tục đọc" : "Bắt đầu đọc"}
+        {isCompleted
+          ? "Đọc lại"
+          : progressPercent > 0
+            ? "Tiếp tục đọc"
+            : "Bắt đầu đọc"}
         <span aria-hidden="true">→</span>
       </button>
     </section>
@@ -486,7 +806,9 @@ function ReaderScreen({
   toggleFavorite,
   resumeSentenceId,
   progressPercent,
-  saveReadingPosition
+  saveReadingPosition,
+  isCompleted,
+  completeArticle
 }: {
   article: BuiltInArticle;
   fontSize: number;
@@ -503,6 +825,8 @@ function ReaderScreen({
     sentenceId: string,
     progressPercent: number
   ) => void;
+  isCompleted: boolean;
+  completeArticle: () => void;
 }) {
   const [selection, setSelection] = useState<AssistanceSelection | null>(null);
   const articleBodyRef = useRef<HTMLDivElement>(null);
@@ -678,8 +1002,27 @@ function ReaderScreen({
           </div>
 
           <footer className="article-end">
-            <span>完</span>
-            <p>Hết bài · mọi chú thích của bài này đã nằm sẵn trên thiết bị.</p>
+            <div className="end-seal">
+              <span>完</span>
+              <p>
+                Hết bài · mọi chú thích của bài này đã nằm sẵn trên thiết bị.
+              </p>
+            </div>
+            {isCompleted ? (
+              <div className="completion-badge">
+                <span aria-hidden="true">✓</span>
+                Đã hoàn thành
+              </div>
+            ) : (
+              <button
+                className="complete-button"
+                type="button"
+                onClick={completeArticle}
+              >
+                <span aria-hidden="true">✓</span>
+                Đánh dấu đã đọc xong
+              </button>
+            )}
           </footer>
         </article>
       </main>

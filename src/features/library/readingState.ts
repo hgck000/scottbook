@@ -1,6 +1,7 @@
 import type { BuiltInArticle } from "../../content/types";
 
-export const LIBRARY_STATE_STORAGE_KEY = "scottbook.libraryState.v1";
+export const LIBRARY_STATE_STORAGE_KEY = "scottbook.libraryState.v2";
+export const LEGACY_LIBRARY_STATE_STORAGE_KEY = "scottbook.libraryState.v1";
 
 export type ReadingProgress = {
   articleId: string;
@@ -9,10 +10,19 @@ export type ReadingProgress = {
   updatedAt: number;
 };
 
+export type ReadingHistoryEntry = {
+  articleId: string;
+  firstOpenedAt: number;
+  lastOpenedAt: number;
+  openCount: number;
+  completedAt: number | null;
+};
+
 export type LibraryState = {
-  version: 1;
+  version: 2;
   favoriteArticleIds: string[];
   progressByArticle: Record<string, ReadingProgress>;
+  historyByArticle: Record<string, ReadingHistoryEntry>;
   lastOpenedArticleId: string | null;
 };
 
@@ -21,15 +31,20 @@ type StorageWriter = Pick<Storage, "setItem">;
 
 export function createEmptyLibraryState(): LibraryState {
   return {
-    version: 1,
+    version: 2,
     favoriteArticleIds: [],
     progressByArticle: {},
+    historyByArticle: {},
     lastOpenedArticleId: null
   };
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isTimestamp(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value) && value >= 0;
 }
 
 function isReadingProgress(
@@ -46,59 +61,150 @@ function isReadingProgress(
     Number.isInteger(value.progressPercent) &&
     value.progressPercent >= 0 &&
     value.progressPercent <= 100 &&
-    typeof value.updatedAt === "number" &&
-    Number.isFinite(value.updatedAt)
+    isTimestamp(value.updatedAt)
   );
 }
 
-export function parseLibraryState(serialized: string | null): LibraryState {
-  if (serialized === null) return createEmptyLibraryState();
+function isReadingHistoryEntry(
+  articleId: string,
+  value: unknown
+): value is ReadingHistoryEntry {
+  if (!isRecord(value)) return false;
+
+  return (
+    value.articleId === articleId &&
+    isTimestamp(value.firstOpenedAt) &&
+    isTimestamp(value.lastOpenedAt) &&
+    typeof value.openCount === "number" &&
+    Number.isInteger(value.openCount) &&
+    value.openCount >= 1 &&
+    (value.completedAt === null || isTimestamp(value.completedAt))
+  );
+}
+
+function parseFavorites(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+
+  return [
+    ...new Set(
+      value.filter(
+        (articleId): articleId is string =>
+          typeof articleId === "string" && articleId.length > 0
+      )
+    )
+  ];
+}
+
+function parseProgressByArticle(
+  value: unknown
+): Record<string, ReadingProgress> {
+  const progressByArticle: Record<string, ReadingProgress> = {};
+  if (!isRecord(value)) return progressByArticle;
+
+  for (const [articleId, progress] of Object.entries(value)) {
+    if (isReadingProgress(articleId, progress)) {
+      progressByArticle[articleId] = progress;
+    }
+  }
+
+  return progressByArticle;
+}
+
+function parseHistoryByArticle(
+  value: unknown
+): Record<string, ReadingHistoryEntry> {
+  const historyByArticle: Record<string, ReadingHistoryEntry> = {};
+  if (!isRecord(value)) return historyByArticle;
+
+  for (const [articleId, entry] of Object.entries(value)) {
+    if (isReadingHistoryEntry(articleId, entry)) {
+      historyByArticle[articleId] = entry;
+    }
+  }
+
+  return historyByArticle;
+}
+
+function historyFromProgress(
+  progressByArticle: Record<string, ReadingProgress>
+): Record<string, ReadingHistoryEntry> {
+  return Object.fromEntries(
+    Object.values(progressByArticle).map((progress) => [
+      progress.articleId,
+      {
+        articleId: progress.articleId,
+        firstOpenedAt: progress.updatedAt,
+        lastOpenedAt: progress.updatedAt,
+        openCount: 1,
+        completedAt:
+          progress.progressPercent === 100 ? progress.updatedAt : null
+      }
+    ])
+  );
+}
+
+function tryParseLibraryState(serialized: string | null): LibraryState | null {
+  if (serialized === null) return null;
 
   try {
     const candidate: unknown = JSON.parse(serialized);
-    if (!isRecord(candidate) || candidate.version !== 1) {
-      return createEmptyLibraryState();
+    if (!isRecord(candidate)) return null;
+
+    const favoriteArticleIds = parseFavorites(candidate.favoriteArticleIds);
+    const progressByArticle = parseProgressByArticle(candidate.progressByArticle);
+
+    if (candidate.version === 1) {
+      return {
+        version: 2,
+        favoriteArticleIds,
+        progressByArticle,
+        historyByArticle: historyFromProgress(progressByArticle),
+        lastOpenedArticleId:
+          typeof candidate.lastOpenedArticleId === "string"
+            ? candidate.lastOpenedArticleId
+            : null
+      };
     }
 
-    const favoriteArticleIds = Array.isArray(candidate.favoriteArticleIds)
-      ? [
-          ...new Set(
-            candidate.favoriteArticleIds.filter(
-              (articleId): articleId is string =>
-                typeof articleId === "string" && articleId.length > 0
-            )
-          )
-        ]
-      : [];
+    if (candidate.version !== 2) return null;
 
-    const progressByArticle: Record<string, ReadingProgress> = {};
-    if (isRecord(candidate.progressByArticle)) {
-      for (const [articleId, progress] of Object.entries(
-        candidate.progressByArticle
-      )) {
-        if (isReadingProgress(articleId, progress)) {
-          progressByArticle[articleId] = progress;
-        }
-      }
+    const historyByArticle = parseHistoryByArticle(candidate.historyByArticle);
+    const fallbackHistory = historyFromProgress(progressByArticle);
+    for (const [articleId, entry] of Object.entries(fallbackHistory)) {
+      historyByArticle[articleId] ??= entry;
     }
 
     return {
-      version: 1,
+      version: 2,
       favoriteArticleIds,
       progressByArticle,
+      historyByArticle,
       lastOpenedArticleId:
         typeof candidate.lastOpenedArticleId === "string"
           ? candidate.lastOpenedArticleId
           : null
     };
   } catch {
-    return createEmptyLibraryState();
+    return null;
   }
+}
+
+export function parseLibraryState(serialized: string | null): LibraryState {
+  return tryParseLibraryState(serialized) ?? createEmptyLibraryState();
 }
 
 export function loadLibraryState(storage: StorageReader): LibraryState {
   try {
-    return parseLibraryState(storage.getItem(LIBRARY_STATE_STORAGE_KEY));
+    const current = tryParseLibraryState(
+      storage.getItem(LIBRARY_STATE_STORAGE_KEY)
+    );
+    if (current) return current;
+
+    return (
+      tryParseLibraryState(
+        storage.getItem(LEGACY_LIBRARY_STATE_STORAGE_KEY)
+      ) ?? createEmptyLibraryState()
+    );
   } catch {
     return createEmptyLibraryState();
   }
@@ -116,13 +222,41 @@ export function persistLibraryState(
   }
 }
 
+function createHistoryEntry(
+  articleId: string,
+  openedAt: number
+): ReadingHistoryEntry {
+  return {
+    articleId,
+    firstOpenedAt: openedAt,
+    lastOpenedAt: openedAt,
+    openCount: 1,
+    completedAt: null
+  };
+}
+
 export function markArticleOpened(
   state: LibraryState,
-  articleId: string
+  articleId: string,
+  openedAt: number
 ): LibraryState {
-  if (state.lastOpenedArticleId === articleId) return state;
+  const existing = state.historyByArticle[articleId];
+  const historyEntry = existing
+    ? {
+        ...existing,
+        lastOpenedAt: Math.max(existing.lastOpenedAt, openedAt),
+        openCount: existing.openCount + 1
+      }
+    : createHistoryEntry(articleId, openedAt);
 
-  return { ...state, lastOpenedArticleId: articleId };
+  return {
+    ...state,
+    lastOpenedArticleId: articleId,
+    historyByArticle: {
+      ...state.historyByArticle,
+      [articleId]: historyEntry
+    }
+  };
 }
 
 export function toggleFavoriteArticle(
@@ -147,11 +281,31 @@ export function updateReadingProgress(
     100,
     Math.max(0, Math.round(progress.progressPercent))
   );
-  const existing = state.progressByArticle[progress.articleId];
+  const normalizedProgress = { ...progress, progressPercent };
+  const existingProgress = state.progressByArticle[progress.articleId];
+  const existingHistory = state.historyByArticle[progress.articleId];
+  const historyEntry = existingHistory
+    ? {
+        ...existingHistory,
+        lastOpenedAt: Math.max(existingHistory.lastOpenedAt, progress.updatedAt),
+        completedAt:
+          existingHistory.completedAt ??
+          (progressPercent === 100 ? progress.updatedAt : null)
+      }
+    : {
+        ...createHistoryEntry(progress.articleId, progress.updatedAt),
+        completedAt: progressPercent === 100 ? progress.updatedAt : null
+      };
 
+  const progressUnchanged =
+    existingProgress?.sentenceId === progress.sentenceId &&
+    existingProgress.progressPercent === progressPercent;
+  const historyUnchanged =
+    existingHistory?.lastOpenedAt === historyEntry.lastOpenedAt &&
+    existingHistory.completedAt === historyEntry.completedAt;
   if (
-    existing?.sentenceId === progress.sentenceId &&
-    existing.progressPercent === progressPercent &&
+    progressUnchanged &&
+    historyUnchanged &&
     state.lastOpenedArticleId === progress.articleId
   ) {
     return state;
@@ -162,8 +316,66 @@ export function updateReadingProgress(
     lastOpenedArticleId: progress.articleId,
     progressByArticle: {
       ...state.progressByArticle,
-      [progress.articleId]: { ...progress, progressPercent }
+      [progress.articleId]: normalizedProgress
+    },
+    historyByArticle: {
+      ...state.historyByArticle,
+      [progress.articleId]: historyEntry
     }
+  };
+}
+
+export function markArticleCompleted(
+  state: LibraryState,
+  articleId: string,
+  lastSentenceId: string,
+  completedAt: number
+): LibraryState {
+  return updateReadingProgress(state, {
+    articleId,
+    sentenceId: lastSentenceId,
+    progressPercent: 100,
+    updatedAt: completedAt
+  });
+}
+
+export function resetArticleProgress(
+  state: LibraryState,
+  articleId: string
+): LibraryState {
+  const existingProgress = state.progressByArticle[articleId];
+  const existingHistory = state.historyByArticle[articleId];
+  if (
+    !existingProgress &&
+    !existingHistory?.completedAt &&
+    state.lastOpenedArticleId !== articleId
+  ) {
+    return state;
+  }
+
+  const progressByArticle = { ...state.progressByArticle };
+  delete progressByArticle[articleId];
+
+  const historyByArticle = existingHistory
+    ? {
+        ...state.historyByArticle,
+        [articleId]: { ...existingHistory, completedAt: null }
+      }
+    : state.historyByArticle;
+
+  const nextLastOpenedArticleId =
+    state.lastOpenedArticleId === articleId
+      ? Object.values(historyByArticle)
+          .filter((entry) => progressByArticle[entry.articleId])
+          .sort((left, right) => right.lastOpenedAt - left.lastOpenedAt)[0]
+          ?.articleId ?? null
+      : state.lastOpenedArticleId;
+
+  return {
+    ...state,
+    progressByArticle,
+    historyByArticle,
+    lastOpenedArticleId: nextLastOpenedArticleId
   };
 }
 
