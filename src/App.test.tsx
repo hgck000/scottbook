@@ -153,6 +153,10 @@ describe("ScottBook routes", () => {
     expect(markup).toContain('aria-label="Chữ (字)"');
     expect(markup).toContain('aria-label="Từ/cụm (词)"');
     expect(markup).toContain('aria-label="Câu (句)"');
+    expect(markup).toContain('aria-label="Mở cài đặt đọc"');
+    expect(markup).toContain('data-reader-font="serif"');
+    expect(markup).toContain('data-reader-line-height="comfortable"');
+    expect(markup).toContain('data-reader-content-width="balanced"');
   });
 });
 

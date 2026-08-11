@@ -7,7 +7,10 @@ import {
 } from "../library/readingState";
 import {
   READER_ASSISTANCE_SCOPE_STORAGE_KEY,
+  READER_CONTENT_WIDTH_STORAGE_KEY,
+  READER_FONT_FAMILY_STORAGE_KEY,
   READER_FONT_SIZE_STORAGE_KEY,
+  READER_LINE_HEIGHT_STORAGE_KEY,
   READER_THEME_STORAGE_KEY
 } from "../preferences/readerPreferences";
 import {
@@ -44,7 +47,14 @@ describe("localStorage migration snapshot", () => {
 
     expect(tryLoadPrimaryLocalData(storage)).toEqual({
       libraryState,
-      preferences: { theme: "night", fontSize: 29, assistanceScope: "word" },
+      preferences: {
+        theme: "night",
+        fontSize: 29,
+        assistanceScope: "word",
+        fontFamily: "serif",
+        lineHeight: "comfortable",
+        contentWidth: "balanced"
+      },
       assistanceHistory: createEmptyAssistanceHistory()
     });
   });
@@ -59,6 +69,26 @@ describe("localStorage migration snapshot", () => {
     expect(tryLoadPrimaryLocalData(storage)?.preferences.assistanceScope).toBe(
       "sentence"
     );
+  });
+
+  it("keeps a complete personalized reader layout", () => {
+    const storage = new MemoryStorage();
+    storage.set(LIBRARY_STATE_STORAGE_KEY, createEmptyLibraryState());
+    storage.set(READER_THEME_STORAGE_KEY, "oled");
+    storage.set(READER_FONT_SIZE_STORAGE_KEY, 31);
+    storage.set(READER_ASSISTANCE_SCOPE_STORAGE_KEY, "character");
+    storage.set(READER_FONT_FAMILY_STORAGE_KEY, "sans");
+    storage.set(READER_LINE_HEIGHT_STORAGE_KEY, "airy");
+    storage.set(READER_CONTENT_WIDTH_STORAGE_KEY, "wide");
+
+    expect(tryLoadPrimaryLocalData(storage)?.preferences).toEqual({
+      theme: "oled",
+      fontSize: 31,
+      assistanceScope: "character",
+      fontFamily: "sans",
+      lineHeight: "airy",
+      contentWidth: "wide"
+    });
   });
 
   it("does not let a corrupt primary overwrite a future IndexedDB copy", () => {
@@ -81,7 +111,14 @@ describe("localStorage migration snapshot", () => {
 
     expect(loadLocalDataFallback(storage)).toEqual({
       libraryState: createEmptyLibraryState(),
-      preferences: { theme: "paper", fontSize: 25, assistanceScope: "word" },
+      preferences: {
+        theme: "paper",
+        fontSize: 25,
+        assistanceScope: "word",
+        fontFamily: "serif",
+        lineHeight: "comfortable",
+        contentWidth: "balanced"
+      },
       assistanceHistory: createEmptyAssistanceHistory()
     });
     expect(tryLoadPrimaryLocalData(storage)).toBeNull();
@@ -103,6 +140,16 @@ describe("localStorage migration snapshot", () => {
     storage.set(READER_THEME_STORAGE_KEY, "paper");
     storage.set(READER_FONT_SIZE_STORAGE_KEY, 25);
     storage.set(READER_ASSISTANCE_SCOPE_STORAGE_KEY, "paragraph");
+
+    expect(tryLoadPrimaryLocalData(storage)).toBeNull();
+  });
+
+  it("does not let a corrupt layout preference replace a healthy IndexedDB copy", () => {
+    const storage = new MemoryStorage();
+    storage.set(LIBRARY_STATE_STORAGE_KEY, createEmptyLibraryState());
+    storage.set(READER_THEME_STORAGE_KEY, "paper");
+    storage.set(READER_FONT_SIZE_STORAGE_KEY, 25);
+    storage.set(READER_LINE_HEIGHT_STORAGE_KEY, "huge");
 
     expect(tryLoadPrimaryLocalData(storage)).toBeNull();
   });

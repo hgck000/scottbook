@@ -5,10 +5,17 @@ import {
   validateLibraryStateSnapshot
 } from "../library/readingState";
 import {
+  DEFAULT_READER_PREFERENCES,
   READER_ASSISTANCE_SCOPE_STORAGE_KEY,
+  READER_CONTENT_WIDTH_STORAGE_KEY,
+  READER_FONT_FAMILY_STORAGE_KEY,
   READER_FONT_SIZE_STORAGE_KEY,
+  READER_LINE_HEIGHT_STORAGE_KEY,
   READER_THEME_STORAGE_KEY,
+  isReaderContentWidth,
+  isReaderFontFamily,
   isReaderFontSize,
+  isReaderLineHeight,
   isReaderTheme,
   validateReaderPreferences
 } from "../preferences/readerPreferences";
@@ -67,11 +74,38 @@ function readPreferences(
     );
     const rawScope = storage.getItem(READER_ASSISTANCE_SCOPE_STORAGE_KEY);
     const assistanceScope: unknown =
-      rawScope === null ? "word" : JSON.parse(rawScope);
+      rawScope === null
+        ? DEFAULT_READER_PREFERENCES.assistanceScope
+        : JSON.parse(rawScope);
+    const rawFontFamily = storage.getItem(READER_FONT_FAMILY_STORAGE_KEY);
+    const fontFamily: unknown =
+      rawFontFamily === null
+        ? DEFAULT_READER_PREFERENCES.fontFamily
+        : JSON.parse(rawFontFamily);
+    const rawLineHeight = storage.getItem(READER_LINE_HEIGHT_STORAGE_KEY);
+    const lineHeight: unknown =
+      rawLineHeight === null
+        ? DEFAULT_READER_PREFERENCES.lineHeight
+        : JSON.parse(rawLineHeight);
+    const rawContentWidth = storage.getItem(READER_CONTENT_WIDTH_STORAGE_KEY);
+    const contentWidth: unknown =
+      rawContentWidth === null
+        ? DEFAULT_READER_PREFERENCES.contentWidth
+        : JSON.parse(rawContentWidth);
     return isReaderTheme(theme) &&
       isReaderFontSize(fontSize) &&
-      isReaderAssistanceScope(assistanceScope)
-      ? { theme, fontSize, assistanceScope }
+      isReaderAssistanceScope(assistanceScope) &&
+      isReaderFontFamily(fontFamily) &&
+      isReaderLineHeight(lineHeight) &&
+      isReaderContentWidth(contentWidth)
+      ? {
+          theme,
+          fontSize,
+          assistanceScope,
+          fontFamily,
+          lineHeight,
+          contentWidth
+        }
       : null;
   } catch {
     return null;
@@ -83,11 +117,7 @@ export function loadLocalDataFallback(
 ): ScottBookBackupData {
   return {
     libraryState: loadLibraryState(storage),
-    preferences: readPreferences(storage) ?? {
-      theme: "paper",
-      fontSize: 25,
-      assistanceScope: "word"
-    },
+    preferences: readPreferences(storage) ?? DEFAULT_READER_PREFERENCES,
     assistanceHistory: loadAssistanceHistory(storage)
   };
 }

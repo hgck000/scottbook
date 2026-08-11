@@ -11,27 +11,59 @@ describe("reader preference migration", () => {
     ).toEqual({
       theme: "night",
       fontSize: 29,
-      assistanceScope: "word"
+      assistanceScope: "word",
+      fontFamily: "serif",
+      lineHeight: "comfortable",
+      contentWidth: "balanced"
     });
   });
 
-  it("keeps a valid current assistance scope", () => {
+  it("migrates v0.11 preferences while keeping the assistance scope", () => {
     const preferences = {
       theme: "paper" as const,
       fontSize: 25,
       assistanceScope: "sentence" as const
     };
 
+    expect(isReaderPreferences(preferences)).toBe(false);
+    expect(validateReaderPreferences(preferences)).toEqual({
+      ...preferences,
+      fontFamily: "serif",
+      lineHeight: "comfortable",
+      contentWidth: "balanced"
+    });
+  });
+
+  it("keeps a complete current personalization snapshot", () => {
+    const preferences = {
+      theme: "oled" as const,
+      fontSize: 31,
+      assistanceScope: "character" as const,
+      fontFamily: "sans" as const,
+      lineHeight: "airy" as const,
+      contentWidth: "wide" as const
+    };
+
     expect(isReaderPreferences(preferences)).toBe(true);
     expect(validateReaderPreferences(preferences)).toEqual(preferences);
   });
 
-  it("rejects unknown fields and unsupported scopes", () => {
+  it("rejects unknown fields and unsupported personalization values", () => {
     expect(
       validateReaderPreferences({
         theme: "paper",
         fontSize: 25,
         assistanceScope: "paragraph"
+      })
+    ).toBeNull();
+    expect(
+      validateReaderPreferences({
+        theme: "paper",
+        fontSize: 25,
+        assistanceScope: "word",
+        fontFamily: "sans",
+        lineHeight: "tight",
+        contentWidth: "wide"
       })
     ).toBeNull();
     expect(

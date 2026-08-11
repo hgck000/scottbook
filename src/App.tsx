@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { builtInLibrary } from "./content/builtInLibrary";
 import type {
   AnnotatedSentence,
@@ -49,13 +49,26 @@ import {
   type ReadingHistoryEntry
 } from "./features/library/readingState";
 import {
+  DEFAULT_READER_PREFERENCES,
   MAX_READER_FONT_SIZE,
   MIN_READER_FONT_SIZE,
   READER_ASSISTANCE_SCOPE_STORAGE_KEY,
+  READER_CONTENT_WIDTH_STORAGE_KEY,
+  READER_CONTENT_WIDTH_VALUES,
+  READER_FONT_FAMILY_STORAGE_KEY,
   READER_FONT_SIZE_STORAGE_KEY,
+  READER_LINE_HEIGHT_STORAGE_KEY,
+  READER_LINE_HEIGHT_VALUES,
   READER_THEME_STORAGE_KEY,
+  isReaderContentWidth,
+  isReaderFontFamily,
   isReaderFontSize,
+  isReaderLineHeight,
   isReaderTheme,
+  type ReaderContentWidth,
+  type ReaderFontFamily,
+  type ReaderLineHeight,
+  type ReaderPreferences,
   type ReaderTheme
 } from "./features/preferences/readerPreferences";
 import {
@@ -196,6 +209,39 @@ function App() {
       bootstrapData.fallback.preferences.assistanceScope,
       isReaderAssistanceScope
     );
+  const [fontFamily, setFontFamily] = useStoredState<ReaderFontFamily>(
+    READER_FONT_FAMILY_STORAGE_KEY,
+    bootstrapData.fallback.preferences.fontFamily,
+    isReaderFontFamily
+  );
+  const [lineHeight, setLineHeight] = useStoredState<ReaderLineHeight>(
+    READER_LINE_HEIGHT_STORAGE_KEY,
+    bootstrapData.fallback.preferences.lineHeight,
+    isReaderLineHeight
+  );
+  const [contentWidth, setContentWidth] = useStoredState<ReaderContentWidth>(
+    READER_CONTENT_WIDTH_STORAGE_KEY,
+    bootstrapData.fallback.preferences.contentWidth,
+    isReaderContentWidth
+  );
+  const readerPreferences = useMemo<ReaderPreferences>(
+    () => ({
+      theme,
+      fontSize,
+      assistanceScope,
+      fontFamily,
+      lineHeight,
+      contentWidth
+    }),
+    [
+      assistanceScope,
+      contentWidth,
+      fontFamily,
+      fontSize,
+      lineHeight,
+      theme
+    ]
+  );
   const [libraryState, setLibraryState] = useState<LibraryState>(
     bootstrapData.fallback.libraryState
   );
@@ -302,8 +348,18 @@ function App() {
     setTheme(data.preferences.theme);
     setFontSize(data.preferences.fontSize);
     setAssistanceScope(data.preferences.assistanceScope);
+    setFontFamily(data.preferences.fontFamily);
+    setLineHeight(data.preferences.lineHeight);
+    setContentWidth(data.preferences.contentWidth);
     setAssistanceHistory(data.assistanceHistory);
-  }, [setAssistanceScope, setFontSize, setTheme]);
+  }, [
+    setAssistanceScope,
+    setContentWidth,
+    setFontFamily,
+    setFontSize,
+    setLineHeight,
+    setTheme
+  ]);
 
   useEffect(() => {
     let active = true;
@@ -338,7 +394,7 @@ function App() {
     void localDataCoordinator
       .persist({
         libraryState,
-        preferences: { theme, fontSize, assistanceScope },
+        preferences: readerPreferences,
         assistanceHistory
       })
       .then((succeeded) => {
@@ -358,12 +414,10 @@ function App() {
     };
   }, [
     assistanceHistory,
-    assistanceScope,
-    fontSize,
     libraryState,
     localDataCoordinator,
     localDataStatus.phase,
-    theme
+    readerPreferences
   ]);
 
   const applyBackupRestore = useCallback(
@@ -371,7 +425,7 @@ function App() {
       const result = await localDataCoordinator.applyRestore(
         {
           libraryState,
-          preferences: { theme, fontSize, assistanceScope },
+          preferences: readerPreferences,
           assistanceHistory
         },
         restoredData
@@ -388,19 +442,17 @@ function App() {
     },
     [
       assistanceHistory,
-      assistanceScope,
-      fontSize,
       libraryState,
       localDataCoordinator,
+      readerPreferences,
       replaceLocalData,
-      theme
     ]
   );
 
   const undoBackupRestore = useCallback(async () => {
     const result = await localDataCoordinator.undoRestore({
       libraryState,
-      preferences: { theme, fontSize, assistanceScope },
+      preferences: readerPreferences,
       assistanceHistory
     });
     if (result.ok) replaceLocalData(result.data);
@@ -414,12 +466,10 @@ function App() {
     return result;
   }, [
     assistanceHistory,
-    assistanceScope,
-    fontSize,
     libraryState,
     localDataCoordinator,
+    readerPreferences,
     replaceLocalData,
-    theme
   ]);
 
   const loadStorageReport = useCallback(() => {
@@ -439,7 +489,7 @@ function App() {
   const preparePwaUpdate = useCallback(async () => {
     const prepared = await localDataCoordinator.prepareForUpdate({
       libraryState,
-      preferences: { theme, fontSize, assistanceScope },
+      preferences: readerPreferences,
       assistanceHistory
     });
     if (!localDataCoordinator.isUsingIndexedDb()) {
@@ -452,11 +502,9 @@ function App() {
     return prepared;
   }, [
     assistanceHistory,
-    assistanceScope,
-    fontSize,
     libraryState,
     localDataCoordinator,
-    theme
+    readerPreferences
   ]);
 
   const saveAssistance = useCallback(
@@ -497,6 +545,33 @@ function App() {
     setTheme((current) => (current === "paper" ? "night" : "paper"));
   };
 
+  const updateReaderPreferences = useCallback(
+    (updates: Partial<ReaderPreferences>) => {
+      if (updates.theme !== undefined) setTheme(updates.theme);
+      if (updates.fontSize !== undefined) setFontSize(updates.fontSize);
+      if (updates.assistanceScope !== undefined) {
+        setAssistanceScope(updates.assistanceScope);
+      }
+      if (updates.fontFamily !== undefined) {
+        setFontFamily(updates.fontFamily);
+      }
+      if (updates.lineHeight !== undefined) {
+        setLineHeight(updates.lineHeight);
+      }
+      if (updates.contentWidth !== undefined) {
+        setContentWidth(updates.contentWidth);
+      }
+    },
+    [
+      setAssistanceScope,
+      setContentWidth,
+      setFontFamily,
+      setFontSize,
+      setLineHeight,
+      setTheme
+    ]
+  );
+
   let content;
   if (route.name === "reader") {
     const article = builtInLibrary.find((item) => item.id === route.articleId);
@@ -507,11 +582,8 @@ function App() {
       <ReaderScreen
         key={article.id}
         article={article}
-        fontSize={fontSize}
-        setFontSize={setFontSize}
-        assistanceScope={assistanceScope}
-        setAssistanceScope={setAssistanceScope}
-        theme={theme}
+        preferences={readerPreferences}
+        updatePreferences={updateReaderPreferences}
         toggleTheme={toggleTheme}
         goHome={goHome}
         isFavorite={libraryState.favoriteArticleIds.includes(article.id)}
@@ -537,9 +609,7 @@ function App() {
   } else if (route.name === "review") {
     content = (
       <ReviewScreen
-        theme={theme}
-        fontSize={fontSize}
-        assistanceScope={assistanceScope}
+        preferences={readerPreferences}
         toggleTheme={toggleTheme}
         libraryState={libraryState}
         assistanceHistory={assistanceHistory}
@@ -1006,9 +1076,7 @@ const historyDateFormatter = new Intl.DateTimeFormat("vi-VN", {
 });
 
 function ReviewScreen({
-  theme,
-  fontSize,
-  assistanceScope,
+  preferences,
   toggleTheme,
   libraryState,
   assistanceHistory,
@@ -1026,9 +1094,7 @@ function ReviewScreen({
   loadStorageReport,
   clearTranslationCache
 }: {
-  theme: ReaderTheme;
-  fontSize: number;
-  assistanceScope: ReaderAssistanceScope;
+  preferences: ReaderPreferences;
   toggleTheme: () => void;
   libraryState: LibraryState;
   assistanceHistory: AssistanceHistoryState;
@@ -1048,6 +1114,7 @@ function ReviewScreen({
   loadStorageReport: () => Promise<ScottBookStorageReport>;
   clearTranslationCache: () => Promise<number>;
 }) {
+  const { theme } = preferences;
   const historyItems: Array<{
     article: BuiltInArticle;
     entry: ReadingHistoryEntry;
@@ -1132,9 +1199,7 @@ function ReviewScreen({
         <DataProtectionCard
           libraryState={libraryState}
           assistanceHistory={assistanceHistory}
-          theme={theme}
-          fontSize={fontSize}
-          assistanceScope={assistanceScope}
+          preferences={preferences}
           storagePersistence={storagePersistence}
           localDataStatus={localDataStatus}
           applyBackupRestore={applyBackupRestore}
@@ -1444,9 +1509,7 @@ function AssistanceReviewCard({
 function DataProtectionCard({
   libraryState,
   assistanceHistory,
-  theme,
-  fontSize,
-  assistanceScope,
+  preferences,
   storagePersistence,
   localDataStatus,
   applyBackupRestore,
@@ -1456,9 +1519,7 @@ function DataProtectionCard({
 }: {
   libraryState: LibraryState;
   assistanceHistory: AssistanceHistoryState;
-  theme: ReaderTheme;
-  fontSize: number;
-  assistanceScope: ReaderAssistanceScope;
+  preferences: ReaderPreferences;
   storagePersistence: StoragePersistence;
   localDataStatus: LocalDataStatus;
   applyBackupRestore: (
@@ -1544,7 +1605,7 @@ function DataProtectionCard({
     try {
       const backup = await createScottBookBackup({
         libraryState,
-        preferences: { theme, fontSize, assistanceScope },
+        preferences,
         assistanceHistory
       });
       downloadScottBookBackup(backup);
@@ -2009,7 +2070,13 @@ function RestorePreview({
       <dl className="restore-preferences">
         <div>
           <dt>Giao diện</dt>
-          <dd>{preview.theme === "paper" ? "Sáng · giấy" : "Tối"}</dd>
+          <dd>
+            {preview.theme === "paper"
+              ? "Sáng · giấy"
+              : preview.theme === "night"
+                ? "Tối"
+                : "OLED · đen"}
+          </dd>
         </div>
         <div>
           <dt>Cỡ chữ</dt>
@@ -2018,6 +2085,26 @@ function RestorePreview({
         <div>
           <dt>Phạm vi trợ giúp</dt>
           <dd>{getAssistanceScopeLabel(preview.assistanceScope)}</dd>
+        </div>
+        <div>
+          <dt>Kiểu chữ</dt>
+          <dd>{preview.fontFamily === "serif" ? "Có chân" : "Không chân"}</dd>
+        </div>
+        <div>
+          <dt>Giãn dòng</dt>
+          <dd>
+            {{ compact: "Gọn", comfortable: "Thoải mái", airy: "Thoáng" }[
+              preview.lineHeight
+            ]}
+          </dd>
+        </div>
+        <div>
+          <dt>Khổ đọc</dt>
+          <dd>
+            {{ narrow: "Hẹp", balanced: "Cân bằng", wide: "Rộng" }[
+              preview.contentWidth
+            ]}
+          </dd>
         </div>
         <div>
           <dt>Mục cần ôn</dt>
@@ -2263,11 +2350,8 @@ function ContinueReadingCard({
 
 function ReaderScreen({
   article,
-  fontSize,
-  setFontSize,
-  assistanceScope,
-  setAssistanceScope,
-  theme,
+  preferences,
+  updatePreferences,
   toggleTheme,
   goHome,
   isFavorite,
@@ -2280,13 +2364,8 @@ function ReaderScreen({
   saveAssistance
 }: {
   article: BuiltInArticle;
-  fontSize: number;
-  setFontSize: React.Dispatch<React.SetStateAction<number>>;
-  assistanceScope: ReaderAssistanceScope;
-  setAssistanceScope: React.Dispatch<
-    React.SetStateAction<ReaderAssistanceScope>
-  >;
-  theme: ReaderTheme;
+  preferences: ReaderPreferences;
+  updatePreferences: (updates: Partial<ReaderPreferences>) => void;
   toggleTheme: () => void;
   goHome: () => void;
   isFavorite: boolean;
@@ -2306,8 +2385,18 @@ function ReaderScreen({
     level: AssistanceLevel
   ) => void;
 }) {
+  const {
+    theme,
+    fontSize,
+    assistanceScope,
+    fontFamily,
+    lineHeight,
+    contentWidth
+  } = preferences;
   const [selection, setSelection] = useState<AssistanceSelection | null>(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const articleBodyRef = useRef<HTMLDivElement>(null);
+  const settingsButtonRef = useRef<HTMLButtonElement>(null);
   const restoredArticleRef = useRef<string | null>(null);
   const initialResumeSentenceRef = useRef(resumeSentenceId);
 
@@ -2342,6 +2431,29 @@ function ReaderScreen({
     window.addEventListener("keydown", closeOnEscape);
     return () => window.removeEventListener("keydown", closeOnEscape);
   }, [closeAssistance, selection]);
+
+  const closeReaderSettings = useCallback((restoreFocus: boolean) => {
+    setSettingsOpen(false);
+    if (!restoreFocus) return;
+    window.requestAnimationFrame(() => settingsButtonRef.current?.focus());
+  }, []);
+
+  useEffect(() => {
+    if (!settingsOpen) return;
+    const frame = window.requestAnimationFrame(() => {
+      document.getElementById("reader-settings")?.focus();
+    });
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      closeReaderSettings(true);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [closeReaderSettings, settingsOpen]);
 
   useEffect(() => {
     if (restoredArticleRef.current === article.id) return;
@@ -2464,7 +2576,9 @@ function ReaderScreen({
           <button
             className="text-control"
             type="button"
-            onClick={() => setFontSize((size) => clampFontSize(size - 2))}
+            onClick={() =>
+              updatePreferences({ fontSize: clampFontSize(fontSize - 2) })
+            }
             aria-label="Giảm cỡ chữ"
           >
             A−
@@ -2475,7 +2589,9 @@ function ReaderScreen({
           <button
             className="text-control"
             type="button"
-            onClick={() => setFontSize((size) => clampFontSize(size + 2))}
+            onClick={() =>
+              updatePreferences({ fontSize: clampFontSize(fontSize + 2) })
+            }
             aria-label="Tăng cỡ chữ"
           >
             A+
@@ -2487,6 +2603,20 @@ function ReaderScreen({
             aria-label={theme === "paper" ? "Bật giao diện tối" : "Bật giao diện sáng"}
           >
             {theme === "paper" ? "☾" : "☀"}
+          </button>
+          <button
+            ref={settingsButtonRef}
+            className="icon-button reader-settings-button"
+            type="button"
+            onClick={() => {
+              setSelection(null);
+              setSettingsOpen(true);
+            }}
+            aria-label="Mở cài đặt đọc"
+            aria-controls="reader-settings"
+            aria-expanded={settingsOpen}
+          >
+            <span aria-hidden="true">⚙</span>
           </button>
         </div>
         <div
@@ -2502,7 +2632,19 @@ function ReaderScreen({
       </header>
 
       <main id="main-content" className="reader-page" tabIndex={-1}>
-        <article className="reader-article" style={{ "--reader-font-size": `${fontSize}px` } as React.CSSProperties}>
+        <article
+          className="reader-article"
+          data-reader-font={fontFamily}
+          data-reader-line-height={lineHeight}
+          data-reader-content-width={contentWidth}
+          style={
+            {
+              "--reader-font-size": `${fontSize}px`,
+              "--reader-line-height": READER_LINE_HEIGHT_VALUES[lineHeight],
+              "--reader-content-width": `${READER_CONTENT_WIDTH_VALUES[contentWidth]}px`
+            } as React.CSSProperties
+          }
+        >
           <header className="article-header">
             <span className="reader-level">{article.level} · {article.topic}</span>
             <h1 lang="zh-Hans">{article.title}</h1>
@@ -2522,7 +2664,7 @@ function ReaderScreen({
             scope={assistanceScope}
             onChange={(nextScope) => {
               setSelection(null);
-              setAssistanceScope(nextScope);
+              updatePreferences({ assistanceScope: nextScope });
             }}
           />
 
@@ -2567,6 +2709,22 @@ function ReaderScreen({
           </footer>
         </article>
       </main>
+
+      {settingsOpen ? (
+        <>
+          <button
+            className="reader-settings-scrim"
+            type="button"
+            aria-label="Đóng cài đặt đọc"
+            onClick={() => closeReaderSettings(true)}
+          />
+          <ReaderSettingsPanel
+            preferences={preferences}
+            updatePreferences={updatePreferences}
+            close={() => closeReaderSettings(true)}
+          />
+        </>
+      ) : null}
 
       {selection && selectedContext ? (
         <AssistancePanel
@@ -2623,6 +2781,242 @@ function ReaderScopeSelector({
         ))}
       </div>
     </div>
+  );
+}
+
+function ReaderSettingsPanel({
+  preferences,
+  updatePreferences,
+  close
+}: {
+  preferences: ReaderPreferences;
+  updatePreferences: (updates: Partial<ReaderPreferences>) => void;
+  close: () => void;
+}) {
+  const clampFontSize = (next: number) =>
+    Math.min(MAX_READER_FONT_SIZE, Math.max(MIN_READER_FONT_SIZE, next));
+  const themeOptions: Array<{
+    value: ReaderTheme;
+    label: string;
+    note: string;
+  }> = [
+    { value: "paper", label: "Giấy", note: "Dịu, sáng" },
+    { value: "night", label: "Tối", note: "Xám đen" },
+    { value: "oled", label: "OLED", note: "Đen tuyệt đối" }
+  ];
+  const fontOptions: Array<{ value: ReaderFontFamily; label: string }> = [
+    { value: "serif", label: "Có chân" },
+    { value: "sans", label: "Không chân" }
+  ];
+  const lineHeightOptions: Array<{
+    value: ReaderLineHeight;
+    label: string;
+    note: string;
+  }> = [
+    { value: "compact", label: "Gọn", note: "1.65" },
+    { value: "comfortable", label: "Thoải mái", note: "2.05" },
+    { value: "airy", label: "Thoáng", note: "2.35" }
+  ];
+  const widthOptions: Array<{
+    value: ReaderContentWidth;
+    label: string;
+    note: string;
+  }> = [
+    { value: "narrow", label: "Hẹp", note: "620 px" },
+    { value: "balanced", label: "Cân bằng", note: "760 px" },
+    { value: "wide", label: "Rộng", note: "920 px" }
+  ];
+
+  return (
+    <aside
+      id="reader-settings"
+      className="reader-settings-panel"
+      role="region"
+      aria-labelledby="reader-settings-heading"
+      tabIndex={-1}
+    >
+      <header>
+        <div>
+          <p className="eyebrow">Hiển thị trên thiết bị này</p>
+          <h2 id="reader-settings-heading">Cài đặt đọc</h2>
+        </div>
+        <button type="button" onClick={close} aria-label="Đóng cài đặt đọc">
+          ×
+        </button>
+      </header>
+
+      <div className="reader-settings-scroll">
+        <section className="reader-setting-section">
+          <div className="reader-setting-heading">
+            <h3>Giao diện</h3>
+            <span>Giấy, tối hoặc đen OLED</span>
+          </div>
+          <div className="reader-setting-options theme-options" role="group" aria-label="Giao diện đọc">
+            {themeOptions.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                className={preferences.theme === option.value ? "active" : ""}
+                data-theme-choice={option.value}
+                aria-pressed={preferences.theme === option.value}
+                onClick={() => updatePreferences({ theme: option.value })}
+              >
+                <span className="theme-swatch" aria-hidden="true" />
+                <strong>{option.label}</strong>
+                <small>{option.note}</small>
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <section className="reader-setting-section">
+          <div className="reader-setting-heading">
+            <h3>Cỡ chữ</h3>
+            <output htmlFor="reader-font-size">{preferences.fontSize}px</output>
+          </div>
+          <div className="reader-font-size-control">
+            <button
+              type="button"
+              aria-label="Giảm cỡ chữ trong cài đặt"
+              onClick={() =>
+                updatePreferences({
+                  fontSize: clampFontSize(preferences.fontSize - 1)
+                })
+              }
+            >
+              A−
+            </button>
+            <input
+              id="reader-font-size"
+              type="range"
+              min={MIN_READER_FONT_SIZE}
+              max={MAX_READER_FONT_SIZE}
+              step={1}
+              value={preferences.fontSize}
+              aria-label="Cỡ chữ bài đọc"
+              onChange={(event) =>
+                updatePreferences({ fontSize: Number(event.target.value) })
+              }
+            />
+            <button
+              type="button"
+              aria-label="Tăng cỡ chữ trong cài đặt"
+              onClick={() =>
+                updatePreferences({
+                  fontSize: clampFontSize(preferences.fontSize + 1)
+                })
+              }
+            >
+              A+
+            </button>
+          </div>
+        </section>
+
+        <section className="reader-setting-section">
+          <div className="reader-setting-heading">
+            <h3>Kiểu chữ</h3>
+            <span>Chỉ áp dụng cho nội dung đọc</span>
+          </div>
+          <div className="reader-setting-options two-columns" role="group" aria-label="Kiểu chữ bài đọc">
+            {fontOptions.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                className={`font-choice ${option.value}${preferences.fontFamily === option.value ? " active" : ""}`}
+                aria-pressed={preferences.fontFamily === option.value}
+                onClick={() =>
+                  updatePreferences({ fontFamily: option.value })
+                }
+              >
+                <span lang="zh-Hans">阅读</span>
+                <strong>{option.label}</strong>
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <section className="reader-setting-section">
+          <div className="reader-setting-heading">
+            <h3>Giãn dòng</h3>
+            <span>Khoảng thở giữa các dòng chữ</span>
+          </div>
+          <div className="reader-setting-options" role="group" aria-label="Độ giãn dòng">
+            {lineHeightOptions.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                className={preferences.lineHeight === option.value ? "active" : ""}
+                aria-pressed={preferences.lineHeight === option.value}
+                onClick={() =>
+                  updatePreferences({ lineHeight: option.value })
+                }
+              >
+                <strong>{option.label}</strong>
+                <small>{option.note}</small>
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <section className="reader-setting-section">
+          <div className="reader-setting-heading">
+            <h3>Khổ đọc</h3>
+            <span>Tự co vừa màn hình điện thoại</span>
+          </div>
+          <div className="reader-setting-options" role="group" aria-label="Độ rộng khổ đọc">
+            {widthOptions.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                className={preferences.contentWidth === option.value ? "active" : ""}
+                aria-pressed={preferences.contentWidth === option.value}
+                onClick={() =>
+                  updatePreferences({ contentWidth: option.value })
+                }
+              >
+                <strong>{option.label}</strong>
+                <small>{option.note}</small>
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <div
+          className={`reader-settings-preview font-${preferences.fontFamily}`}
+          style={
+            {
+              "--preview-line-height":
+                READER_LINE_HEIGHT_VALUES[preferences.lineHeight]
+            } as React.CSSProperties
+          }
+          aria-label="Xem trước kiểu đọc"
+        >
+          <span lang="zh-Hans">先理解，再翻译。</span>
+          <small>Xiān lǐjiě, zài fānyì.</small>
+        </div>
+      </div>
+
+      <footer>
+        <button
+          className="reader-settings-reset"
+          type="button"
+          onClick={() =>
+            updatePreferences({
+              theme: DEFAULT_READER_PREFERENCES.theme,
+              fontSize: DEFAULT_READER_PREFERENCES.fontSize,
+              fontFamily: DEFAULT_READER_PREFERENCES.fontFamily,
+              lineHeight: DEFAULT_READER_PREFERENCES.lineHeight,
+              contentWidth: DEFAULT_READER_PREFERENCES.contentWidth
+            })
+          }
+        >
+          Đặt lại mặc định
+        </button>
+        <button className="reader-settings-done" type="button" onClick={close}>
+          Xong
+        </button>
+      </footer>
+    </aside>
   );
 }
 

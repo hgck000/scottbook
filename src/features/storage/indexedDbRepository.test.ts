@@ -45,7 +45,10 @@ function createData(
     preferences: {
       theme,
       fontSize: theme === "paper" ? 25 : 28,
-      assistanceScope: "word"
+      assistanceScope: "word",
+      fontFamily: "serif",
+      lineHeight: "comfortable",
+      contentWidth: "balanced"
     },
     assistanceHistory: createEmptyAssistanceHistory()
   };
@@ -154,7 +157,10 @@ describe("IndexedDB local-data repository", () => {
         preferences: {
           theme: "paper",
           fontSize: 25,
-          assistanceScope: "word"
+          assistanceScope: "word",
+          fontFamily: "serif",
+          lineHeight: "comfortable",
+          contentWidth: "balanced"
         },
         assistanceHistory: createEmptyAssistanceHistory()
       },
@@ -229,7 +235,10 @@ describe("IndexedDB local-data repository", () => {
         preferences: {
           theme: "night",
           fontSize: 30,
-          assistanceScope: "word"
+          assistanceScope: "word",
+          fontFamily: "serif",
+          lineHeight: "comfortable",
+          contentWidth: "balanced"
         }
       }
     });

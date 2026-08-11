@@ -197,6 +197,67 @@ test("switches authored assistance between character, word, and sentence", async
   expect(pageErrors).toEqual([]);
 });
 
+test("personalizes the reader layout and restores safe defaults", async ({
+  page
+}) => {
+  const pageErrors = collectPageErrors(page);
+  await page.goto("/");
+  await dismissInstallNotice(page);
+  await page
+    .getByRole("button", { name: "Mở bài Buổi sáng của tôi" })
+    .click();
+
+  const article = page.locator(".reader-article");
+  await page.getByRole("button", { name: "Mở cài đặt đọc" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Cài đặt đọc" })
+  ).toBeVisible();
+  await page.getByRole("button", { name: /OLED/ }).click();
+  await page.getByRole("button", { name: /Không chân/ }).click();
+  await page.getByRole("button", { name: /Thoáng/ }).click();
+  await page.getByRole("button", { name: /Rộng/ }).click();
+  await page.locator("#reader-font-size").press("End");
+
+  await expect(page.locator("[data-theme]")).toHaveAttribute(
+    "data-theme",
+    "oled"
+  );
+  await expect(article).toHaveAttribute("data-reader-font", "sans");
+  await expect(article).toHaveAttribute("data-reader-line-height", "airy");
+  await expect(article).toHaveAttribute("data-reader-content-width", "wide");
+  await expect(page.locator("#reader-font-size")).toHaveValue("38");
+  await page.getByRole("button", { name: "Xong", exact: true }).click();
+
+  await page.reload();
+  await expect(page.locator("[data-theme]")).toHaveAttribute(
+    "data-theme",
+    "oled"
+  );
+  await expect(article).toHaveAttribute("data-reader-font", "sans");
+  await expect(article).toHaveAttribute("data-reader-line-height", "airy");
+  await expect(article).toHaveAttribute("data-reader-content-width", "wide");
+
+  await page.getByRole("button", { name: "Mở cài đặt đọc" }).click();
+  await page
+    .getByRole("button", { name: "Đặt lại mặc định", exact: true })
+    .click();
+  await expect(page.locator("[data-theme]")).toHaveAttribute(
+    "data-theme",
+    "paper"
+  );
+  await expect(article).toHaveAttribute("data-reader-font", "serif");
+  await expect(article).toHaveAttribute(
+    "data-reader-line-height",
+    "comfortable"
+  );
+  await expect(article).toHaveAttribute(
+    "data-reader-content-width",
+    "balanced"
+  );
+  await expect(page.locator("#reader-font-size")).toHaveValue("25");
+  expect(pageErrors).toEqual([]);
+});
+
 test("migrates an anonymized v1 reading snapshot", async ({ page }) => {
   const pageErrors = collectPageErrors(page);
   await page.addInitScript(

@@ -11,7 +11,10 @@ import {
 } from "../library/readingState";
 import {
   READER_ASSISTANCE_SCOPE_STORAGE_KEY,
+  READER_CONTENT_WIDTH_STORAGE_KEY,
+  READER_FONT_FAMILY_STORAGE_KEY,
   READER_FONT_SIZE_STORAGE_KEY,
+  READER_LINE_HEIGHT_STORAGE_KEY,
   READER_THEME_STORAGE_KEY
 } from "../preferences/readerPreferences";
 import { createEmptyAssistanceHistory } from "../review/assistanceHistory";
@@ -80,7 +83,10 @@ function createCurrentData(): ScottBookBackupData {
     preferences: {
       theme: "night",
       fontSize: 28,
-      assistanceScope: "word"
+      assistanceScope: "word",
+      fontFamily: "serif",
+      lineHeight: "compact",
+      contentWidth: "narrow"
     },
     assistanceHistory: createEmptyAssistanceHistory()
   };
@@ -107,9 +113,12 @@ function createRestoredData(): ScottBookBackupData {
       600
     ),
     preferences: {
-      theme: "paper",
+      theme: "oled",
       fontSize: 24,
-      assistanceScope: "sentence"
+      assistanceScope: "sentence",
+      fontFamily: "sans",
+      lineHeight: "airy",
+      contentWidth: "wide"
     },
     assistanceHistory: createEmptyAssistanceHistory()
   };
@@ -153,7 +162,10 @@ describe("ScottBook backup restore", () => {
       preferences: {
         theme: "paper",
         fontSize: 25,
-        assistanceScope: "word"
+        assistanceScope: "word",
+        fontFamily: "serif",
+        lineHeight: "comfortable",
+        contentWidth: "balanced"
       },
       assistanceHistory: createEmptyAssistanceHistory()
     });
@@ -179,9 +191,12 @@ describe("ScottBook backup restore", () => {
         completedCount: 1,
         activeProgressCount: 1,
         assistanceItemCount: 0,
-        theme: "paper",
+        theme: "oled",
         fontSize: 24,
-        assistanceScope: "sentence"
+        assistanceScope: "sentence",
+        fontFamily: "sans",
+        lineHeight: "airy",
+        contentWidth: "wide"
       }
     });
   });
@@ -199,6 +214,9 @@ describe("ScottBook backup restore", () => {
     delete legacy.data.assistanceHistory;
     const legacyPreferences = legacy.data.preferences as Record<string, unknown>;
     delete legacyPreferences.assistanceScope;
+    delete legacyPreferences.fontFamily;
+    delete legacyPreferences.lineHeight;
+    delete legacyPreferences.contentWidth;
     const unsigned = {
       format: legacy.format,
       formatVersion: legacy.formatVersion,
@@ -229,7 +247,10 @@ describe("ScottBook backup restore", () => {
           preferences: {
             theme: "night",
             fontSize: 28,
-            assistanceScope: "word"
+            assistanceScope: "word",
+            fontFamily: "serif",
+            lineHeight: "comfortable",
+            contentWidth: "balanced"
           }
         }
       }
@@ -255,6 +276,15 @@ describe("ScottBook backup restore", () => {
       ),
       [READER_ASSISTANCE_SCOPE_STORAGE_KEY]: JSON.stringify(
         currentData.preferences.assistanceScope
+      ),
+      [READER_FONT_FAMILY_STORAGE_KEY]: JSON.stringify(
+        currentData.preferences.fontFamily
+      ),
+      [READER_LINE_HEIGHT_STORAGE_KEY]: JSON.stringify(
+        currentData.preferences.lineHeight
+      ),
+      [READER_CONTENT_WIDTH_STORAGE_KEY]: JSON.stringify(
+        currentData.preferences.contentWidth
       )
     });
 
@@ -275,6 +305,10 @@ describe("ScottBook backup restore", () => {
     expect(storage.getItem(READER_ASSISTANCE_SCOPE_STORAGE_KEY)).toBe(
       '"sentence"'
     );
+    expect(storage.getItem(READER_THEME_STORAGE_KEY)).toBe('"oled"');
+    expect(storage.getItem(READER_FONT_FAMILY_STORAGE_KEY)).toBe('"sans"');
+    expect(storage.getItem(READER_LINE_HEIGHT_STORAGE_KEY)).toBe('"airy"');
+    expect(storage.getItem(READER_CONTENT_WIDTH_STORAGE_KEY)).toBe('"wide"');
     expect(loadScottBookRestoreUndo(storage)?.data).toEqual(currentData);
 
     const undone = undoLastScottBookRestore(storage, restoredData);
@@ -287,6 +321,9 @@ describe("ScottBook backup restore", () => {
     expect(storage.getItem(READER_ASSISTANCE_SCOPE_STORAGE_KEY)).toBe(
       '"word"'
     );
+    expect(storage.getItem(READER_FONT_FAMILY_STORAGE_KEY)).toBe('"serif"');
+    expect(storage.getItem(READER_LINE_HEIGHT_STORAGE_KEY)).toBe('"compact"');
+    expect(storage.getItem(READER_CONTENT_WIDTH_STORAGE_KEY)).toBe('"narrow"');
     expect(storage.getItem(RESTORE_UNDO_STORAGE_KEY)).toBeNull();
   });
 

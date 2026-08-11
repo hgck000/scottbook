@@ -31,6 +31,20 @@
   --shadow: 0 24px 70px rgb(0 0 0 / 30%);
 }
 
+[data-theme="oled"] {
+  color-scheme: dark;
+  --paper: #000;
+  --paper-raised: #090b0a;
+  --ink: #f3f5ef;
+  --muted: #9aa49f;
+  --line: rgb(255 255 255 / 12%);
+  --jade: #8bc8b7;
+  --jade-soft: #10251f;
+  --amber: #dfad5b;
+  --coral: #ed8b73;
+  --shadow: 0 24px 70px rgb(0 0 0 / 72%);
+}
+
 * {
   box-sizing: border-box;
 }
@@ -1144,7 +1158,7 @@ svg {
   background: transparent;
 }
 
-[data-theme="night"] .restore-file-button {
+:is([data-theme="night"], [data-theme="oled"]) .restore-file-button {
   border-color: var(--ink);
   color: var(--ink);
 }
@@ -2126,6 +2140,10 @@ svg {
   margin-left: 0;
 }
 
+.reader-actions .reader-settings-button {
+  margin-left: 2px;
+}
+
 .reader-page {
   min-height: calc(100vh - 70px);
   padding: clamp(38px, 8vw, 96px) 20px 220px;
@@ -2133,8 +2151,16 @@ svg {
 
 .reader-article {
   --reader-font-size: 25px;
-  width: min(100%, 760px);
+  --reader-line-height: 2.05;
+  --reader-content-width: 760px;
+  --reader-font-family: "Songti SC", "STSong", "Noto Serif CJK SC", "Microsoft YaHei", serif;
+  width: min(100%, var(--reader-content-width));
   margin: 0 auto;
+  transition: width 160ms ease;
+}
+
+.reader-article[data-reader-font="sans"] {
+  --reader-font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", ui-sans-serif, sans-serif;
 }
 
 .article-header {
@@ -2285,10 +2311,11 @@ svg {
 .article-body {
   padding-top: 36px;
   color: var(--ink);
-  font-family: "Songti SC", "STSong", "Noto Serif CJK SC", "Microsoft YaHei", serif;
+  font-family: var(--reader-font-family);
   font-size: var(--reader-font-size);
-  line-height: 2.05;
+  line-height: var(--reader-line-height);
   letter-spacing: 0.025em;
+  transition: font-size 120ms ease, line-height 120ms ease;
 }
 
 .article-body p {
@@ -2387,6 +2414,261 @@ svg {
 .completion-badge {
   color: #4b8b5d;
   background: rgb(75 139 93 / 12%);
+}
+
+.reader-settings-scrim {
+  position: fixed;
+  z-index: 64;
+  inset: 0;
+  border: 0;
+  background: rgb(8 15 13 / 28%);
+  backdrop-filter: blur(2px);
+  cursor: default;
+}
+
+.reader-settings-panel {
+  position: fixed;
+  z-index: 65;
+  top: 86px;
+  right: 18px;
+  bottom: 18px;
+  width: min(430px, calc(100vw - 36px));
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  color: var(--ink);
+  background: var(--paper-raised);
+  box-shadow: 0 30px 90px rgb(7 16 13 / 28%);
+  backdrop-filter: blur(24px);
+  animation: settings-enter 180ms ease-out both;
+}
+
+.reader-settings-panel:focus {
+  outline: none;
+}
+
+.reader-settings-panel > header,
+.reader-settings-panel > footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 18px 20px;
+}
+
+.reader-settings-panel > header {
+  border-bottom: 1px solid var(--line);
+}
+
+.reader-settings-panel > header h2 {
+  margin: 3px 0 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.35rem;
+}
+
+.reader-settings-panel > header p {
+  margin: 0;
+}
+
+.reader-settings-panel > header button {
+  width: 36px;
+  height: 36px;
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 50%;
+  color: var(--muted);
+  background: var(--line);
+  font-size: 1.15rem;
+  cursor: pointer;
+}
+
+.reader-settings-scroll {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 4px 20px 20px;
+}
+
+.reader-setting-section {
+  padding: 18px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.reader-setting-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 11px;
+}
+
+.reader-setting-heading h3 {
+  margin: 0;
+  font-size: 0.82rem;
+}
+
+.reader-setting-heading span,
+.reader-setting-heading output {
+  color: var(--muted);
+  font-size: 0.65rem;
+}
+
+.reader-setting-heading output {
+  color: var(--coral);
+  font-weight: 850;
+}
+
+.reader-setting-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.reader-setting-options.two-columns {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.reader-setting-options button {
+  min-height: 58px;
+  display: grid;
+  place-items: center;
+  gap: 3px;
+  padding: 8px 6px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  color: var(--muted);
+  background: transparent;
+  cursor: pointer;
+}
+
+.reader-setting-options button strong {
+  color: var(--ink);
+  font-size: 0.7rem;
+}
+
+.reader-setting-options button small {
+  font-size: 0.57rem;
+}
+
+.reader-setting-options button.active {
+  border-color: color-mix(in srgb, var(--jade) 38%, var(--line));
+  color: var(--jade);
+  background: var(--jade-soft);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--jade) 12%, transparent);
+}
+
+.theme-options button {
+  min-height: 78px;
+}
+
+.theme-swatch {
+  width: 30px;
+  height: 19px;
+  border: 1px solid rgb(32 49 44 / 16%);
+  border-radius: 6px;
+  background: #f6f1e7;
+  box-shadow: inset 9px 0 #fffaf1;
+}
+
+[data-theme-choice="night"] .theme-swatch {
+  border-color: rgb(255 255 255 / 14%);
+  background: #111816;
+  box-shadow: inset 9px 0 #19211e;
+}
+
+[data-theme-choice="oled"] .theme-swatch {
+  border-color: rgb(255 255 255 / 18%);
+  background: #000;
+  box-shadow: inset 9px 0 #090b0a;
+}
+
+.reader-setting-options .font-choice {
+  min-height: 72px;
+}
+
+.font-choice span {
+  color: var(--ink);
+  font-size: 1.22rem;
+}
+
+.font-choice.serif span,
+.reader-settings-preview.font-serif span {
+  font-family: "Songti SC", "STSong", "Noto Serif CJK SC", serif;
+}
+
+.font-choice.sans span,
+.reader-settings-preview.font-sans span {
+  font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+}
+
+.reader-font-size-control {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) 42px;
+  align-items: center;
+  gap: 10px;
+}
+
+.reader-font-size-control button {
+  height: 40px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  color: var(--ink);
+  background: transparent;
+  font-size: 0.72rem;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.reader-font-size-control input {
+  width: 100%;
+  accent-color: var(--jade);
+}
+
+.reader-settings-preview {
+  display: grid;
+  gap: 4px;
+  margin-top: 18px;
+  padding: 16px;
+  border: 1px dashed color-mix(in srgb, var(--jade) 32%, var(--line));
+  border-radius: 15px;
+  background: color-mix(in srgb, var(--jade-soft) 38%, transparent);
+}
+
+.reader-settings-preview span {
+  font-size: 1.2rem;
+  line-height: var(--preview-line-height);
+}
+
+.reader-settings-preview small {
+  color: var(--muted);
+  font-size: 0.65rem;
+}
+
+.reader-settings-panel > footer {
+  border-top: 1px solid var(--line);
+  background: color-mix(in srgb, var(--paper-raised) 92%, transparent);
+}
+
+.reader-settings-panel > footer button {
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 11px;
+  font-size: 0.7rem;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.reader-settings-reset {
+  border: 1px solid var(--line);
+  color: var(--muted);
+  background: transparent;
+}
+
+.reader-settings-done {
+  border: 0;
+  color: #f6f1e7;
+  background: #193c35;
 }
 
 .assist-panel {
@@ -2548,6 +2830,16 @@ svg {
 @keyframes assist-enter {
   from { opacity: 0; transform: translateY(12px) scale(0.98); }
   to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes settings-enter {
+  from { opacity: 0; transform: translateX(16px) scale(0.99); }
+  to { opacity: 1; transform: translateX(0) scale(1); }
+}
+
+@keyframes settings-enter-mobile {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @media (max-width: 1050px) {
@@ -2879,11 +3171,25 @@ svg {
   }
 
   .article-body {
-    line-height: 1.95;
+    line-height: var(--reader-line-height);
   }
 
   .reader-scope-bar {
     top: 74px;
+  }
+
+  .reader-settings-panel {
+    top: auto;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    max-height: calc(100dvh - 68px);
+    border-right: 0;
+    border-bottom: 0;
+    border-left: 0;
+    border-radius: 24px 24px 0 0;
+    animation-name: settings-enter-mobile;
   }
 
   .assist-panel {
@@ -2914,6 +3220,21 @@ svg {
 
   .reader-actions {
     gap: 0;
+  }
+
+  .reader-settings-panel > header,
+  .reader-settings-panel > footer {
+    padding-right: 16px;
+    padding-left: 16px;
+  }
+
+  .reader-settings-scroll {
+    padding-right: 16px;
+    padding-left: 16px;
+  }
+
+  .reader-setting-heading {
+    align-items: start;
   }
 
   .reader-instruction {

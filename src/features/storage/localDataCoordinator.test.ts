@@ -11,7 +11,10 @@ import {
 } from "../library/readingState";
 import {
   READER_ASSISTANCE_SCOPE_STORAGE_KEY,
+  READER_CONTENT_WIDTH_STORAGE_KEY,
+  READER_FONT_FAMILY_STORAGE_KEY,
   READER_FONT_SIZE_STORAGE_KEY,
+  READER_LINE_HEIGHT_STORAGE_KEY,
   READER_THEME_STORAGE_KEY
 } from "../preferences/readerPreferences";
 import {
@@ -88,7 +91,10 @@ function createData(
     preferences: {
       theme,
       fontSize: theme === "paper" ? 25 : 29,
-      assistanceScope: "word"
+      assistanceScope: "word",
+      fontFamily: theme === "paper" ? "sans" : "serif",
+      lineHeight: theme === "paper" ? "airy" : "compact",
+      contentWidth: theme === "paper" ? "wide" : "narrow"
     },
     assistanceHistory: createEmptyAssistanceHistory()
   };
@@ -102,6 +108,15 @@ function createStorage(data: ScottBookBackupData): MemoryStorage {
     [READER_FONT_SIZE_STORAGE_KEY]: JSON.stringify(data.preferences.fontSize),
     [READER_ASSISTANCE_SCOPE_STORAGE_KEY]: JSON.stringify(
       data.preferences.assistanceScope
+    ),
+    [READER_FONT_FAMILY_STORAGE_KEY]: JSON.stringify(
+      data.preferences.fontFamily
+    ),
+    [READER_LINE_HEIGHT_STORAGE_KEY]: JSON.stringify(
+      data.preferences.lineHeight
+    ),
+    [READER_CONTENT_WIDTH_STORAGE_KEY]: JSON.stringify(
+      data.preferences.contentWidth
     ),
     [ASSISTANCE_HISTORY_STORAGE_KEY]: JSON.stringify(data.assistanceHistory),
     [ASSISTANCE_HISTORY_BACKUP_STORAGE_KEY]: "exact-assistance-safety-copy"

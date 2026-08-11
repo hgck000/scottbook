@@ -4,7 +4,10 @@ import {
 } from "../library/readingState";
 import {
   READER_ASSISTANCE_SCOPE_STORAGE_KEY,
+  READER_CONTENT_WIDTH_STORAGE_KEY,
+  READER_FONT_FAMILY_STORAGE_KEY,
   READER_FONT_SIZE_STORAGE_KEY,
+  READER_LINE_HEIGHT_STORAGE_KEY,
   READER_THEME_STORAGE_KEY
 } from "../preferences/readerPreferences";
 import {
@@ -32,6 +35,9 @@ export type ScottBookBackupPreview = {
   theme: ScottBookBackupData["preferences"]["theme"];
   fontSize: number;
   assistanceScope: ScottBookBackupData["preferences"]["assistanceScope"];
+  fontFamily: ScottBookBackupData["preferences"]["fontFamily"];
+  lineHeight: ScottBookBackupData["preferences"]["lineHeight"];
+  contentWidth: ScottBookBackupData["preferences"]["contentWidth"];
 };
 
 export type ScottBookBackupParseResult =
@@ -74,6 +80,9 @@ const TRANSACTION_KEYS = [
   READER_THEME_STORAGE_KEY,
   READER_FONT_SIZE_STORAGE_KEY,
   READER_ASSISTANCE_SCOPE_STORAGE_KEY,
+  READER_FONT_FAMILY_STORAGE_KEY,
+  READER_LINE_HEIGHT_STORAGE_KEY,
+  READER_CONTENT_WIDTH_STORAGE_KEY,
   ASSISTANCE_HISTORY_STORAGE_KEY,
   ASSISTANCE_HISTORY_BACKUP_STORAGE_KEY,
   RESTORE_UNDO_STORAGE_KEY
@@ -132,7 +141,10 @@ function buildPreview(backup: ScottBookBackup): ScottBookBackupPreview {
     assistanceItemCount: Object.keys(backup.data.assistanceHistory.items).length,
     theme: preferences.theme,
     fontSize: preferences.fontSize,
-    assistanceScope: preferences.assistanceScope
+    assistanceScope: preferences.assistanceScope,
+    fontFamily: preferences.fontFamily,
+    lineHeight: preferences.lineHeight,
+    contentWidth: preferences.contentWidth
   };
 }
 
@@ -284,6 +296,18 @@ export function writeScottBookDataBundle(
   storage.setItem(
     READER_ASSISTANCE_SCOPE_STORAGE_KEY,
     JSON.stringify(target.preferences.assistanceScope)
+  );
+  storage.setItem(
+    READER_FONT_FAMILY_STORAGE_KEY,
+    JSON.stringify(target.preferences.fontFamily)
+  );
+  storage.setItem(
+    READER_LINE_HEIGHT_STORAGE_KEY,
+    JSON.stringify(target.preferences.lineHeight)
+  );
+  storage.setItem(
+    READER_CONTENT_WIDTH_STORAGE_KEY,
+    JSON.stringify(target.preferences.contentWidth)
   );
   storage.setItem(
     ASSISTANCE_HISTORY_STORAGE_KEY,
