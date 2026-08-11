@@ -15,7 +15,7 @@ Capacitor will use the same frontend in a later sprint.
 ## Current status
 
 - Responsive reference library and reader.
-- Three pilot articles covering HSK 1, HSK 2, and HSK 3.
+- Nine pilot articles, balanced at three each for HSK 1, HSK 2, and HSK 3.
 - Every built-in character and word already contains contextual pinyin and a
   Vietnamese meaning; every sentence contains a Vietnamese translation.
 - A persisted `字 / 词 / 句` assistance selector works entirely from that
@@ -50,7 +50,7 @@ Capacitor will use the same frontend in a later sprint.
 - A redacted local diagnostic download with counts and capability flags only.
 - A restrictive content-security policy plus automated API, license, and dependency audits.
 - A 20,000-Hanzi reader fixture that guards the long-document render budget.
-- Sixteen production-browser journeys across desktop and mobile Chrome profiles.
+- Eighteen production-browser journeys across desktop and mobile Chrome profiles.
 - Root and configurable subpath PWA builds with an artifact contract check.
 - GitHub Actions builds on Ubuntu, Windows, and macOS and retains QA evidence.
 - Generated service worker precaches the complete prototype.
@@ -98,12 +98,14 @@ npm run preview
 
 ## Offline content contract
 
-Reference articles live in `src/content/builtInLibrary.ts`. They are authored as
-version-controlled data, not generated in the browser. A word token is invalid
-without Hanzi, tone-marked pinyin, a Vietnamese meaning, and one ordered
-authored annotation for every character. A sentence is invalid without a
-Vietnamese translation. Sentence pinyin is composed only from the authored word
-readings; ScottBook does not guess readings at runtime.
+Reference articles live in `src/content/builtInLibrary.ts` and
+`src/content/additionalArticles.ts`; contextual character readings live in
+`src/content/characterAnnotations.ts`. They are authored as version-controlled
+data, not generated in the browser. A word token is invalid without Hanzi,
+tone-marked pinyin, a Vietnamese meaning, and one ordered authored annotation
+for every character. A sentence is invalid without a Vietnamese translation.
+Sentence pinyin is composed only from the authored word readings; ScottBook
+does not guess readings at runtime.
 
 `npm run build` first executes the content validation test. Incomplete reference
 content therefore fails both the local production build and GitHub Actions.
@@ -191,6 +193,14 @@ while preserving Hanzi lookup. Level and reading-status filters derive their
 counts from the existing authored library, progress, completion, and favorite
 records. Search text and active filters are temporary view state: they do not
 alter reading data, backups, or IndexedDB.
+
+Version 0.14 completes the nine-article pilot content pack defined for the
+Reader MVP: three authored articles at each of HSK 1, HSK 2, and HSK 3. The six
+new articles add 24 sentences while preserving fully offline character,
+word/phrase, and sentence assistance. Content validation now also rejects empty
+summaries, invalid reading times, missing ids, and duplicate paragraph ids.
+This content-only expansion does not change the local-data schema or invalidate
+existing progress, favorites, history, backups, or IndexedDB records.
 
 ## Controlled PWA updates
 
@@ -285,6 +295,13 @@ and safe reset. The desktop/mobile matrix now runs sixteen browser cases. Its
 implementation and evidence are recorded in
 [`docs/release/SCOTTBOOK-v0.13.0.md`](docs/release/SCOTTBOOK-v0.13.0.md).
 
+Version 0.14 adds a ninth critical journey that discovers a newly authored HSK
+3 article through accent-insensitive Vietnamese search, opens it, and verifies
+its pinyin, contextual meaning, and sentence translation. The desktop/mobile
+matrix now runs eighteen browser cases. Its content contract and evidence are
+recorded in
+[`docs/release/SCOTTBOOK-v0.14.0.md`](docs/release/SCOTTBOOK-v0.14.0.md).
+
 ## Install ScottBook
 
 Chromium browsers on Android, Windows, macOS, and Linux can expose ScottBook's
@@ -296,7 +313,7 @@ Screen**. On macOS Safari, choose **Share → Add to Dock**; Chrome and Edge use
 their install action in the address bar. The manifest includes 192 px, 512 px,
 maskable, and Apple touch icons.
 
-All three built-in reference articles are compiled into the precached app shell,
+All nine built-in reference articles are compiled into the precached app shell,
 so they remain available in airplane mode without a separate download. External
 TXT/EPUB content and cache-on-demand imported books remain intentionally
 disabled until the import research phase is approved.

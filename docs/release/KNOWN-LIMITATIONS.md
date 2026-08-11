@@ -4,10 +4,10 @@ This list is intentionally release-blocking evidence, not a hidden backlog.
 
 ## Product gaps
 
-- The offline library contains three authored pilot articles, not the proposed
-  target of 30. The HSK versioning system and final 1.0 content count are not yet
-  approved.
-- Character, word/phrase, and sentence assistance is available for the three
+- The offline library contains nine authored pilot articles, balanced at three
+  each for HSK 1–3, not the proposed target of 30. The HSK versioning system and
+  final 1.0 content count are not yet approved.
+- Character, word/phrase, and sentence assistance is available for the nine
   authored pilot articles. It is not yet backed by a content-authoring editor
   or an approved import pipeline.
 - The authored translation language is Vietnamese. Choosing another target
