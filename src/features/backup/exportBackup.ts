@@ -1,4 +1,4 @@
-import packageMetadata from "../../../package.json";
+import { version as appVersion } from "../../../package.json";
 import type { LibraryState } from "../library/readingState";
 import type { ReaderPreferences } from "../preferences/readerPreferences";
 
@@ -48,7 +48,7 @@ export async function createScottBookBackup(
   const unsigned: UnsignedBackup = {
     format: "scottbook-backup",
     formatVersion: 1,
-    appVersion: packageMetadata.version,
+    appVersion,
     exportedAt,
     data
   };

@@ -963,6 +963,159 @@ svg {
   background: #193c35;
 }
 
+.storage-overview {
+  grid-column: 2 / -1;
+  display: grid;
+  gap: 15px;
+  padding: 19px;
+  border: 1px solid var(--line);
+  border-radius: 17px;
+  background: color-mix(in srgb, var(--paper-raised) 68%, transparent);
+}
+
+.storage-overview-heading {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.storage-overview-heading h3 {
+  margin: 5px 0 0;
+  color: var(--ink);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.05rem;
+}
+
+.storage-overview-heading > div > p:last-child {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 0.69rem;
+  line-height: 1.45;
+}
+
+.storage-mode-badge {
+  flex: 0 0 auto;
+  min-height: 27px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 10px;
+  border-radius: 999px;
+  color: #2f7652;
+  background: color-mix(in srgb, #56a56f 13%, transparent);
+  font-size: 0.63rem;
+  font-weight: 850;
+  letter-spacing: 0.02em;
+}
+
+.storage-mode-badge.fallback {
+  color: #98622d;
+  background: color-mix(in srgb, var(--amber) 15%, transparent);
+}
+
+.storage-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--paper-raised) 76%, transparent);
+}
+
+.storage-metrics > div {
+  min-width: 0;
+  min-height: 82px;
+  display: grid;
+  align-content: center;
+  gap: 3px;
+  padding: 12px;
+}
+
+.storage-metrics > div + div {
+  border-left: 1px solid var(--line);
+}
+
+.storage-metrics span,
+.storage-metrics small {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.59rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.storage-metrics span {
+  font-weight: 780;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.storage-metrics strong {
+  overflow: hidden;
+  color: var(--ink);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.12rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.storage-overview-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.storage-overview-footer > p {
+  max-width: 46rem;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.68rem;
+  line-height: 1.5;
+}
+
+.storage-overview-footer > div {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 7px;
+}
+
+.storage-overview-footer button {
+  min-height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  color: var(--muted);
+  background: transparent;
+  font-size: 0.67rem;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.storage-overview-footer button:disabled {
+  cursor: wait;
+  opacity: 0.58;
+}
+
+.storage-overview-footer .clear-cache-button {
+  border-color: color-mix(in srgb, var(--amber) 58%, var(--line));
+  color: var(--ink);
+  background: color-mix(in srgb, var(--amber) 10%, transparent);
+}
+
+.storage-report-feedback {
+  min-height: 1em;
+  margin: -6px 0 0;
+  color: #2f7652;
+  font-size: 0.65rem;
+  font-weight: 700;
+}
+
+.storage-report-feedback.error {
+  color: #a34a3f;
+}
+
 .history-list {
   display: grid;
   gap: 14px;
@@ -2099,6 +2252,32 @@ svg {
     justify-self: end;
   }
 
+  .storage-overview {
+    grid-column: 2;
+  }
+
+  .storage-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .storage-metrics > div:nth-child(3) {
+    border-left: 0;
+    border-top: 1px solid var(--line);
+  }
+
+  .storage-metrics > div:nth-child(4) {
+    border-top: 1px solid var(--line);
+  }
+
+  .storage-overview-footer {
+    align-items: stretch;
+    display: grid;
+  }
+
+  .storage-overview-footer > div {
+    justify-self: end;
+  }
+
   .history-card {
     grid-template-columns: 58px minmax(0, 1fr);
     align-items: start;
@@ -2289,6 +2468,24 @@ svg {
   }
 
   .restore-confirmation > div {
+    display: grid;
+    justify-self: stretch;
+  }
+
+  .storage-overview {
+    grid-column: 1;
+    padding: 15px;
+  }
+
+  .storage-overview-heading {
+    display: grid;
+  }
+
+  .storage-mode-badge {
+    justify-self: start;
+  }
+
+  .storage-overview-footer > div {
     display: grid;
     justify-self: stretch;
   }

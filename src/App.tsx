@@ -12,11 +12,10 @@ import {
   type ScottBookBackupData
 } from "./features/backup/exportBackup";
 import {
-  applyScottBookRestore,
   getBackupFileSizeError,
   loadScottBookRestoreUndo,
   parseScottBookBackupText,
-  undoLastScottBookRestore,
+  type RestoreTransactionResult,
   type ScottBookBackupPreview
 } from "./features/backup/restoreBackup";
 import {
@@ -26,7 +25,6 @@ import {
 import {
   getArticleSentenceIds,
   getSentenceProgressPercent,
-  loadLibraryState,
   markArticleCompleted,
   markArticleOpened,
   persistLibraryState,
@@ -51,11 +49,27 @@ import {
   type PwaStatusSnapshot,
   type StoragePersistence
 } from "./features/pwa/pwaStatus";
+import {
+  scottBookRepository,
+  type IndexedDbBootstrapResult,
+  type ScottBookStorageReport
+} from "./features/storage/indexedDbRepository";
+import { ScottBookLocalDataCoordinator } from "./features/storage/localDataCoordinator";
+import {
+  loadLocalDataFallback,
+  tryLoadPrimaryLocalData
+} from "./features/storage/localDataSnapshot";
 
 type Route =
   | { name: "library" }
   | { name: "review" }
   | { name: "reader"; articleId: string };
+
+type LocalDataStatus = {
+  phase: "checking" | "ready" | "fallback";
+  source: IndexedDbBootstrapResult["source"] | null;
+  quarantinedThisRun: number;
+};
 
 function parseRoute(): Route {
   if (window.location.hash === "#/review") return { name: "review" };
@@ -135,19 +149,35 @@ function ChevronIcon() {
 function App() {
   const pwaStatus = usePwaStatus();
   const [route, setRoute] = useState<Route>(parseRoute);
+  const [bootstrapData] = useState(() => ({
+    fallback: loadLocalDataFallback(window.localStorage),
+    preferred: tryLoadPrimaryLocalData(window.localStorage)
+  }));
   const [theme, setTheme] = useStoredState<ReaderTheme>(
     READER_THEME_STORAGE_KEY,
-    "paper",
+    bootstrapData.fallback.preferences.theme,
     isReaderTheme
   );
   const [fontSize, setFontSize] = useStoredState<number>(
     READER_FONT_SIZE_STORAGE_KEY,
-    25,
+    bootstrapData.fallback.preferences.fontSize,
     isReaderFontSize
   );
-  const [libraryState, setLibraryState] = useState<LibraryState>(() =>
-    loadLibraryState(window.localStorage)
+  const [libraryState, setLibraryState] = useState<LibraryState>(
+    bootstrapData.fallback.libraryState
   );
+  const [localDataCoordinator] = useState(
+    () =>
+      new ScottBookLocalDataCoordinator(
+        scottBookRepository,
+        window.localStorage
+      )
+  );
+  const [localDataStatus, setLocalDataStatus] = useState<LocalDataStatus>({
+    phase: "checking",
+    source: null,
+    quarantinedThisRun: 0
+  });
 
   useEffect(() => {
     const onHashChange = () => setRoute(parseRoute());
@@ -208,6 +238,116 @@ function App() {
     setFontSize(data.preferences.fontSize);
   }, [setFontSize, setTheme]);
 
+  useEffect(() => {
+    let active = true;
+    void localDataCoordinator
+      .bootstrap(bootstrapData.fallback, bootstrapData.preferred)
+      .then((result) => {
+        if (!active) return;
+        replaceLocalData(result.data);
+        setLocalDataStatus({
+          phase: result.available ? "ready" : "fallback",
+          source: result.source,
+          quarantinedThisRun: result.quarantinedThisRun
+        });
+      })
+      .catch(() => {
+        if (!active) return;
+        setLocalDataStatus({
+          phase: "fallback",
+          source: "fallback",
+          quarantinedThisRun: 0
+        });
+      });
+    return () => {
+      active = false;
+    };
+  }, [bootstrapData, localDataCoordinator, replaceLocalData]);
+
+  useEffect(() => {
+    if (localDataStatus.phase !== "ready") return;
+
+    let active = true;
+    void localDataCoordinator
+      .persist({
+        libraryState,
+        preferences: { theme, fontSize }
+      })
+      .then((succeeded) => {
+        if (
+          active &&
+          (!succeeded || !localDataCoordinator.isUsingIndexedDb())
+        ) {
+          setLocalDataStatus((current) => ({
+            ...current,
+            phase: "fallback",
+            source: "fallback"
+          }));
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [fontSize, libraryState, localDataCoordinator, localDataStatus.phase, theme]);
+
+  const applyBackupRestore = useCallback(
+    async (restoredData: ScottBookBackupData) => {
+      const result = await localDataCoordinator.applyRestore(
+        {
+          libraryState,
+          preferences: { theme, fontSize }
+        },
+        restoredData
+      );
+      if (result.ok) replaceLocalData(result.data);
+      if (!localDataCoordinator.isUsingIndexedDb()) {
+        setLocalDataStatus((current) => ({
+          ...current,
+          phase: "fallback",
+          source: "fallback"
+        }));
+      }
+      return result;
+    },
+    [
+      fontSize,
+      libraryState,
+      localDataCoordinator,
+      replaceLocalData,
+      theme
+    ]
+  );
+
+  const undoBackupRestore = useCallback(async () => {
+    const result = await localDataCoordinator.undoRestore({
+      libraryState,
+      preferences: { theme, fontSize }
+    });
+    if (result.ok) replaceLocalData(result.data);
+    if (!localDataCoordinator.isUsingIndexedDb()) {
+      setLocalDataStatus((current) => ({
+        ...current,
+        phase: "fallback",
+        source: "fallback"
+      }));
+    }
+    return result;
+  }, [fontSize, libraryState, localDataCoordinator, replaceLocalData, theme]);
+
+  const loadStorageReport = useCallback(() => {
+    const storageManager =
+      typeof navigator === "undefined" ? undefined : navigator.storage;
+    const estimate = storageManager?.estimate
+      ? () => storageManager.estimate()
+      : undefined;
+    return localDataCoordinator.getStorageReport(estimate);
+  }, [localDataCoordinator]);
+
+  const clearTranslationCache = useCallback(
+    () => localDataCoordinator.clearTranslationCache(),
+    [localDataCoordinator]
+  );
+
   const goHome = () => {
     window.location.hash = "/";
   };
@@ -258,7 +398,11 @@ function App() {
         openArticle={openArticle}
         resetProgress={resetProgress}
         storagePersistence={pwaStatus.storagePersistence}
-        replaceLocalData={replaceLocalData}
+        localDataStatus={localDataStatus}
+        applyBackupRestore={applyBackupRestore}
+        undoBackupRestore={undoBackupRestore}
+        loadStorageReport={loadStorageReport}
+        clearTranslationCache={clearTranslationCache}
       />
     );
   } else {
@@ -617,7 +761,11 @@ function ReviewScreen({
   openArticle,
   resetProgress,
   storagePersistence,
-  replaceLocalData
+  localDataStatus,
+  applyBackupRestore,
+  undoBackupRestore,
+  loadStorageReport,
+  clearTranslationCache
 }: {
   theme: ReaderTheme;
   fontSize: number;
@@ -626,7 +774,13 @@ function ReviewScreen({
   openArticle: (articleId: string) => void;
   resetProgress: (articleId: string) => void;
   storagePersistence: StoragePersistence;
-  replaceLocalData: (data: ScottBookBackupData) => void;
+  localDataStatus: LocalDataStatus;
+  applyBackupRestore: (
+    data: ScottBookBackupData
+  ) => Promise<RestoreTransactionResult>;
+  undoBackupRestore: () => Promise<RestoreTransactionResult>;
+  loadStorageReport: () => Promise<ScottBookStorageReport>;
+  clearTranslationCache: () => Promise<number>;
 }) {
   const historyItems: Array<{
     article: BuiltInArticle;
@@ -693,7 +847,11 @@ function ReviewScreen({
           theme={theme}
           fontSize={fontSize}
           storagePersistence={storagePersistence}
-          replaceLocalData={replaceLocalData}
+          localDataStatus={localDataStatus}
+          applyBackupRestore={applyBackupRestore}
+          undoBackupRestore={undoBackupRestore}
+          loadStorageReport={loadStorageReport}
+          clearTranslationCache={clearTranslationCache}
         />
 
         <section className="history-section" aria-labelledby="history-heading">
@@ -747,13 +905,23 @@ function DataProtectionCard({
   theme,
   fontSize,
   storagePersistence,
-  replaceLocalData
+  localDataStatus,
+  applyBackupRestore,
+  undoBackupRestore,
+  loadStorageReport,
+  clearTranslationCache
 }: {
   libraryState: LibraryState;
   theme: ReaderTheme;
   fontSize: number;
   storagePersistence: StoragePersistence;
-  replaceLocalData: (data: ScottBookBackupData) => void;
+  localDataStatus: LocalDataStatus;
+  applyBackupRestore: (
+    data: ScottBookBackupData
+  ) => Promise<RestoreTransactionResult>;
+  undoBackupRestore: () => Promise<RestoreTransactionResult>;
+  loadStorageReport: () => Promise<ScottBookStorageReport>;
+  clearTranslationCache: () => Promise<number>;
 }) {
   const [exportStatus, setExportStatus] = useState<
     "idle" | "working" | "done" | "error"
@@ -773,7 +941,55 @@ function DataProtectionCard({
   const [hasRestoreUndo, setHasRestoreUndo] = useState(
     () => loadScottBookRestoreUndo(window.localStorage) !== null
   );
+  const [storageReport, setStorageReport] =
+    useState<ScottBookStorageReport | null>(null);
+  const [storageReportStatus, setStorageReportStatus] = useState<
+    "idle" | "loading" | "clearing" | "ready" | "error"
+  >("loading");
+  const [storageReportMessage, setStorageReportMessage] = useState("");
   const restoreAttemptRef = useRef(0);
+  const storageReportAttemptRef = useRef(0);
+
+  const fetchStorageReport = useCallback(async () => {
+    const attempt = ++storageReportAttemptRef.current;
+    try {
+      const report = await loadStorageReport();
+      if (attempt !== storageReportAttemptRef.current) return;
+      setStorageReport(report);
+      setStorageReportStatus("ready");
+    } catch {
+      if (attempt !== storageReportAttemptRef.current) return;
+      setStorageReportStatus("error");
+      setStorageReportMessage("Chưa thể đọc thống kê lưu trữ lúc này.");
+    }
+  }, [loadStorageReport]);
+
+  const refreshStorageReport = useCallback(async () => {
+    setStorageReportMessage("");
+    setStorageReportStatus("loading");
+    await fetchStorageReport();
+  }, [fetchStorageReport]);
+
+  useEffect(() => {
+    if (localDataStatus.phase === "checking") return;
+    const attempt = ++storageReportAttemptRef.current;
+    let active = true;
+    void loadStorageReport().then(
+      (report) => {
+        if (!active || attempt !== storageReportAttemptRef.current) return;
+        setStorageReport(report);
+        setStorageReportStatus("ready");
+      },
+      () => {
+        if (!active || attempt !== storageReportAttemptRef.current) return;
+        setStorageReportStatus("error");
+        setStorageReportMessage("Chưa thể đọc thống kê lưu trữ lúc này.");
+      }
+    );
+    return () => {
+      active = false;
+    };
+  }, [loadStorageReport, localDataStatus.phase]);
 
   const exportBackup = async () => {
     setExportStatus("working");
@@ -848,18 +1064,11 @@ function DataProtectionCard({
     setRestoreMessage("Đã hủy xem trước; dữ liệu hiện tại chưa bị thay đổi.");
   };
 
-  const confirmRestore = () => {
+  const confirmRestore = async () => {
     if (!pendingRestore) return;
 
     setRestoreStatus("applying");
-    const result = applyScottBookRestore(
-      window.localStorage,
-      {
-        libraryState,
-        preferences: { theme, fontSize }
-      },
-      pendingRestore.backup.data
-    );
+    const result = await applyBackupRestore(pendingRestore.backup.data);
 
     if (!result.ok) {
       setRestoreStatus("error");
@@ -867,21 +1076,18 @@ function DataProtectionCard({
       return;
     }
 
-    replaceLocalData(result.data);
     setPendingRestore(null);
     setHasRestoreUndo(true);
     setRestoreStatus("success");
     setRestoreMessage(
       "Đã khôi phục bản sao. Bạn có thể hoàn tác một lần về dữ liệu trước đó."
     );
+    void refreshStorageReport();
   };
 
-  const undoRestore = () => {
+  const undoRestore = async () => {
     setRestoreStatus("applying");
-    const result = undoLastScottBookRestore(window.localStorage, {
-      libraryState,
-      preferences: { theme, fontSize }
-    });
+    const result = await undoBackupRestore();
 
     if (!result.ok) {
       setRestoreStatus("error");
@@ -892,11 +1098,31 @@ function DataProtectionCard({
       return;
     }
 
-    replaceLocalData(result.data);
     setPendingRestore(null);
     setHasRestoreUndo(false);
     setRestoreStatus("undone");
     setRestoreMessage("Đã hoàn tác và trở về dữ liệu trước lần khôi phục gần nhất.");
+    void refreshStorageReport();
+  };
+
+  const clearCache = async () => {
+    setStorageReportStatus("clearing");
+    setStorageReportMessage("");
+    try {
+      const clearedCount = await clearTranslationCache();
+      setStorageReportMessage(
+        clearedCount > 0
+          ? `Đã xóa ${clearedCount} mục cache dịch; sách và tiến độ được giữ nguyên.`
+          : "Cache dịch đang trống; sách và tiến độ không bị chạm tới."
+      );
+      setStorageReportStatus("loading");
+      await fetchStorageReport();
+    } catch {
+      setStorageReportStatus("error");
+      setStorageReportMessage(
+        "Chưa thể xóa cache. Sách, tiến độ và cài đặt không bị thay đổi."
+      );
+    }
   };
 
   const persistenceLabel = {
@@ -998,6 +1224,133 @@ function DataProtectionCard({
           onConfirm={confirmRestore}
         />
       ) : null}
+      <StorageOverview
+        localDataStatus={localDataStatus}
+        report={storageReport}
+        status={storageReportStatus}
+        message={storageReportMessage}
+        onRefresh={() => void refreshStorageReport()}
+        onClearCache={() => void clearCache()}
+      />
+    </section>
+  );
+}
+
+function formatStorageBytes(value: number | null | undefined): string {
+  if (value === null || value === undefined) return "Chưa xác định";
+  if (value < 1_024) return `${Math.round(value)} B`;
+  if (value < 1_048_576) return `${(value / 1_024).toFixed(1)} KB`;
+  if (value < 1_073_741_824) {
+    return `${(value / 1_048_576).toFixed(1)} MB`;
+  }
+  return `${(value / 1_073_741_824).toFixed(1)} GB`;
+}
+
+function StorageOverview({
+  localDataStatus,
+  report,
+  status,
+  message,
+  onRefresh,
+  onClearCache
+}: {
+  localDataStatus: LocalDataStatus;
+  report: ScottBookStorageReport | null;
+  status: "idle" | "loading" | "clearing" | "ready" | "error";
+  message: string;
+  onRefresh: () => void;
+  onClearCache: () => void;
+}) {
+  const sourceMessage = {
+    "local-storage": "Đã chuyển dữ liệu v0.5 hiện có sang IndexedDB.",
+    "indexed-db": "Đã nạp bản dữ liệu IndexedDB hợp lệ trên thiết bị.",
+    recovered: "Đã cô lập record hỏng và phục hồi từ phần dữ liệu an toàn.",
+    default: "Đã khởi tạo kho IndexedDB mới trên thiết bị.",
+    fallback: "IndexedDB không khả dụng; ScottBook tiếp tục dùng localStorage."
+  }[localDataStatus.source ?? "fallback"];
+  const storageBusy = status === "loading" || status === "clearing";
+  const modeLabel =
+    localDataStatus.phase === "checking"
+      ? "Đang khởi tạo"
+      : localDataStatus.phase === "ready"
+        ? `IndexedDB v${report?.schemaVersion ?? 2}`
+        : "localStorage fallback";
+
+  return (
+    <section className="storage-overview" aria-labelledby="storage-overview-heading">
+      <div className="storage-overview-heading">
+        <div>
+          <p className="eyebrow">Kho dữ liệu trên thiết bị</p>
+          <h3 id="storage-overview-heading">Dung lượng và vùng cache tách biệt</h3>
+          <p>{sourceMessage}</p>
+        </div>
+        <span
+          className={`storage-mode-badge${localDataStatus.phase === "fallback" ? " fallback" : ""}`}
+        >
+          {modeLabel}
+        </span>
+      </div>
+
+      <div className="storage-metrics" aria-label="Thống kê kho dữ liệu">
+        <div>
+          <span>Dung lượng app</span>
+          <strong>{formatStorageBytes(report?.usageBytes)}</strong>
+          <small>
+            {report?.quotaBytes
+              ? `trên ${formatStorageBytes(report.quotaBytes)}`
+              : "toàn bộ origin"}
+          </small>
+        </div>
+        <div>
+          <span>Cache dịch</span>
+          <strong>{report?.cacheCount ?? 0}</strong>
+          <small>mục có thể xóa</small>
+        </div>
+        <div>
+          <span>Record cô lập</span>
+          <strong>{report?.quarantinedCount ?? 0}</strong>
+          <small>
+            {localDataStatus.quarantinedThisRun > 0
+              ? `${localDataStatus.quarantinedThisRun} mục vừa phát hiện`
+              : "không dùng để ghi đè"}
+          </small>
+        </div>
+        <div>
+          <span>Sách ngoài</span>
+          <strong>{report?.bookCount ?? 0}</strong>
+          <small>import vẫn đang khóa</small>
+        </div>
+      </div>
+
+      <div className="storage-overview-footer">
+        <p>
+          Xóa cache chỉ tác động vùng dịch tạm; bài đọc, tiến độ, yêu thích và
+          cài đặt nằm ở các store khác.
+        </p>
+        <div>
+          <button type="button" onClick={onRefresh} disabled={storageBusy}>
+            {status === "loading" ? "Đang đọc…" : "Làm mới"}
+          </button>
+          <button
+            className="clear-cache-button"
+            type="button"
+            onClick={onClearCache}
+            disabled={
+              storageBusy ||
+              localDataStatus.phase !== "ready" ||
+              !report?.indexedDbAvailable
+            }
+          >
+            {status === "clearing" ? "Đang xóa…" : "Xóa cache dịch"}
+          </button>
+        </div>
+      </div>
+      <p
+        className={`storage-report-feedback${status === "error" ? " error" : ""}`}
+        aria-live="polite"
+      >
+        {message}
+      </p>
     </section>
   );
 }

@@ -320,6 +320,16 @@ export function parseLibraryState(serialized: string | null): LibraryState {
   return tryParseLibraryState(serialized) ?? createEmptyLibraryState();
 }
 
+export function tryLoadPrimaryLibraryState(
+  storage: StorageReader
+): LibraryState | null {
+  try {
+    return tryParseLibraryState(storage.getItem(LIBRARY_STATE_STORAGE_KEY));
+  } catch {
+    return null;
+  }
+}
+
 export function loadLibraryState(storage: StorageReader): LibraryState {
   try {
     const current = tryParseLibraryState(

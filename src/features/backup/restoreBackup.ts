@@ -1,13 +1,12 @@
 import {
   LIBRARY_STATE_BACKUP_STORAGE_KEY,
-  LIBRARY_STATE_STORAGE_KEY,
-  validateLibraryStateSnapshot
+  LIBRARY_STATE_STORAGE_KEY
 } from "../library/readingState";
 import {
   READER_FONT_SIZE_STORAGE_KEY,
-  READER_THEME_STORAGE_KEY,
-  isReaderPreferences
+  READER_THEME_STORAGE_KEY
 } from "../preferences/readerPreferences";
+import { validateLocalDataSnapshot } from "../storage/localDataSnapshot";
 import {
   verifyScottBookBackup,
   type ScottBookBackup,
@@ -57,7 +56,10 @@ export type ScottBookRestoreUndo = {
   data: ScottBookBackupData;
 };
 
-type RestoreStorage = Pick<Storage, "getItem" | "setItem" | "removeItem">;
+export type RestoreStorage = Pick<
+  Storage,
+  "getItem" | "setItem" | "removeItem"
+>;
 
 const TRANSACTION_KEYS = [
   LIBRARY_STATE_STORAGE_KEY,
@@ -68,7 +70,7 @@ const TRANSACTION_KEYS = [
 ] as const;
 
 type TransactionKey = (typeof TRANSACTION_KEYS)[number];
-type StorageSnapshot = Record<TransactionKey, string | null>;
+export type RestoreStorageSnapshot = Record<TransactionKey, string | null>;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -94,20 +96,7 @@ function isCanonicalIsoDate(value: unknown): value is string {
 export function validateScottBookBackupData(
   value: unknown
 ): ScottBookBackupData | null {
-  if (
-    !isRecord(value) ||
-    !hasOnlyKeys(value, ["libraryState", "preferences"])
-  ) {
-    return null;
-  }
-
-  const libraryState = validateLibraryStateSnapshot(value.libraryState);
-  if (!libraryState || !isReaderPreferences(value.preferences)) return null;
-
-  return {
-    libraryState,
-    preferences: { ...value.preferences }
-  };
+  return validateLocalDataSnapshot(value);
 }
 
 function buildPreview(backup: ScottBookBackup): ScottBookBackupPreview {
@@ -234,15 +223,17 @@ export async function parseScottBookBackupText(
   return { ok: true, backup, preview: buildPreview(backup) };
 }
 
-function snapshotStorage(storage: RestoreStorage): StorageSnapshot {
+export function captureRestoreStorageSnapshot(
+  storage: RestoreStorage
+): RestoreStorageSnapshot {
   return Object.fromEntries(
     TRANSACTION_KEYS.map((key) => [key, storage.getItem(key)])
-  ) as StorageSnapshot;
+  ) as RestoreStorageSnapshot;
 }
 
-function restoreStorageSnapshot(
+export function restoreCapturedStorageSnapshot(
   storage: RestoreStorage,
-  snapshot: StorageSnapshot
+  snapshot: RestoreStorageSnapshot
 ): boolean {
   let succeeded = true;
   for (const key of TRANSACTION_KEYS) {
@@ -284,9 +275,9 @@ function writeDataBundle(
 
 function failedTransaction(
   storage: RestoreStorage,
-  snapshot: StorageSnapshot
+  snapshot: RestoreStorageSnapshot
 ): RestoreTransactionResult {
-  const rollbackSucceeded = restoreStorageSnapshot(storage, snapshot);
+  const rollbackSucceeded = restoreCapturedStorageSnapshot(storage, snapshot);
   return {
     ok: false,
     rollbackSucceeded,
@@ -312,9 +303,9 @@ export function applyScottBookRestore(
     };
   }
 
-  let snapshot: StorageSnapshot;
+  let snapshot: RestoreStorageSnapshot;
   try {
-    snapshot = snapshotStorage(storage);
+    snapshot = captureRestoreStorageSnapshot(storage);
   } catch {
     return {
       ok: false,
@@ -395,9 +386,9 @@ export function undoLastScottBookRestore(
     };
   }
 
-  let snapshot: StorageSnapshot;
+  let snapshot: RestoreStorageSnapshot;
   try {
-    snapshot = snapshotStorage(storage);
+    snapshot = captureRestoreStorageSnapshot(storage);
   } catch {
     return {
       ok: false,
