@@ -24,6 +24,10 @@ Capacitor will use the same frontend in a later sprint.
 - A full responsive reader-settings panel with Paper, Night, and pure-black
   OLED themes; 18–38 px text; serif/sans type; three line spacings; and three
   content widths.
+- Offline library search across authored Hanzi, tone-free pinyin, Vietnamese
+  titles, summaries, translations, and word meanings.
+- HSK 1–3 plus in-progress, completed, and favorite library filters with live
+  result counts.
 - Reading position saved as a stable sentence anchor on the current device.
 - A continue-reading card, per-article progress, and a local favorites filter.
 - A local reading-history screen with open counts and latest-reading order.
@@ -46,7 +50,7 @@ Capacitor will use the same frontend in a later sprint.
 - A redacted local diagnostic download with counts and capability flags only.
 - A restrictive content-security policy plus automated API, license, and dependency audits.
 - A 20,000-Hanzi reader fixture that guards the long-document render budget.
-- Fourteen production-browser journeys across desktop and mobile Chrome profiles.
+- Sixteen production-browser journeys across desktop and mobile Chrome profiles.
 - Root and configurable subpath PWA builds with an artifact contract check.
 - GitHub Actions builds on Ubuntu, Windows, and macOS and retains QA evidence.
 - Generated service worker precaches the complete prototype.
@@ -181,6 +185,13 @@ fallback, and the IndexedDB v3 mirror all carry the complete six-field reader
 preference record. A corrupt new preference cannot replace a healthy local
 snapshot.
 
+Version 0.13 adds offline library discovery without changing the local-data
+schema. Search removes Vietnamese accents and pinyin tone marks for matching,
+while preserving Hanzi lookup. Level and reading-status filters derive their
+counts from the existing authored library, progress, completion, and favorite
+records. Search text and active filters are temporary view state: they do not
+alter reading data, backups, or IndexedDB.
+
 ## Controlled PWA updates
 
 The generated service worker uses prompt mode. A waiting version displays a
@@ -267,6 +278,12 @@ reader typography, line spacing, content width, persistence, and safe reset.
 The desktop/mobile matrix now runs fourteen browser cases. Its implementation,
 migrations, and evidence are recorded in
 [`docs/release/SCOTTBOOK-v0.12.0.md`](docs/release/SCOTTBOOK-v0.12.0.md).
+
+Version 0.13 adds an eighth critical journey for accent-insensitive search,
+Hanzi lookup, HSK filtering, favorite filtering, live counts, empty results,
+and safe reset. The desktop/mobile matrix now runs sixteen browser cases. Its
+implementation and evidence are recorded in
+[`docs/release/SCOTTBOOK-v0.13.0.md`](docs/release/SCOTTBOOK-v0.13.0.md).
 
 ## Install ScottBook
 
