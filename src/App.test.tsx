@@ -34,6 +34,9 @@ describe("ScottBook routes", () => {
     expect(markup).toContain("Thư viện tham khảo");
     expect(markup).toContain("Bắt đầu với một đoạn ngắn");
     expect(markup).toContain('href="#/review"');
+    expect(markup).toContain("Bỏ qua đến nội dung chính");
+    expect(markup).toContain('id="main-content"');
+    expect(markup).toContain('tabindex="-1"');
   });
 
   it("renders local history and completion status on the review route", () => {
@@ -72,6 +75,8 @@ describe("ScottBook routes", () => {
     expect(markup).toContain('accept="application/json,.json"');
     expect(markup).toContain("Dung lượng và vùng cache tách biệt");
     expect(markup).toContain("Xóa cache dịch");
+    expect(markup).toContain("Tải chẩn đoán local");
+    expect(markup).toContain("không có nội dung bài đọc");
     expect(markup).toContain("import vẫn đang khóa");
   });
 

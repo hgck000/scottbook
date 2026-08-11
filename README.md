@@ -31,6 +31,11 @@ Capacitor will use the same frontend in a later sprint.
 - Validated JSON backup restore with preview, rollback, and one-level undo.
 - IndexedDB v2 mirror with migration, corrupt-record quarantine, and fallback.
 - On-device storage usage plus an isolated translation-cache clear action.
+- Storage-pressure warnings at 80% and 95%, with backup-first recovery guidance.
+- Keyboard navigation, route focus, and progressive screen-reader descriptions.
+- A redacted local diagnostic download with counts and capability flags only.
+- A restrictive content-security policy plus automated API, license, and dependency audits.
+- A 20,000-Hanzi reader fixture that guards the long-document render budget.
 - Generated service worker precaches the complete prototype.
 - Import is intentionally deferred while its language-processing design is evaluated.
 
@@ -49,6 +54,7 @@ Quality checks:
 npm run lint
 npm run typecheck
 npm test
+npm run audit:security
 npm run build
 ```
 
@@ -134,6 +140,35 @@ local snapshot becomes the next version's migration source.
 An update dismissed with “Để sau” remains reachable through a compact update
 action; there is no background reload loop. Missing article routes render an
 explicit online/offline recovery screen instead of a blank page.
+
+## Accessibility, diagnostics, and security
+
+Version 0.8 gives every route a descriptive document title and moves keyboard
+focus to its main content after navigation. A skip link bypasses repeated
+navigation without changing the hash route. In the reader, Left/Right Arrow,
+Home, and End move between word controls; Escape closes the assistance panel
+and restores focus to the selected word. Screen readers receive a progressive
+description that matches the current Hanzi → pinyin → meaning interaction.
+
+Long paragraphs use browser content visibility so off-screen work can be
+deferred. The test suite also renders a deterministic 20,000-Hanzi fixture under
+a two-second processing budget. This is a regression guard for application
+work, not a claim that every device will paint or scroll at the same speed;
+real-device checks remain part of the release-candidate sprint.
+
+The Review screen can download a diagnostic JSON file entirely on the current
+device. It contains app/runtime capability flags, aggregate content and reading
+counts, storage pressure, and store counts. It excludes article identifiers,
+reading text, titles, user-agent strings, and network destinations, and it is
+never uploaded by ScottBook. Origin usage enters warning state at 80% of quota
+and critical state at 95%; recovery guidance asks for a backup before any cache
+cleanup.
+
+The app shell now declares a restrictive content-security policy. CI rejects
+production use of dynamic code evaluation, direct HTML injection, high-severity
+runtime dependency advisories, or runtime packages outside the audited
+permissive-license set. Development websocket access remains limited to local
+Vite hosts. External-content import remains disabled.
 
 ## Install ScottBook
 

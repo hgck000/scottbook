@@ -9,7 +9,8 @@ import {
 import {
   SCOTTBOOK_DATABASE_VERSION,
   SCOTTBOOK_STORE_NAMES,
-  ScottBookIndexedDbRepository
+  ScottBookIndexedDbRepository,
+  getStoragePressure
 } from "./indexedDbRepository";
 
 function requestResult<T>(request: IDBRequest<T>): Promise<T> {
@@ -89,6 +90,15 @@ async function openDatabase(
 }
 
 describe("IndexedDB local-data repository", () => {
+  it("classifies quota pressure with recovery-oriented thresholds", () => {
+    expect(getStoragePressure(null, 1_000)).toBe("unknown");
+    expect(getStoragePressure(100, 0)).toBe("unknown");
+    expect(getStoragePressure(799, 1_000)).toBe("normal");
+    expect(getStoragePressure(800, 1_000)).toBe("warning");
+    expect(getStoragePressure(949, 1_000)).toBe("warning");
+    expect(getStoragePressure(950, 1_000)).toBe("critical");
+  });
+
   it("migrates the complete v0.5 local snapshot and reads it after reopen", async () => {
     const factory = new IDBFactory();
     const databaseName = "migration-from-local-storage";
@@ -226,7 +236,8 @@ describe("IndexedDB local-data repository", () => {
       usageBytes: 4_096,
       quotaBytes: 1_048_576,
       bookCount: 1,
-      cacheCount: 0
+      cacheCount: 0,
+      pressure: "normal"
     });
 
     await repository.close();
