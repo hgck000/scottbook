@@ -6,13 +6,18 @@ import {
   getNextReaderTokenIndex,
   getReaderTokenLabel
 } from "./readerAccessibility";
+import { getTokenAssistanceUnits } from "./readerScope";
 
 const token: WordToken = {
   id: "w1",
   kind: "word",
   hanzi: "学习",
   pinyin: "xuéxí",
-  meaning: "học tập"
+  meaning: "học tập",
+  characters: [
+    { hanzi: "学", pinyin: "xué", meaning: "học" },
+    { hanzi: "习", pinyin: "xí", meaning: "luyện tập" }
+  ]
 };
 
 describe("reader keyboard and screen-reader behavior", () => {
@@ -27,13 +32,15 @@ describe("reader keyboard and screen-reader behavior", () => {
   });
 
   it("announces the next assistance level instead of a generic tap label", () => {
-    const key = "s1:w1";
-    expect(getReaderTokenLabel(token, null, key)).toContain("mở pinyin");
+    const key = "s1:word:w1";
+    const unit = getTokenAssistanceUnits(token, "word")[0];
+    if (!unit) throw new Error("word unit expected");
+    expect(getReaderTokenLabel(unit, null, key)).toContain("mở pinyin");
     expect(
-      getReaderTokenLabel(token, { key, level: 1 }, key)
+      getReaderTokenLabel(unit, { key, level: 1 }, key)
     ).toContain("xuéxí; mở nghĩa");
     expect(
-      getReaderTokenLabel(token, { key, level: 2 }, key)
+      getReaderTokenLabel(unit, { key, level: 2 }, key)
     ).toContain("học tập; đóng trợ giúp");
   });
 
@@ -47,8 +54,9 @@ describe("reader keyboard and screen-reader behavior", () => {
     const markup = renderToStaticMarkup(
       <SentenceLine
         sentence={sentence}
-        selection={{ key: "s1:w1", level: 1 }}
-        chooseToken={() => undefined}
+        scope="word"
+        selection={{ key: "s1:word:w1", level: 1 }}
+        chooseUnit={() => undefined}
       />
     );
 
@@ -66,7 +74,12 @@ describe("long-reader rendering budget", () => {
       kind: "word",
       hanzi: "学习中文很有意思",
       pinyin: "xuéxí Zhōngwén hěn yǒuyìsi",
-      meaning: "học tiếng Trung rất thú vị"
+      meaning: "học tiếng Trung rất thú vị",
+      characters: Array.from("学习中文很有意思").map((hanzi) => ({
+        hanzi,
+        pinyin: "fixture",
+        meaning: "fixture"
+      }))
     }));
     const sentence: AnnotatedSentence = {
       id: "long-sentence",
@@ -78,8 +91,9 @@ describe("long-reader rendering budget", () => {
     const markup = renderToStaticMarkup(
       <SentenceLine
         sentence={sentence}
+        scope="word"
         selection={null}
-        chooseToken={() => undefined}
+        chooseUnit={() => undefined}
       />
     );
     const elapsed = performance.now() - startedAt;

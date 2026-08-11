@@ -42,7 +42,11 @@ function createData(
       articleId,
       100
     ),
-    preferences: { theme, fontSize: theme === "paper" ? 25 : 28 },
+    preferences: {
+      theme,
+      fontSize: theme === "paper" ? 25 : 28,
+      assistanceScope: "word"
+    },
     assistanceHistory: createEmptyAssistanceHistory()
   };
 }
@@ -124,6 +128,7 @@ describe("IndexedDB local-data repository", () => {
       hanzi: "早上",
       pinyin: "zǎoshang",
       meaning: "buổi sáng",
+      scope: "word",
       level: "meaning",
       occurredAt: 500
     });
@@ -146,7 +151,11 @@ describe("IndexedDB local-data repository", () => {
     const loaded = await reopened.bootstrap(
       {
         libraryState: createEmptyLibraryState(),
-        preferences: { theme: "paper", fontSize: 25 },
+        preferences: {
+          theme: "paper",
+          fontSize: 25,
+          assistanceScope: "word"
+        },
         assistanceHistory: createEmptyAssistanceHistory()
       },
       null
@@ -217,7 +226,11 @@ describe("IndexedDB local-data repository", () => {
       quarantinedThisRun: 1,
       data: {
         libraryState: fallback.libraryState,
-        preferences: { theme: "night", fontSize: 30 }
+        preferences: {
+          theme: "night",
+          fontSize: 30,
+          assistanceScope: "word"
+        }
       }
     });
 

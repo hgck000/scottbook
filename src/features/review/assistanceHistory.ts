@@ -1,3 +1,8 @@
+import {
+  isReaderAssistanceScope,
+  type ReaderAssistanceScope
+} from "../reader/readerScope";
+
 export const ASSISTANCE_HISTORY_STORAGE_KEY =
   "scottbook.assistanceHistory.v1";
 export const ASSISTANCE_HISTORY_BACKUP_STORAGE_KEY =
@@ -20,6 +25,7 @@ export type AssistanceContext = {
 
 export type AssistanceReviewItem = {
   id: string;
+  scope: ReaderAssistanceScope;
   hanzi: string;
   pinyin: string;
   meaning: string;
@@ -33,7 +39,7 @@ export type AssistanceReviewItem = {
 };
 
 export type AssistanceHistoryState = {
-  version: 1;
+  version: 2;
   recordingEnabled: boolean;
   items: Record<string, AssistanceReviewItem>;
 };
@@ -46,6 +52,7 @@ export type RecordAssistanceInput = {
   hanzi: string;
   pinyin: string;
   meaning: string;
+  scope: ReaderAssistanceScope;
   level: AssistanceLevel;
   occurredAt: number;
 };
@@ -54,7 +61,7 @@ type StorageReader = Pick<Storage, "getItem">;
 type StorageWriter = Pick<Storage, "getItem" | "setItem">;
 
 export function createEmptyAssistanceHistory(): AssistanceHistoryState {
-  return { version: 1, recordingEnabled: true, items: {} };
+  return { version: 2, recordingEnabled: true, items: {} };
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -107,6 +114,20 @@ function isIdentifier(value: unknown): value is string {
 }
 
 export function getAssistanceItemId(input: {
+  scope: ReaderAssistanceScope;
+  hanzi: string;
+  pinyin: string;
+  meaning: string;
+}): string {
+  return JSON.stringify([
+    input.scope,
+    input.hanzi,
+    input.pinyin,
+    input.meaning
+  ]);
+}
+
+function getLegacyAssistanceItemId(input: {
   hanzi: string;
   pinyin: string;
   meaning: string;
@@ -153,33 +174,63 @@ function validateContext(value: unknown): AssistanceContext | null {
   };
 }
 
-function validateItem(key: string, value: unknown): AssistanceReviewItem | null {
+function validateItem(
+  key: string,
+  value: unknown,
+  legacy: boolean
+): AssistanceReviewItem | null {
   if (
     !isIdentifier(key) ||
     !isRecord(value) ||
-    !hasOnlyKeys(value, [
-      "id",
-      "hanzi",
-      "pinyin",
-      "meaning",
-      "pinyinCount",
-      "meaningCount",
-      "firstSeenAt",
-      "lastSeenAt",
-      "knownAt",
-      "pinned",
-      "contexts"
-    ]) ||
+    !hasOnlyKeys(
+      value,
+      legacy
+        ? [
+            "id",
+            "hanzi",
+            "pinyin",
+            "meaning",
+            "pinyinCount",
+            "meaningCount",
+            "firstSeenAt",
+            "lastSeenAt",
+            "knownAt",
+            "pinned",
+            "contexts"
+          ]
+        : [
+            "id",
+            "scope",
+            "hanzi",
+            "pinyin",
+            "meaning",
+            "pinyinCount",
+            "meaningCount",
+            "firstSeenAt",
+            "lastSeenAt",
+            "knownAt",
+            "pinned",
+            "contexts"
+          ]
+    ) ||
     value.id !== key ||
+    (!legacy && !isReaderAssistanceScope(value.scope)) ||
     !isSafeText(value.hanzi, 128) ||
     !isSafeText(value.pinyin, 256) ||
     !isSafeText(value.meaning, 1_000) ||
     key !==
-      getAssistanceItemId({
-        hanzi: value.hanzi,
-        pinyin: value.pinyin,
-        meaning: value.meaning
-      }) ||
+      (legacy
+        ? getLegacyAssistanceItemId({
+            hanzi: value.hanzi,
+            pinyin: value.pinyin,
+            meaning: value.meaning
+          })
+        : getAssistanceItemId({
+            scope: value.scope as ReaderAssistanceScope,
+            hanzi: value.hanzi,
+            pinyin: value.pinyin,
+            meaning: value.meaning
+          })) ||
     !isCount(value.pinyinCount, 1) ||
     !isCount(value.meaningCount) ||
     value.meaningCount > value.pinyinCount ||
@@ -204,8 +255,16 @@ function validateItem(key: string, value: unknown): AssistanceReviewItem | null 
     contexts.push(context);
   }
 
+  const scope = legacy ? "word" : (value.scope as ReaderAssistanceScope);
+  const id = getAssistanceItemId({
+    scope,
+    hanzi: value.hanzi,
+    pinyin: value.pinyin,
+    meaning: value.meaning
+  });
   return {
-    id: key,
+    id,
+    scope,
     hanzi: value.hanzi,
     pinyin: value.pinyin,
     meaning: value.meaning,
@@ -225,7 +284,7 @@ export function validateAssistanceHistorySnapshot(
   if (
     !isRecord(value) ||
     !hasOnlyKeys(value, ["version", "recordingEnabled", "items"]) ||
-    value.version !== 1 ||
+    (value.version !== 1 && value.version !== 2) ||
     typeof value.recordingEnabled !== "boolean" ||
     !isRecord(value.items)
   ) {
@@ -234,12 +293,12 @@ export function validateAssistanceHistorySnapshot(
 
   const items: Record<string, AssistanceReviewItem> = {};
   for (const [key, candidate] of Object.entries(value.items)) {
-    const item = validateItem(key, candidate);
-    if (!item) return null;
-    items[key] = item;
+    const item = validateItem(key, candidate, value.version === 1);
+    if (!item || Object.hasOwn(items, item.id)) return null;
+    items[item.id] = item;
   }
 
-  return { version: 1, recordingEnabled: value.recordingEnabled, items };
+  return { version: 2, recordingEnabled: value.recordingEnabled, items };
 }
 
 export function parseAssistanceHistory(
@@ -308,7 +367,8 @@ export function recordAssistance(
     !isSafeText(input.sentenceTranslation) ||
     !isSafeText(input.hanzi, 128) ||
     !isSafeText(input.pinyin, 256) ||
-    !isSafeText(input.meaning, 1_000)
+    !isSafeText(input.meaning, 1_000) ||
+    !isReaderAssistanceScope(input.scope)
   ) {
     return state;
   }
@@ -361,6 +421,7 @@ export function recordAssistance(
       }
     : {
         id,
+        scope: input.scope,
         hanzi: input.hanzi,
         pinyin: input.pinyin,
         meaning: input.meaning,

@@ -5,12 +5,14 @@ import {
   validateLibraryStateSnapshot
 } from "../library/readingState";
 import {
+  READER_ASSISTANCE_SCOPE_STORAGE_KEY,
   READER_FONT_SIZE_STORAGE_KEY,
   READER_THEME_STORAGE_KEY,
   isReaderFontSize,
-  isReaderPreferences,
-  isReaderTheme
+  isReaderTheme,
+  validateReaderPreferences
 } from "../preferences/readerPreferences";
+import { isReaderAssistanceScope } from "../reader/readerScope";
 import {
   ASSISTANCE_HISTORY_STORAGE_KEY,
   createEmptyAssistanceHistory,
@@ -39,7 +41,8 @@ export function validateLocalDataSnapshot(
   }
 
   const libraryState = validateLibraryStateSnapshot(candidate.libraryState);
-  if (!libraryState || !isReaderPreferences(candidate.preferences)) return null;
+  const preferences = validateReaderPreferences(candidate.preferences);
+  if (!libraryState || !preferences) return null;
   const assistanceHistory = hasAssistanceHistory
     ? validateAssistanceHistorySnapshot(candidate.assistanceHistory)
     : createEmptyAssistanceHistory();
@@ -47,7 +50,7 @@ export function validateLocalDataSnapshot(
 
   return {
     libraryState,
-    preferences: { ...candidate.preferences },
+    preferences,
     assistanceHistory
   };
 }
@@ -62,8 +65,13 @@ function readPreferences(
     const fontSize: unknown = JSON.parse(
       storage.getItem(READER_FONT_SIZE_STORAGE_KEY) ?? "null"
     );
-    return isReaderTheme(theme) && isReaderFontSize(fontSize)
-      ? { theme, fontSize }
+    const rawScope = storage.getItem(READER_ASSISTANCE_SCOPE_STORAGE_KEY);
+    const assistanceScope: unknown =
+      rawScope === null ? "word" : JSON.parse(rawScope);
+    return isReaderTheme(theme) &&
+      isReaderFontSize(fontSize) &&
+      isReaderAssistanceScope(assistanceScope)
+      ? { theme, fontSize, assistanceScope }
       : null;
   } catch {
     return null;
@@ -75,13 +83,17 @@ export function loadLocalDataFallback(
 ): ScottBookBackupData {
   return {
     libraryState: loadLibraryState(storage),
-    preferences: readPreferences(storage) ?? { theme: "paper", fontSize: 25 },
+    preferences: readPreferences(storage) ?? {
+      theme: "paper",
+      fontSize: 25,
+      assistanceScope: "word"
+    },
     assistanceHistory: loadAssistanceHistory(storage)
   };
 }
 
 /**
- * Returns only a complete primary v0.5 snapshot. Safety/legacy fallbacks are
+ * Returns only a complete primary snapshot. Safety/legacy fallbacks are
  * excluded so a damaged localStorage primary cannot overwrite a healthy
  * IndexedDB copy during bootstrap.
  */

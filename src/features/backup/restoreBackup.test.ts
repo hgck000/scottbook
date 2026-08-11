@@ -10,6 +10,7 @@ import {
   type LibraryState
 } from "../library/readingState";
 import {
+  READER_ASSISTANCE_SCOPE_STORAGE_KEY,
   READER_FONT_SIZE_STORAGE_KEY,
   READER_THEME_STORAGE_KEY
 } from "../preferences/readerPreferences";
@@ -76,7 +77,11 @@ function createCurrentData(): ScottBookBackupData {
       progressPercent: 50,
       updatedAt: 200
     }),
-    preferences: { theme: "night", fontSize: 28 },
+    preferences: {
+      theme: "night",
+      fontSize: 28,
+      assistanceScope: "word"
+    },
     assistanceHistory: createEmptyAssistanceHistory()
   };
 }
@@ -101,7 +106,11 @@ function createRestoredData(): ScottBookBackupData {
       "s4",
       600
     ),
-    preferences: { theme: "paper", fontSize: 24 },
+    preferences: {
+      theme: "paper",
+      fontSize: 24,
+      assistanceScope: "sentence"
+    },
     assistanceHistory: createEmptyAssistanceHistory()
   };
 }
@@ -141,7 +150,11 @@ describe("ScottBook backup restore", () => {
     } as LibraryState;
     const signed = await createScottBookBackup({
       libraryState: invalidState,
-      preferences: { theme: "paper", fontSize: 25 },
+      preferences: {
+        theme: "paper",
+        fontSize: 25,
+        assistanceScope: "word"
+      },
       assistanceHistory: createEmptyAssistanceHistory()
     });
 
@@ -167,7 +180,8 @@ describe("ScottBook backup restore", () => {
         activeProgressCount: 1,
         assistanceItemCount: 0,
         theme: "paper",
-        fontSize: 24
+        fontSize: 24,
+        assistanceScope: "sentence"
       }
     });
   });
@@ -183,6 +197,8 @@ describe("ScottBook backup restore", () => {
       checksum: { algorithm: "SHA-256"; value: string };
     };
     delete legacy.data.assistanceHistory;
+    const legacyPreferences = legacy.data.preferences as Record<string, unknown>;
+    delete legacyPreferences.assistanceScope;
     const unsigned = {
       format: legacy.format,
       formatVersion: legacy.formatVersion,
@@ -206,9 +222,14 @@ describe("ScottBook backup restore", () => {
       backup: {
         data: {
           assistanceHistory: {
-            version: 1,
+            version: 2,
             recordingEnabled: true,
             items: {}
+          },
+          preferences: {
+            theme: "night",
+            fontSize: 28,
+            assistanceScope: "word"
           }
         }
       }
@@ -231,6 +252,9 @@ describe("ScottBook backup restore", () => {
       [READER_THEME_STORAGE_KEY]: JSON.stringify(currentData.preferences.theme),
       [READER_FONT_SIZE_STORAGE_KEY]: JSON.stringify(
         currentData.preferences.fontSize
+      ),
+      [READER_ASSISTANCE_SCOPE_STORAGE_KEY]: JSON.stringify(
+        currentData.preferences.assistanceScope
       )
     });
 
@@ -248,6 +272,9 @@ describe("ScottBook backup restore", () => {
     expect(
       JSON.parse(storage.getItem(LIBRARY_STATE_BACKUP_STORAGE_KEY) ?? "")
     ).toEqual(currentData.libraryState);
+    expect(storage.getItem(READER_ASSISTANCE_SCOPE_STORAGE_KEY)).toBe(
+      '"sentence"'
+    );
     expect(loadScottBookRestoreUndo(storage)?.data).toEqual(currentData);
 
     const undone = undoLastScottBookRestore(storage, restoredData);
@@ -257,6 +284,9 @@ describe("ScottBook backup restore", () => {
     );
     expect(storage.getItem(READER_THEME_STORAGE_KEY)).toBe('"night"');
     expect(storage.getItem(READER_FONT_SIZE_STORAGE_KEY)).toBe("28");
+    expect(storage.getItem(READER_ASSISTANCE_SCOPE_STORAGE_KEY)).toBe(
+      '"word"'
+    );
     expect(storage.getItem(RESTORE_UNDO_STORAGE_KEY)).toBeNull();
   });
 

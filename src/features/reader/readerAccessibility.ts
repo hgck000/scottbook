@@ -1,5 +1,8 @@
-import type { WordToken } from "../../content/types";
 import type { AssistanceSelection } from "./assistance";
+import {
+  getAssistanceScopeLabel,
+  type ReaderAssistanceUnit
+} from "./readerScope";
 
 export function getNextReaderTokenIndex(
   currentIndex: number,
@@ -19,14 +22,21 @@ export function getNextReaderTokenIndex(
 }
 
 export function getReaderTokenLabel(
-  token: WordToken,
+  token: ReaderAssistanceUnit,
   selection: AssistanceSelection | null,
   key: string
 ): string {
+  const scopeLabel = getAssistanceScopeLabel(token.scope);
   if (selection?.key !== key) {
-    return `${token.hanzi}; mở pinyin`;
+    return `${scopeLabel} ${token.hanzi}; mở pinyin`;
   }
   return selection.level === 1
-    ? `${token.hanzi}; pinyin ${token.pinyin}; mở nghĩa trong ngữ cảnh`
-    : `${token.hanzi}; nghĩa ${token.meaning}; đóng trợ giúp`;
+    ? `${scopeLabel} ${token.hanzi}; pinyin ${token.pinyin}; ${
+        token.scope === "sentence"
+          ? "mở bản dịch câu"
+          : "mở nghĩa trong ngữ cảnh"
+      }`
+    : `${scopeLabel} ${token.hanzi}; ${
+        token.scope === "sentence" ? "bản dịch" : "nghĩa"
+      } ${token.meaning}; đóng trợ giúp`;
 }

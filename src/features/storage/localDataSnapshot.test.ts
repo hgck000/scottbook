@@ -6,6 +6,7 @@ import {
   toggleFavoriteArticle
 } from "../library/readingState";
 import {
+  READER_ASSISTANCE_SCOPE_STORAGE_KEY,
   READER_FONT_SIZE_STORAGE_KEY,
   READER_THEME_STORAGE_KEY
 } from "../preferences/readerPreferences";
@@ -43,9 +44,21 @@ describe("localStorage migration snapshot", () => {
 
     expect(tryLoadPrimaryLocalData(storage)).toEqual({
       libraryState,
-      preferences: { theme: "night", fontSize: 29 },
+      preferences: { theme: "night", fontSize: 29, assistanceScope: "word" },
       assistanceHistory: createEmptyAssistanceHistory()
     });
+  });
+
+  it("keeps an explicitly selected sentence assistance scope", () => {
+    const storage = new MemoryStorage();
+    storage.set(LIBRARY_STATE_STORAGE_KEY, createEmptyLibraryState());
+    storage.set(READER_THEME_STORAGE_KEY, "paper");
+    storage.set(READER_FONT_SIZE_STORAGE_KEY, 25);
+    storage.set(READER_ASSISTANCE_SCOPE_STORAGE_KEY, "sentence");
+
+    expect(tryLoadPrimaryLocalData(storage)?.preferences.assistanceScope).toBe(
+      "sentence"
+    );
   });
 
   it("does not let a corrupt primary overwrite a future IndexedDB copy", () => {
@@ -68,7 +81,7 @@ describe("localStorage migration snapshot", () => {
 
     expect(loadLocalDataFallback(storage)).toEqual({
       libraryState: createEmptyLibraryState(),
-      preferences: { theme: "paper", fontSize: 25 },
+      preferences: { theme: "paper", fontSize: 25, assistanceScope: "word" },
       assistanceHistory: createEmptyAssistanceHistory()
     });
     expect(tryLoadPrimaryLocalData(storage)).toBeNull();
@@ -80,6 +93,16 @@ describe("localStorage migration snapshot", () => {
     storage.set(READER_THEME_STORAGE_KEY, "paper");
     storage.set(READER_FONT_SIZE_STORAGE_KEY, 25);
     storage.values.set(ASSISTANCE_HISTORY_STORAGE_KEY, "corrupt-json");
+
+    expect(tryLoadPrimaryLocalData(storage)).toBeNull();
+  });
+
+  it("does not let a corrupt assistance scope replace a healthy IndexedDB copy", () => {
+    const storage = new MemoryStorage();
+    storage.set(LIBRARY_STATE_STORAGE_KEY, createEmptyLibraryState());
+    storage.set(READER_THEME_STORAGE_KEY, "paper");
+    storage.set(READER_FONT_SIZE_STORAGE_KEY, 25);
+    storage.set(READER_ASSISTANCE_SCOPE_STORAGE_KEY, "paragraph");
 
     expect(tryLoadPrimaryLocalData(storage)).toBeNull();
   });

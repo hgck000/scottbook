@@ -114,6 +114,7 @@ describe("ScottBook routes", () => {
       hanzi: "早上",
       pinyin: "zǎoshang",
       meaning: "buổi sáng",
+      scope: "word",
       level: "pinyin",
       occurredAt: 100
     });
@@ -125,6 +126,7 @@ describe("ScottBook routes", () => {
       hanzi: "学习",
       pinyin: "xuéxí",
       meaning: "học tập",
+      scope: "word",
       level: "meaning",
       occurredAt: 200
     });
@@ -132,7 +134,7 @@ describe("ScottBook routes", () => {
 
     const markup = renderToStaticMarkup(<App />);
 
-    expect(markup).toContain("Từ và cụm từng cần trợ giúp");
+    expect(markup).toContain("Chữ, từ và câu từng cần trợ giúp");
     expect(markup).toContain("Cần cách đọc");
     expect(markup).toContain("Chưa hiểu nghĩa");
     expect(markup).toContain("zǎoshang");
@@ -147,6 +149,10 @@ describe("ScottBook routes", () => {
 
     expect(markup).toContain('class="back-button"');
     expect(markup).toContain('aria-label="Về thư viện"');
+    expect(markup).toContain("Phạm vi trợ giúp");
+    expect(markup).toContain('aria-label="Chữ (字)"');
+    expect(markup).toContain('aria-label="Từ/cụm (词)"');
+    expect(markup).toContain('aria-label="Câu (句)"');
   });
 });
 

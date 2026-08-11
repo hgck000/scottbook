@@ -57,6 +57,9 @@ export type ScottBookLocalDiagnosticReport = {
     readingHelpCount: number;
     meaningHelpCount: number;
     knownCount: number;
+    characterItemCount: number;
+    wordItemCount: number;
+    sentenceItemCount: number;
     recordingEnabled: boolean;
   };
   storage: ScottBookStorageReport | null;
@@ -131,6 +134,13 @@ export function createLocalDiagnosticReport(
         (item) => item.knownAt === null && item.meaningCount > 0
       ).length,
       knownCount: reviewItems.filter((item) => item.knownAt !== null).length,
+      characterItemCount: reviewItems.filter(
+        (item) => item.scope === "character"
+      ).length,
+      wordItemCount: reviewItems.filter((item) => item.scope === "word").length,
+      sentenceItemCount: reviewItems.filter(
+        (item) => item.scope === "sentence"
+      ).length,
       recordingEnabled: input.assistanceHistory.recordingEnabled
     },
     storage: input.storageReport ? { ...input.storageReport } : null,

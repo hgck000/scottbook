@@ -18,6 +18,7 @@ const baseInput = {
   hanzi: "早上",
   pinyin: "zǎoshang",
   meaning: "buổi sáng",
+  scope: "word" as const,
   level: "pinyin" as const,
   occurredAt: 100
 };
@@ -87,6 +88,48 @@ describe("assistance review history", () => {
 
     expect(validateAssistanceHistorySnapshot(state)).toEqual(state);
     expect(validateAssistanceHistorySnapshot(corrupt)).toBeNull();
+  });
+
+  it("keeps character and word evidence separate for a one-character token", () => {
+    const word = recordAssistance(createEmptyAssistanceHistory(), {
+      ...baseInput,
+      hanzi: "我",
+      pinyin: "wǒ",
+      meaning: "tôi"
+    });
+    const character = recordAssistance(word, {
+      ...baseInput,
+      scope: "character",
+      hanzi: "我",
+      pinyin: "wǒ",
+      meaning: "tôi",
+      occurredAt: 200
+    });
+
+    expect(Object.values(character.items).map((item) => item.scope)).toEqual([
+      "word",
+      "character"
+    ]);
+  });
+
+  it("migrates v1 review items to word-scoped v2 identifiers", () => {
+    const current = recordAssistance(createEmptyAssistanceHistory(), baseInput);
+    const currentItem = Object.values(current.items)[0];
+    if (!currentItem) throw new Error("review fixture expected");
+    const { scope, ...legacyItem } = currentItem;
+    expect(scope).toBe("word");
+    const legacyId = JSON.stringify([
+      legacyItem.hanzi,
+      legacyItem.pinyin,
+      legacyItem.meaning
+    ]);
+    const legacy = {
+      version: 1,
+      recordingEnabled: true,
+      items: { [legacyId]: { ...legacyItem, id: legacyId } }
+    };
+
+    expect(validateAssistanceHistorySnapshot(legacy)).toEqual(current);
   });
 
   it("ignores identifiers whose derived storage key exceeds its safe bound", () => {

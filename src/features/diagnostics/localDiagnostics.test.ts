@@ -40,6 +40,7 @@ describe("local diagnostic export", () => {
             hanzi: "私密",
             pinyin: "sīmì",
             meaning: "riêng tư",
+            scope: "word",
             level: "meaning",
             occurredAt: 200
           }
@@ -78,7 +79,7 @@ describe("local diagnostic export", () => {
     expect(report).toMatchObject({
       format: "scottbook-local-diagnostics",
       formatVersion: 1,
-      appVersion: "0.10.0",
+      appVersion: "0.11.0",
       generatedAt: "2026-08-11T04:00:00.000Z",
       privacy: {
         transmitted: false,
@@ -92,6 +93,9 @@ describe("local diagnostic export", () => {
         readingHelpCount: 0,
         meaningHelpCount: 1,
         knownCount: 0,
+        characterItemCount: 0,
+        wordItemCount: 1,
+        sentenceItemCount: 0,
         recordingEnabled: true
       }
     });

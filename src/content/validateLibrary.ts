@@ -80,6 +80,35 @@ export function validateBuiltInLibrary(
             if (!token.meaning.trim()) {
               issues.push({ path: tokenPath, message: "word meaning is required" });
             }
+
+            const glyphs = Array.from(token.hanzi);
+            if (token.characters.length !== glyphs.length) {
+              issues.push({
+                path: tokenPath,
+                message: "every character requires one authored annotation"
+              });
+            }
+            token.characters.forEach((character, index) => {
+              const characterPath = `${tokenPath}/character:${index}`;
+              if (character.hanzi !== glyphs[index]) {
+                issues.push({
+                  path: characterPath,
+                  message: "character annotation must match token text order"
+                });
+              }
+              if (!character.pinyin.trim()) {
+                issues.push({
+                  path: characterPath,
+                  message: "character pinyin is required"
+                });
+              }
+              if (!character.meaning.trim()) {
+                issues.push({
+                  path: characterPath,
+                  message: "character meaning is required"
+                });
+              }
+            });
           }
         }
 

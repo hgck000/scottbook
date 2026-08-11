@@ -1,6 +1,6 @@
 import type { ScottBookBackupData } from "../backup/exportBackup";
 import { validateLibraryStateSnapshot } from "../library/readingState";
-import { isReaderPreferences } from "../preferences/readerPreferences";
+import { validateReaderPreferences } from "../preferences/readerPreferences";
 import {
   createEmptyAssistanceHistory,
   validateAssistanceHistorySnapshot
@@ -164,8 +164,9 @@ function parsePreferencesRecord(value: unknown): {
   if (!isSnapshotRecord(value, READER_PREFERENCES_RECORD_ID)) {
     return { data: null, corrupt: true };
   }
-  return isReaderPreferences(value.value)
-    ? { data: { ...value.value }, corrupt: false }
+  const data = validateReaderPreferences(value.value);
+  return data
+    ? { data, corrupt: false }
     : { data: null, corrupt: true };
 }
 

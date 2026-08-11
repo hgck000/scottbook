@@ -1,10 +1,17 @@
 import type { KeyboardEvent } from "react";
-import type { AnnotatedSentence, WordToken } from "../../content/types";
+import type { AnnotatedSentence } from "../../content/types";
 import type { AssistanceSelection } from "./assistance";
 import {
   getNextReaderTokenIndex,
   getReaderTokenLabel
 } from "./readerAccessibility";
+import {
+  getAssistanceUnitKey,
+  getSentenceAssistanceUnits,
+  getTokenAssistanceUnits,
+  type ReaderAssistanceScope,
+  type ReaderAssistanceUnit
+} from "./readerScope";
 
 function moveReaderTokenFocus(event: KeyboardEvent<HTMLButtonElement>): void {
   if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) {
@@ -14,7 +21,7 @@ function moveReaderTokenFocus(event: KeyboardEvent<HTMLButtonElement>): void {
 
   const article = event.currentTarget.closest(".reader-article");
   const tokens = Array.from(
-    article?.querySelectorAll<HTMLButtonElement>("[data-reader-token]") ?? []
+    article?.querySelectorAll<HTMLButtonElement>("[data-reader-unit]") ?? []
   );
   const currentIndex = tokens.indexOf(event.currentTarget);
   const nextIndex = getNextReaderTokenIndex(
@@ -30,13 +37,50 @@ function moveReaderTokenFocus(event: KeyboardEvent<HTMLButtonElement>): void {
 
 export function SentenceLine({
   sentence,
+  scope,
   selection,
-  chooseToken
+  chooseUnit
 }: {
   sentence: AnnotatedSentence;
+  scope: ReaderAssistanceScope;
   selection: AssistanceSelection | null;
-  chooseToken: (sentence: AnnotatedSentence, token: WordToken) => void;
+  chooseUnit: (
+    sentence: AnnotatedSentence,
+    unit: ReaderAssistanceUnit
+  ) => void;
 }) {
+  const renderUnit = (unit: ReaderAssistanceUnit, content?: string) => {
+    const key = getAssistanceUnitKey(sentence, unit);
+    const isSelected = selection?.key === key;
+    return (
+      <button
+        key={unit.id}
+        className={`word-token scope-${unit.scope}${isSelected ? " selected" : ""}`}
+        type="button"
+        data-reader-token
+        data-reader-unit
+        data-assistance-key={key}
+        data-assistance-scope={unit.scope}
+        onClick={() => chooseUnit(sentence, unit)}
+        onKeyDown={moveReaderTokenFocus}
+        aria-label={getReaderTokenLabel(unit, selection, key)}
+        aria-controls={isSelected ? "reader-assistance" : undefined}
+        aria-expanded={isSelected}
+      >
+        <span lang="zh-Hans">{content ?? unit.hanzi}</span>
+      </button>
+    );
+  };
+
+  if (scope === "sentence") {
+    const unit = getSentenceAssistanceUnits(sentence, scope)[0];
+    return unit ? (
+      <span className="sentence" data-sentence-id={sentence.id}>
+        {renderUnit(unit)}
+      </span>
+    ) : null;
+  }
+
   return (
     <span className="sentence" data-sentence-id={sentence.id}>
       {sentence.tokens.map((token) => {
@@ -44,23 +88,8 @@ export function SentenceLine({
           return <span key={token.id} lang="zh-Hans">{token.hanzi}</span>;
         }
 
-        const key = `${sentence.id}:${token.id}`;
-        const isSelected = selection?.key === key;
-        return (
-          <button
-            key={token.id}
-            className={`word-token${isSelected ? " selected" : ""}`}
-            type="button"
-            data-reader-token
-            data-assistance-key={key}
-            onClick={() => chooseToken(sentence, token)}
-            onKeyDown={moveReaderTokenFocus}
-            aria-label={getReaderTokenLabel(token, selection, key)}
-            aria-controls={isSelected ? "reader-assistance" : undefined}
-            aria-expanded={isSelected}
-          >
-            <span lang="zh-Hans">{token.hanzi}</span>
-          </button>
+        return getTokenAssistanceUnits(token, scope).map((unit) =>
+          renderUnit(unit)
         );
       })}
     </span>

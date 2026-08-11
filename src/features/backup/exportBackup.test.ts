@@ -12,7 +12,11 @@ describe("ScottBook JSON backup", () => {
     const backup = await createScottBookBackup(
       {
         libraryState: createEmptyLibraryState(),
-        preferences: { theme: "night", fontSize: 29 },
+        preferences: {
+          theme: "night",
+          fontSize: 29,
+          assistanceScope: "sentence"
+        },
         assistanceHistory: createEmptyAssistanceHistory()
       },
       "2026-08-11T02:00:00.000Z"
@@ -20,9 +24,13 @@ describe("ScottBook JSON backup", () => {
 
     expect(backup.format).toBe("scottbook-backup");
     expect(backup.formatVersion).toBe(1);
-    expect(backup.appVersion).toBe("0.10.0");
+    expect(backup.appVersion).toBe("0.11.0");
     expect(backup.exportedAt).toBe("2026-08-11T02:00:00.000Z");
-    expect(backup.data.preferences).toEqual({ theme: "night", fontSize: 29 });
+    expect(backup.data.preferences).toEqual({
+      theme: "night",
+      fontSize: 29,
+      assistanceScope: "sentence"
+    });
     expect(backup.checksum).toEqual({
       algorithm: "SHA-256",
       value: expect.stringMatching(/^[a-f0-9]{64}$/)
@@ -33,7 +41,11 @@ describe("ScottBook JSON backup", () => {
   it("detects a backup changed after its checksum was created", async () => {
     const backup = await createScottBookBackup({
       libraryState: createEmptyLibraryState(),
-      preferences: { theme: "paper", fontSize: 25 },
+      preferences: {
+        theme: "paper",
+        fontSize: 25,
+        assistanceScope: "word"
+      },
       assistanceHistory: createEmptyAssistanceHistory()
     });
     const tampered: ScottBookBackup = {

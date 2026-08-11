@@ -2,8 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { builtInLibrary } from "./content/builtInLibrary";
 import type {
   AnnotatedSentence,
-  BuiltInArticle,
-  WordToken
+  BuiltInArticle
 } from "./content/types";
 import {
   createScottBookBackup,
@@ -29,6 +28,15 @@ import {
 } from "./features/reader/assistance";
 import { SentenceLine } from "./features/reader/SentenceLine";
 import {
+  getAssistanceScopeLabel,
+  getAssistanceUnitKey,
+  getSentenceAssistanceUnits,
+  getSentenceText,
+  isReaderAssistanceScope,
+  type ReaderAssistanceScope,
+  type ReaderAssistanceUnit
+} from "./features/reader/readerScope";
+import {
   getArticleSentenceIds,
   getSentenceProgressPercent,
   markArticleCompleted,
@@ -43,6 +51,7 @@ import {
 import {
   MAX_READER_FONT_SIZE,
   MIN_READER_FONT_SIZE,
+  READER_ASSISTANCE_SCOPE_STORAGE_KEY,
   READER_FONT_SIZE_STORAGE_KEY,
   READER_THEME_STORAGE_KEY,
   isReaderFontSize,
@@ -127,19 +136,19 @@ function useStoredState<T>(
 
 function findSelectedContext(
   article: BuiltInArticle,
-  selection: AssistanceSelection | null
+  selection: AssistanceSelection | null,
+  scope: ReaderAssistanceScope
 ) {
   if (!selection) return null;
 
   for (const paragraph of article.paragraphs) {
     for (const sentence of paragraph.sentences) {
-      const token = sentence.tokens.find(
+      const unit = getSentenceAssistanceUnits(sentence, scope).find(
         (candidate) =>
-          candidate.kind === "word" &&
-          `${sentence.id}:${candidate.id}` === selection.key
+          getAssistanceUnitKey(sentence, candidate) === selection.key
       );
-      if (token?.kind === "word") {
-        return { sentence, token };
+      if (unit) {
+        return { sentence, unit };
       }
     }
   }
@@ -181,6 +190,12 @@ function App() {
     bootstrapData.fallback.preferences.fontSize,
     isReaderFontSize
   );
+  const [assistanceScope, setAssistanceScope] =
+    useStoredState<ReaderAssistanceScope>(
+      READER_ASSISTANCE_SCOPE_STORAGE_KEY,
+      bootstrapData.fallback.preferences.assistanceScope,
+      isReaderAssistanceScope
+    );
   const [libraryState, setLibraryState] = useState<LibraryState>(
     bootstrapData.fallback.libraryState
   );
@@ -286,8 +301,9 @@ function App() {
     setLibraryState(data.libraryState);
     setTheme(data.preferences.theme);
     setFontSize(data.preferences.fontSize);
+    setAssistanceScope(data.preferences.assistanceScope);
     setAssistanceHistory(data.assistanceHistory);
-  }, [setFontSize, setTheme]);
+  }, [setAssistanceScope, setFontSize, setTheme]);
 
   useEffect(() => {
     let active = true;
@@ -322,7 +338,7 @@ function App() {
     void localDataCoordinator
       .persist({
         libraryState,
-        preferences: { theme, fontSize },
+        preferences: { theme, fontSize, assistanceScope },
         assistanceHistory
       })
       .then((succeeded) => {
@@ -342,6 +358,7 @@ function App() {
     };
   }, [
     assistanceHistory,
+    assistanceScope,
     fontSize,
     libraryState,
     localDataCoordinator,
@@ -354,7 +371,7 @@ function App() {
       const result = await localDataCoordinator.applyRestore(
         {
           libraryState,
-          preferences: { theme, fontSize },
+          preferences: { theme, fontSize, assistanceScope },
           assistanceHistory
         },
         restoredData
@@ -371,6 +388,7 @@ function App() {
     },
     [
       assistanceHistory,
+      assistanceScope,
       fontSize,
       libraryState,
       localDataCoordinator,
@@ -382,7 +400,7 @@ function App() {
   const undoBackupRestore = useCallback(async () => {
     const result = await localDataCoordinator.undoRestore({
       libraryState,
-      preferences: { theme, fontSize },
+      preferences: { theme, fontSize, assistanceScope },
       assistanceHistory
     });
     if (result.ok) replaceLocalData(result.data);
@@ -396,6 +414,7 @@ function App() {
     return result;
   }, [
     assistanceHistory,
+    assistanceScope,
     fontSize,
     libraryState,
     localDataCoordinator,
@@ -420,7 +439,7 @@ function App() {
   const preparePwaUpdate = useCallback(async () => {
     const prepared = await localDataCoordinator.prepareForUpdate({
       libraryState,
-      preferences: { theme, fontSize },
+      preferences: { theme, fontSize, assistanceScope },
       assistanceHistory
     });
     if (!localDataCoordinator.isUsingIndexedDb()) {
@@ -431,25 +450,33 @@ function App() {
       }));
     }
     return prepared;
-  }, [assistanceHistory, fontSize, libraryState, localDataCoordinator, theme]);
+  }, [
+    assistanceHistory,
+    assistanceScope,
+    fontSize,
+    libraryState,
+    localDataCoordinator,
+    theme
+  ]);
 
   const saveAssistance = useCallback(
     (
       article: BuiltInArticle,
       sentence: AnnotatedSentence,
-      token: WordToken,
+      unit: ReaderAssistanceUnit,
       level: AssistanceLevel
     ) => {
-      const sentenceText = sentence.tokens.map((item) => item.hanzi).join("");
+      const sentenceText = getSentenceText(sentence);
       setAssistanceHistory((current) =>
         recordAssistance(current, {
           articleId: article.id,
           sentenceId: sentence.id,
           sentenceText,
           sentenceTranslation: sentence.translation,
-          hanzi: token.hanzi,
-          pinyin: token.pinyin,
-          meaning: token.meaning,
+          hanzi: unit.hanzi,
+          pinyin: unit.pinyin,
+          meaning: unit.meaning,
+          scope: unit.scope,
           level,
           occurredAt: Date.now()
         })
@@ -482,6 +509,8 @@ function App() {
         article={article}
         fontSize={fontSize}
         setFontSize={setFontSize}
+        assistanceScope={assistanceScope}
+        setAssistanceScope={setAssistanceScope}
         theme={theme}
         toggleTheme={toggleTheme}
         goHome={goHome}
@@ -498,8 +527,8 @@ function App() {
           const lastSentenceId = sentenceIds.at(-1);
           if (lastSentenceId) completeArticle(article.id, lastSentenceId);
         }}
-        saveAssistance={(sentence, token, level) =>
-          saveAssistance(article, sentence, token, level)
+        saveAssistance={(sentence, unit, level) =>
+          saveAssistance(article, sentence, unit, level)
         }
       />
     ) : (
@@ -510,6 +539,7 @@ function App() {
       <ReviewScreen
         theme={theme}
         fontSize={fontSize}
+        assistanceScope={assistanceScope}
         toggleTheme={toggleTheme}
         libraryState={libraryState}
         assistanceHistory={assistanceHistory}
@@ -978,6 +1008,7 @@ const historyDateFormatter = new Intl.DateTimeFormat("vi-VN", {
 function ReviewScreen({
   theme,
   fontSize,
+  assistanceScope,
   toggleTheme,
   libraryState,
   assistanceHistory,
@@ -997,6 +1028,7 @@ function ReviewScreen({
 }: {
   theme: ReaderTheme;
   fontSize: number;
+  assistanceScope: ReaderAssistanceScope;
   toggleTheme: () => void;
   libraryState: LibraryState;
   assistanceHistory: AssistanceHistoryState;
@@ -1062,7 +1094,7 @@ function ReviewScreen({
         <section className="review-hero">
           <div>
             <span className="hero-stamp">学习记录 · Học từ lúc đọc</span>
-            <h1>Những từ bạn đã thật sự cần trợ giúp.</h1>
+            <h1>Những chỗ bạn đã thật sự cần trợ giúp.</h1>
             <p>
               ScottBook phân biệt lúc bạn chỉ cần cách đọc với lúc bạn cần cả
               nghĩa. Mọi ngữ cảnh đều nằm trên thiết bị này.
@@ -1102,6 +1134,7 @@ function ReviewScreen({
           assistanceHistory={assistanceHistory}
           theme={theme}
           fontSize={fontSize}
+          assistanceScope={assistanceScope}
           storagePersistence={storagePersistence}
           localDataStatus={localDataStatus}
           applyBackupRestore={applyBackupRestore}
@@ -1201,9 +1234,9 @@ function AssistanceReviewSection({
         left.hanzi.localeCompare(right.hanzi, "zh-Hans")
     );
   const emptyCopy = {
-    reading: "Chưa có từ nào bạn chỉ mở pinyin.",
-    meaning: "Chưa có từ nào bạn phải mở đến nghĩa.",
-    known: "Chưa có từ nào được đánh dấu đã biết."
+    reading: "Chưa có mục nào bạn chỉ mở pinyin.",
+    meaning: "Chưa có mục nào bạn phải mở đến nghĩa.",
+    known: "Chưa có mục nào được đánh dấu đã biết."
   }[filter];
 
   return (
@@ -1214,7 +1247,9 @@ function AssistanceReviewSection({
       <div className="section-heading assistance-review-heading">
         <div>
           <p className="eyebrow">Dấu vết học tập</p>
-          <h2 id="assistance-review-heading">Từ và cụm từng cần trợ giúp</h2>
+          <h2 id="assistance-review-heading">
+            Chữ, từ và câu từng cần trợ giúp
+          </h2>
         </div>
         <label className="recording-toggle">
           <input
@@ -1326,7 +1361,9 @@ function AssistanceReviewCard({
         : "Cần cách đọc";
 
   return (
-    <article className={`review-word-card${item.pinned ? " pinned" : ""}`}>
+    <article
+      className={`review-word-card scope-${item.scope}${item.pinned ? " pinned" : ""}`}
+    >
       <header>
         <div className="review-word-identity">
           <strong lang="zh-Hans">{item.hanzi}</strong>
@@ -1335,11 +1372,16 @@ function AssistanceReviewCard({
             <p>{item.meaning}</p>
           </div>
         </div>
-        <span
-          className={`review-word-status${item.knownAt !== null ? " known" : ""}`}
-        >
-          {status}
-        </span>
+        <div className="review-word-badges">
+          <span className="review-scope-badge">
+            {getAssistanceScopeLabel(item.scope)}
+          </span>
+          <span
+            className={`review-word-status${item.knownAt !== null ? " known" : ""}`}
+          >
+            {status}
+          </span>
+        </div>
       </header>
 
       {latestContext ? (
@@ -1404,6 +1446,7 @@ function DataProtectionCard({
   assistanceHistory,
   theme,
   fontSize,
+  assistanceScope,
   storagePersistence,
   localDataStatus,
   applyBackupRestore,
@@ -1415,6 +1458,7 @@ function DataProtectionCard({
   assistanceHistory: AssistanceHistoryState;
   theme: ReaderTheme;
   fontSize: number;
+  assistanceScope: ReaderAssistanceScope;
   storagePersistence: StoragePersistence;
   localDataStatus: LocalDataStatus;
   applyBackupRestore: (
@@ -1500,7 +1544,7 @@ function DataProtectionCard({
     try {
       const backup = await createScottBookBackup({
         libraryState,
-        preferences: { theme, fontSize },
+        preferences: { theme, fontSize, assistanceScope },
         assistanceHistory
       });
       downloadScottBookBackup(backup);
@@ -1972,7 +2016,11 @@ function RestorePreview({
           <dd>{preview.fontSize}px</dd>
         </div>
         <div>
-          <dt>Từ cần ôn</dt>
+          <dt>Phạm vi trợ giúp</dt>
+          <dd>{getAssistanceScopeLabel(preview.assistanceScope)}</dd>
+        </div>
+        <div>
+          <dt>Mục cần ôn</dt>
           <dd>{preview.assistanceItemCount}</dd>
         </div>
       </dl>
@@ -2217,6 +2265,8 @@ function ReaderScreen({
   article,
   fontSize,
   setFontSize,
+  assistanceScope,
+  setAssistanceScope,
   theme,
   toggleTheme,
   goHome,
@@ -2232,6 +2282,10 @@ function ReaderScreen({
   article: BuiltInArticle;
   fontSize: number;
   setFontSize: React.Dispatch<React.SetStateAction<number>>;
+  assistanceScope: ReaderAssistanceScope;
+  setAssistanceScope: React.Dispatch<
+    React.SetStateAction<ReaderAssistanceScope>
+  >;
   theme: ReaderTheme;
   toggleTheme: () => void;
   goHome: () => void;
@@ -2248,7 +2302,7 @@ function ReaderScreen({
   completeArticle: () => void;
   saveAssistance: (
     sentence: AnnotatedSentence,
-    token: WordToken,
+    unit: ReaderAssistanceUnit,
     level: AssistanceLevel
   ) => void;
 }) {
@@ -2257,7 +2311,11 @@ function ReaderScreen({
   const restoredArticleRef = useRef<string | null>(null);
   const initialResumeSentenceRef = useRef(resumeSentenceId);
 
-  const selectedContext = findSelectedContext(article, selection);
+  const selectedContext = findSelectedContext(
+    article,
+    selection,
+    assistanceScope
+  );
 
   const closeAssistance = useCallback((restoreFocus: boolean) => {
     const selectedKey = selection?.key;
@@ -2267,7 +2325,7 @@ function ReaderScreen({
     window.requestAnimationFrame(() => {
       const selectedToken = Array.from(
         articleBodyRef.current?.querySelectorAll<HTMLButtonElement>(
-          "[data-assistance-key]"
+          "[data-reader-unit]"
         ) ?? []
       ).find((candidate) => candidate.dataset.assistanceKey === selectedKey);
       selectedToken?.focus();
@@ -2352,18 +2410,27 @@ function ReaderScreen({
     return () => observer.disconnect();
   }, [article, saveReadingPosition]);
 
-  const chooseToken = (sentence: AnnotatedSentence, token: WordToken) => {
-    const key = `${sentence.id}:${token.id}`;
+  const chooseUnit = (
+    sentence: AnnotatedSentence,
+    unit: ReaderAssistanceUnit
+  ) => {
+    const key = getAssistanceUnitKey(sentence, unit);
     const next = advanceAssistance(selection, key);
     setSelection(next);
     if (next) {
       saveAssistance(
         sentence,
-        token,
+        unit,
         next.level === 1 ? "pinyin" : "meaning"
       );
     }
   };
+
+  const scopeCopy = {
+    character: { glyph: "字", target: "một chữ", result: "nghĩa" },
+    word: { glyph: "词", target: "một từ hoặc cụm", result: "nghĩa" },
+    sentence: { glyph: "句", target: "một câu", result: "bản dịch" }
+  }[assistanceScope];
 
   const clampFontSize = (next: number) =>
     Math.min(MAX_READER_FONT_SIZE, Math.max(MIN_READER_FONT_SIZE, next));
@@ -2442,13 +2509,22 @@ function ReaderScreen({
             <p className="title-pinyin">{article.titlePinyin}</p>
             <p className="title-translation">{article.titleTranslation}</p>
             <div className="reader-instruction">
-              <span className="tap-demo">按</span>
+              <span className="tap-demo">{scopeCopy.glyph}</span>
               <p>
-                <strong>Chạm vào một cụm từ.</strong><br />
-                Lần một hiện pinyin · lần hai hiện nghĩa · lần ba đóng.
+                <strong>Chạm vào {scopeCopy.target}.</strong><br />
+                Lần một hiện pinyin · lần hai hiện {scopeCopy.result} · lần ba
+                đóng.
               </p>
             </div>
           </header>
+
+          <ReaderScopeSelector
+            scope={assistanceScope}
+            onChange={(nextScope) => {
+              setSelection(null);
+              setAssistanceScope(nextScope);
+            }}
+          />
 
           <div className="article-body" ref={articleBodyRef}>
             {article.paragraphs.map((paragraph) => (
@@ -2457,8 +2533,9 @@ function ReaderScreen({
                   <SentenceLine
                     key={sentence.id}
                     sentence={sentence}
+                    scope={assistanceScope}
                     selection={selection}
-                    chooseToken={chooseToken}
+                    chooseUnit={chooseUnit}
                   />
                 ))}
               </p>
@@ -2495,7 +2572,7 @@ function ReaderScreen({
         <AssistancePanel
           level={selection.level}
           sentence={selectedContext.sentence}
-          token={selectedContext.token}
+          unit={selectedContext.unit}
           close={() => closeAssistance(true)}
         />
       ) : null}
@@ -2503,18 +2580,67 @@ function ReaderScreen({
   );
 }
 
+function ReaderScopeSelector({
+  scope,
+  onChange
+}: {
+  scope: ReaderAssistanceScope;
+  onChange: (scope: ReaderAssistanceScope) => void;
+}) {
+  const options: Array<{
+    value: ReaderAssistanceScope;
+    glyph: string;
+    label: string;
+  }> = [
+    { value: "character", glyph: "字", label: "Chữ" },
+    { value: "word", glyph: "词", label: "Từ/cụm" },
+    { value: "sentence", glyph: "句", label: "Câu" }
+  ];
+
+  return (
+    <div className="reader-scope-bar">
+      <div>
+        <strong>Phạm vi trợ giúp</strong>
+        <span>Dữ liệu viết sẵn · dùng offline</span>
+      </div>
+      <div
+        className="reader-scope-switch"
+        role="group"
+        aria-label="Chọn phạm vi trợ giúp đọc"
+      >
+        {options.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            className={scope === option.value ? "active" : ""}
+            aria-pressed={scope === option.value}
+            aria-label={`${option.label} (${option.glyph})`}
+            onClick={() => onChange(option.value)}
+          >
+            <span lang="zh-Hans">{option.glyph}</span>
+            {option.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function AssistancePanel({
   level,
   sentence,
-  token,
+  unit,
   close
 }: {
   level: 1 | 2;
   sentence: AnnotatedSentence;
-  token: WordToken;
+  unit: ReaderAssistanceUnit;
   close: () => void;
 }) {
-  const sentenceText = sentence.tokens.map((item) => item.hanzi).join("");
+  const sentenceText = getSentenceText(sentence);
+  const scopeLabel = getAssistanceScopeLabel(unit.scope).toLocaleLowerCase(
+    "vi-VN"
+  );
 
   return (
     <aside
@@ -2523,29 +2649,38 @@ function AssistancePanel({
       role="region"
       aria-live="polite"
       aria-atomic="true"
-      aria-label="Trợ giúp đọc"
+      aria-label={`Trợ giúp ${scopeLabel}`}
     >
       <div className="assist-handle" aria-hidden="true" />
-      <div className="assist-word">
-        <span className="assist-hanzi" lang="zh-Hans">{token.hanzi}</span>
+      <div className={`assist-word scope-${unit.scope}`}>
+        <span className="assist-hanzi" lang="zh-Hans">{unit.hanzi}</span>
         <div>
           <p className="assist-label">Pinyin</p>
-          <strong className="assist-pinyin">{token.pinyin}</strong>
+          <strong className="assist-pinyin">{unit.pinyin}</strong>
         </div>
       </div>
 
       {level === 1 ? (
-        <p className="assist-hint">Chạm lại cụm đang chọn để mở nghĩa.</p>
+        <p className="assist-hint">
+          Chạm lại {scopeLabel} đang chọn để mở{" "}
+          {unit.scope === "sentence" ? "bản dịch" : "nghĩa"}.
+        </p>
       ) : (
         <div className="assist-details">
           <div>
-            <p className="assist-label">Nghĩa trong ngữ cảnh</p>
-            <strong className="assist-meaning">{token.meaning}</strong>
+            <p className="assist-label">
+              {unit.scope === "sentence"
+                ? "Bản dịch câu"
+                : "Nghĩa trong ngữ cảnh"}
+            </p>
+            <strong className="assist-meaning">{unit.meaning}</strong>
           </div>
-          <div className="sentence-translation">
-            <p lang="zh-Hans">{sentenceText}</p>
-            <strong>{sentence.translation}</strong>
-          </div>
+          {unit.scope !== "sentence" ? (
+            <div className="sentence-translation">
+              <p lang="zh-Hans">{sentenceText}</p>
+              <strong>{sentence.translation}</strong>
+            </div>
+          ) : null}
         </div>
       )}
 

@@ -120,7 +120,7 @@ test("turns assistance into an editable local review list", async ({ page }) => 
   await page.getByRole("button", { name: "Về thư viện" }).click();
   await page.locator('a[href="#/review"]:visible').click();
   await expect(
-    page.getByRole("heading", { name: "Từ và cụm từng cần trợ giúp" })
+    page.getByRole("heading", { name: "Chữ, từ và câu từng cần trợ giúp" })
   ).toBeVisible();
   await expect(page.getByText("liù diǎn", { exact: true })).toBeVisible();
 
@@ -142,6 +142,58 @@ test("turns assistance into an editable local review list", async ({ page }) => 
   await expect(
     page.getByText("Wǒ de zǎoshang · Buổi sáng của tôi", { exact: true })
   ).toBeVisible();
+  expect(pageErrors).toEqual([]);
+});
+
+test("switches authored assistance between character, word, and sentence", async ({
+  page
+}) => {
+  const pageErrors = collectPageErrors(page);
+  await page.goto("/");
+  await dismissInstallNotice(page);
+  await page
+    .getByRole("button", { name: "Mở bài Buổi sáng của tôi" })
+    .click();
+
+  await page.getByRole("button", { name: "Chữ (字)" }).click();
+  const firstCharacter = page.locator(
+    '[data-assistance-key="s1:character:s1-t1:0"]'
+  );
+  await expect(firstCharacter).toHaveAccessibleName(/Chữ 早; mở pinyin/);
+  await firstCharacter.click();
+  await expect(page.getByText("zǎo", { exact: true })).toBeVisible();
+  await firstCharacter.click();
+  await expect(page.getByText("sớm", { exact: true })).toBeVisible();
+  await page
+    .getByRole("button", { name: "Đóng trợ giúp", exact: true })
+    .click();
+
+  await page.getByRole("button", { name: "Câu (句)" }).click();
+  const firstSentence = page.locator(
+    '[data-assistance-key="s1:sentence:s1"]'
+  );
+  await expect(firstSentence).toHaveAccessibleName(
+    /Câu 早上六点，我起床。; mở pinyin/
+  );
+  await firstSentence.click();
+  await expect(
+    page.getByText("zǎoshang liù diǎn， wǒ qǐchuáng。", { exact: true })
+  ).toBeVisible();
+  await firstSentence.click();
+  await expect(
+    page.getByText("Sáu giờ sáng, tôi thức dậy.", { exact: true })
+  ).toBeVisible();
+
+  await page.reload();
+  await expect(page.getByRole("button", { name: "Câu (句)" })).toHaveAttribute(
+    "aria-pressed",
+    "true"
+  );
+  await page.getByRole("button", { name: "Về thư viện" }).click();
+  await page.locator('a[href="#/review"]:visible').click();
+  await page.getByRole("button", { name: /Chưa hiểu nghĩa 2/ }).click();
+  await expect(page.getByText("Chữ", { exact: true })).toBeVisible();
+  await expect(page.getByText("Câu", { exact: true })).toBeVisible();
   expect(pageErrors).toEqual([]);
 });
 

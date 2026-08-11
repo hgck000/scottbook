@@ -1,10 +1,18 @@
 import type { BuiltInArticle } from "./types";
+import { getAuthoredCharacters } from "./characterAnnotations";
 
 const punctuation = (id: string, hanzi: string) =>
   ({ id, kind: "punctuation", hanzi }) as const;
 
 const word = (id: string, hanzi: string, pinyin: string, meaning: string) =>
-  ({ id, kind: "word", hanzi, pinyin, meaning }) as const;
+  ({
+    id,
+    kind: "word",
+    hanzi,
+    pinyin,
+    meaning,
+    characters: getAuthoredCharacters(hanzi, pinyin, meaning)
+  }) as const;
 
 /**
  * ScottBook reference content is deliberately authored as annotated data.

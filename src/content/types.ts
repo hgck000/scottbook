@@ -1,11 +1,18 @@
 export type HskLevel = "HSK 1" | "HSK 2" | "HSK 3";
 
+export type CharacterAnnotation = {
+  hanzi: string;
+  pinyin: string;
+  meaning: string;
+};
+
 export type WordToken = {
   id: string;
   kind: "word";
   hanzi: string;
   pinyin: string;
   meaning: string;
+  characters: readonly CharacterAnnotation[];
 };
 
 export type PunctuationToken = {
