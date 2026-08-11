@@ -36,6 +36,9 @@ Capacitor will use the same frontend in a later sprint.
 - A redacted local diagnostic download with counts and capability flags only.
 - A restrictive content-security policy plus automated API, license, and dependency audits.
 - A 20,000-Hanzi reader fixture that guards the long-document render budget.
+- Eight production-browser journeys across desktop and mobile Chrome profiles.
+- Root and configurable subpath PWA builds with an artifact contract check.
+- GitHub Actions builds on Ubuntu, Windows, and macOS and retains QA evidence.
 - Generated service worker precaches the complete prototype.
 - Import is intentionally deferred while its language-processing design is evaluated.
 
@@ -56,7 +59,22 @@ npm run typecheck
 npm test
 npm run audit:security
 npm run build
+npm run test:e2e
 ```
+
+`npm run test:e2e` requires a locally installed stable Google Chrome. CI uses
+the Chrome installation on its hosted Ubuntu runner.
+
+Build for a project subpath such as GitHub Pages:
+
+```bash
+SCOTTBOOK_BASE_PATH=/scottbook/ npm run build
+SCOTTBOOK_BASE_PATH=/scottbook/ npm run preview
+```
+
+Use the same base for build and local preview. The default remains `/`. The
+release verifier rejects manifest, icon, service worker, version, or
+deployment-base drift before a build can pass.
 
 Preview the production PWA:
 
@@ -169,6 +187,26 @@ production use of dynamic code evaluation, direct HTML injection, high-severity
 runtime dependency advisories, or runtime packages outside the audited
 permissive-license set. Development websocket access remains limited to local
 Vite hosts. External-content import remains disabled.
+
+## Release qualification
+
+Version 0.9 adds production-browser journeys for reading assistance, persisted
+theme/favorites, JSON backup/restore/undo, anonymized v1 migration, and an
+offline service-worker reload. Every journey runs in desktop and mobile Chrome
+profiles. The test exposed and now guards the mobile reader's accessible back
+button name.
+
+CI also verifies the production build on Ubuntu, Windows, and macOS. A separate
+root/subpath artifact contract prevents a PWA built for `/scottbook/` from
+silently pointing its manifest, icons, or navigation fallback at `/`.
+
+This is release qualification, not a claim that 1.0 is ready. The exact
+automated evidence and physical-device matrix are in
+[`docs/release/SCOTTBOOK-v0.9.0-RC.md`](docs/release/SCOTTBOOK-v0.9.0-RC.md).
+The intentionally visible blockers are in
+[`docs/release/KNOWN-LIMITATIONS.md`](docs/release/KNOWN-LIMITATIONS.md).
+Android APK signing, the final content count, and Safari/iPhone/Android
+real-device evidence remain unresolved. Import remains disabled.
 
 ## Install ScottBook
 
