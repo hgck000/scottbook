@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { builtInLibrary } from "./content/builtInLibrary";
 import type {
   AnnotatedSentence,
@@ -40,6 +40,28 @@ function useStoredState<T>(key: string, initial: T) {
   }, [key, value]);
 
   return [value, setValue] as const;
+}
+
+function findSelectedContext(
+  article: BuiltInArticle,
+  selection: AssistanceSelection | null
+) {
+  if (!selection) return null;
+
+  for (const paragraph of article.paragraphs) {
+    for (const sentence of paragraph.sentences) {
+      const token = sentence.tokens.find(
+        (candidate) =>
+          candidate.kind === "word" &&
+          `${sentence.id}:${candidate.id}` === selection.key
+      );
+      if (token?.kind === "word") {
+        return { sentence, token };
+      }
+    }
+  }
+
+  return null;
 }
 
 function BookIcon() {
@@ -285,23 +307,7 @@ function ReaderScreen({
 }) {
   const [selection, setSelection] = useState<AssistanceSelection | null>(null);
 
-  const selectedContext = useMemo(() => {
-    if (!selection) return null;
-
-    for (const paragraph of article.paragraphs) {
-      for (const sentence of paragraph.sentences) {
-        const token = sentence.tokens.find(
-          (candidate) =>
-            candidate.kind === "word" && `${sentence.id}:${candidate.id}` === selection.key
-        );
-        if (token?.kind === "word") {
-          return { sentence, token };
-        }
-      }
-    }
-
-    return null;
-  }, [article, selection]);
+  const selectedContext = findSelectedContext(article, selection);
 
   const chooseToken = (sentence: AnnotatedSentence, token: WordToken) => {
     const key = `${sentence.id}:${token.id}`;
