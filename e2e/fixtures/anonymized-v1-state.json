@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "favoriteArticleIds": ["hsk1-my-morning"],
+  "progressByArticle": {
+    "hsk1-my-morning": {
+      "articleId": "hsk1-my-morning",
+      "sentenceId": "s3",
+      "progressPercent": 75,
+      "updatedAt": 1786413600000
+    }
+  },
+  "lastOpenedArticleId": "hsk1-my-morning"
+}

@@ -1734,7 +1734,12 @@ function ArticleCard({
       className={`article-card accent-${article.accent}`}
       style={{ "--delay": `${index * 70}ms` } as React.CSSProperties}
     >
-      <button className="article-card-open" type="button" onClick={onOpen}>
+      <button
+        className="article-card-open"
+        type="button"
+        onClick={onOpen}
+        aria-label={`Mở bài ${article.titleTranslation}`}
+      >
         <span className="card-topline">
           <span className="level-badge">{article.level}</span>
           <span>{article.estimatedMinutes} phút</span>
@@ -1818,7 +1823,11 @@ function ContinueReadingCard({
           <span style={{ width: `${progressPercent}%` }} />
         </span>
       </div>
-      <button type="button" onClick={onOpen}>
+      <button
+        type="button"
+        onClick={onOpen}
+        aria-label={`Tiếp tục bài ${article.titleTranslation}`}
+      >
         {isCompleted
           ? "Đọc lại"
           : progressPercent > 0
@@ -1974,7 +1983,12 @@ function ReaderScreen({
   return (
     <div className="reader-shell">
       <header className="reader-toolbar">
-        <button className="back-button" type="button" onClick={goHome}>
+        <button
+          className="back-button"
+          type="button"
+          onClick={goHome}
+          aria-label="Về thư viện"
+        >
           <span aria-hidden="true">←</span>
           <span>Thư viện</span>
         </button>

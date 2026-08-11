@@ -18,7 +18,7 @@ describe("ScottBook JSON backup", () => {
 
     expect(backup.format).toBe("scottbook-backup");
     expect(backup.formatVersion).toBe(1);
-    expect(backup.appVersion).toBe("0.8.0");
+    expect(backup.appVersion).toBe("0.9.0");
     expect(backup.exportedAt).toBe("2026-08-11T02:00:00.000Z");
     expect(backup.data.preferences).toEqual({ theme: "night", fontSize: 29 });
     expect(backup.checksum).toEqual({

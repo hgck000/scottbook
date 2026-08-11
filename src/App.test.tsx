@@ -89,6 +89,15 @@ describe("ScottBook routes", () => {
     expect(markup).toContain("Thư viện dựng sẵn vẫn còn nguyên");
     expect(markup).toContain("Về thư viện");
   });
+
+  it("keeps a screen-reader name on the compact mobile back button", () => {
+    installWindow("#/read/hsk1-my-morning");
+
+    const markup = renderToStaticMarkup(<App />);
+
+    expect(markup).toContain('class="back-button"');
+    expect(markup).toContain('aria-label="Về thư viện"');
+  });
 });
 
 describe("PWA install guidance", () => {
