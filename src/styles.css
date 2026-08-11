@@ -233,6 +233,7 @@ svg {
 }
 
 .update-notice,
+.install-notice,
 .offline-ready-notice,
 .pwa-error-notice {
   width: 100%;
@@ -243,7 +244,8 @@ svg {
   backdrop-filter: blur(22px);
 }
 
-.update-notice {
+.update-notice,
+.install-notice {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   gap: 14px;
@@ -251,7 +253,8 @@ svg {
   border-radius: 20px;
 }
 
-.notice-icon {
+.notice-icon,
+.install-notice-icon {
   width: 40px;
   height: 40px;
   display: grid;
@@ -262,19 +265,28 @@ svg {
   font-size: 1.2rem;
 }
 
-.update-notice strong {
+.install-notice-icon {
+  color: #193c35;
+  background: #e3c57b;
+  font-weight: 950;
+}
+
+.update-notice strong,
+.install-notice strong {
   font-family: Georgia, "Times New Roman", serif;
   font-size: 1rem;
 }
 
-.update-notice p {
+.update-notice p,
+.install-notice p {
   margin: 5px 0 0;
   color: var(--muted);
   font-size: 0.73rem;
   line-height: 1.45;
 }
 
-.update-notice .notice-error {
+.update-notice .notice-error,
+.install-notice .notice-error {
   color: var(--coral);
 }
 
@@ -356,6 +368,38 @@ svg {
 
 .pwa-error-notice {
   border-color: color-mix(in srgb, var(--coral) 26%, var(--line));
+}
+
+.pwa-action-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 7px;
+}
+
+.pwa-action-chips:empty {
+  display: none;
+}
+
+.pwa-action-chips button {
+  min-height: 31px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--jade);
+  background: color-mix(in srgb, var(--paper-raised) 94%, transparent);
+  box-shadow: 0 10px 30px rgb(18 35 30 / 10%);
+  font-size: 0.67rem;
+  font-weight: 850;
+  cursor: pointer;
+  backdrop-filter: blur(16px);
+}
+
+.pwa-action-chips button:hover {
+  border-color: color-mix(in srgb, var(--jade) 32%, var(--line));
 }
 
 .status-dot {
@@ -2028,6 +2072,14 @@ svg {
   font-family: Georgia, serif;
 }
 
+.not-found p {
+  max-width: 460px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
 .not-found button {
   min-height: 44px;
   margin-top: 8px;
@@ -2490,11 +2542,13 @@ svg {
     justify-self: stretch;
   }
 
-  .update-notice {
+  .update-notice,
+  .install-notice {
     grid-template-columns: 1fr;
   }
 
-  .notice-icon {
+  .notice-icon,
+  .install-notice-icon {
     display: none;
   }
 

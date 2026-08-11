@@ -7,7 +7,13 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: "prompt",
-      includeAssets: ["scottbook-icon.svg"],
+      includeAssets: [
+        "scottbook-icon.svg",
+        "scottbook-icon-192.png",
+        "scottbook-icon-512.png",
+        "scottbook-icon-maskable-512.png",
+        "scottbook-apple-touch-icon.png"
+      ],
       manifest: {
         id: "/",
         name: "ScottBook",
@@ -19,12 +25,31 @@ export default defineConfig({
         start_url: "/",
         scope: "/",
         lang: "vi",
+        categories: ["education", "books"],
         icons: [
           {
             src: "/scottbook-icon.svg",
             sizes: "any",
             type: "image/svg+xml",
-            purpose: "any maskable"
+            purpose: "any"
+          },
+          {
+            src: "/scottbook-icon-192.png",
+            sizes: "192x192",
+            type: "image/png",
+            purpose: "any"
+          },
+          {
+            src: "/scottbook-icon-512.png",
+            sizes: "512x512",
+            type: "image/png",
+            purpose: "any"
+          },
+          {
+            src: "/scottbook-icon-maskable-512.png",
+            sizes: "512x512",
+            type: "image/png",
+            purpose: "maskable"
           }
         ]
       },

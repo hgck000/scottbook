@@ -6,14 +6,47 @@ export type StoragePersistence =
   | "granted"
   | "unsupported";
 
+export type PwaInstallMethod = "native" | "ios" | "macos" | "browser";
+export type PwaInstallState =
+  | "hidden"
+  | "available"
+  | "prompting"
+  | "installed";
+
+export type PwaNativeInstallPrompt = {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{
+    outcome: "accepted" | "dismissed";
+  }>;
+};
+
+export type PwaInstallEnvironment = {
+  isInstalled: () => boolean;
+  getManualMethod: () => Exclude<PwaInstallMethod, "native">;
+  isDismissed: () => boolean;
+  setDismissed: () => void;
+  clearDismissed: () => void;
+  addPromptListener: (
+    listener: (prompt: PwaNativeInstallPrompt) => void
+  ) => () => void;
+  addInstalledListener: (listener: () => void) => () => void;
+};
+
+export const PWA_INSTALL_DISMISSED_STORAGE_KEY =
+  "scottbook-pwa-install-dismissed-v1";
+
 export type PwaStatusSnapshot = {
   isOnline: boolean;
   needRefresh: boolean;
+  updateAvailable: boolean;
   reloadPending: boolean;
   offlineReady: boolean;
   updating: boolean;
   updateError: string | null;
   storagePersistence: StoragePersistence;
+  installState: PwaInstallState;
+  installMethod: PwaInstallMethod | null;
+  installError: string | null;
 };
 
 export type PwaStatusEnvironment = {
@@ -24,20 +57,95 @@ export type PwaStatusEnvironment = {
     persisted: () => Promise<boolean>;
     persist: () => Promise<boolean>;
   };
+  install?: PwaInstallEnvironment;
 };
 
 type UpdateServiceWorker = () => Promise<void>;
+type PrepareForUpdate = () => Promise<boolean>;
 type Listener = () => void;
 
 const serverSnapshot: PwaStatusSnapshot = {
   isOnline: true,
   needRefresh: false,
+  updateAvailable: false,
   reloadPending: false,
   offlineReady: false,
   updating: false,
   updateError: null,
-  storagePersistence: "checking"
+  storagePersistence: "checking",
+  installState: "hidden",
+  installMethod: null,
+  installError: null
 };
+
+export function detectManualInstallMethod(
+  userAgent: string,
+  platform: string,
+  maxTouchPoints: number
+): Exclude<PwaInstallMethod, "native"> {
+  const isAppleMobile =
+    /iPad|iPhone|iPod/i.test(userAgent) ||
+    (platform === "MacIntel" && maxTouchPoints > 1);
+  if (isAppleMobile) return "ios";
+  if (/Macintosh|Mac OS X/i.test(userAgent)) return "macos";
+  return "browser";
+}
+
+function createBrowserInstallEnvironment(): PwaInstallEnvironment {
+  const browserNavigator = navigator as Navigator & { standalone?: boolean };
+
+  return {
+    isInstalled: () =>
+      window.matchMedia?.("(display-mode: standalone)").matches === true ||
+      browserNavigator.standalone === true,
+    getManualMethod: () =>
+      detectManualInstallMethod(
+        browserNavigator.userAgent,
+        browserNavigator.platform,
+        browserNavigator.maxTouchPoints
+      ),
+    isDismissed: () => {
+      try {
+        return (
+          window.localStorage.getItem(PWA_INSTALL_DISMISSED_STORAGE_KEY) ===
+          "1"
+        );
+      } catch {
+        return false;
+      }
+    },
+    setDismissed: () => {
+      try {
+        window.localStorage.setItem(PWA_INSTALL_DISMISSED_STORAGE_KEY, "1");
+      } catch {
+        // Dismissal persistence is optional when browser storage is blocked.
+      }
+    },
+    clearDismissed: () => {
+      try {
+        window.localStorage.removeItem(PWA_INSTALL_DISMISSED_STORAGE_KEY);
+      } catch {
+        // The install guide can still be shown for the current session.
+      }
+    },
+    addPromptListener: (listener) => {
+      const onBeforeInstallPrompt = (event: Event) => {
+        event.preventDefault();
+        listener(event as Event & PwaNativeInstallPrompt);
+      };
+      window.addEventListener("beforeinstallprompt", onBeforeInstallPrompt);
+      return () =>
+        window.removeEventListener(
+          "beforeinstallprompt",
+          onBeforeInstallPrompt
+        );
+    },
+    addInstalledListener: (listener) => {
+      window.addEventListener("appinstalled", listener);
+      return () => window.removeEventListener("appinstalled", listener);
+    }
+  };
+}
 
 function createBrowserEnvironment(): PwaStatusEnvironment {
   if (typeof window === "undefined" || typeof navigator === "undefined") {
@@ -68,17 +176,30 @@ function createBrowserEnvironment(): PwaStatusEnvironment {
       };
     },
     reload: () => window.location.reload(),
-    storage
+    storage,
+    install: createBrowserInstallEnvironment()
   };
 }
 
 export function createPwaStatusStore(environment: PwaStatusEnvironment) {
+  const installEnvironment = environment.install;
+  const initiallyInstalled = installEnvironment?.isInstalled() ?? false;
+  const initialInstallMethod = initiallyInstalled
+    ? null
+    : (installEnvironment?.getManualMethod() ?? null);
   let snapshot: PwaStatusSnapshot = {
     ...serverSnapshot,
     isOnline: environment.getOnline(),
-    storagePersistence: environment.storage ? "checking" : "unsupported"
+    storagePersistence: environment.storage ? "checking" : "unsupported",
+    installState: initiallyInstalled
+      ? "installed"
+      : initialInstallMethod && !installEnvironment?.isDismissed()
+        ? "available"
+        : "hidden",
+    installMethod: initialInstallMethod
   };
   let updateServiceWorker: UpdateServiceWorker | null = null;
+  let nativeInstallPrompt: PwaNativeInstallPrompt | null = null;
   let updateAccepted = false;
   let initialized = false;
   const listeners = new Set<Listener>();
@@ -94,8 +215,31 @@ export function createPwaStatusStore(environment: PwaStatusEnvironment) {
 
     const syncConnection = () =>
       publish({ isOnline: environment.getOnline() });
-    const removeConnectionListener =
-      environment.addConnectionListener(syncConnection);
+    const removeListeners = [environment.addConnectionListener(syncConnection)];
+
+    if (installEnvironment) {
+      removeListeners.push(
+        installEnvironment.addPromptListener((prompt) => {
+          nativeInstallPrompt = prompt;
+          publish({
+            installMethod: "native",
+            installState: installEnvironment.isDismissed()
+              ? "hidden"
+              : "available",
+            installError: null
+          });
+        }),
+        installEnvironment.addInstalledListener(() => {
+          nativeInstallPrompt = null;
+          installEnvironment.setDismissed();
+          publish({
+            installState: "installed",
+            installMethod: null,
+            installError: null
+          });
+        })
+      );
+    }
 
     if (environment.storage) {
       environment.storage
@@ -106,7 +250,7 @@ export function createPwaStatusStore(environment: PwaStatusEnvironment) {
         .catch(() => publish({ storagePersistence: "available" }));
     }
 
-    return removeConnectionListener;
+    return () => removeListeners.forEach((removeListener) => removeListener());
   };
 
   const subscribe = (listener: Listener) => {
@@ -114,22 +258,42 @@ export function createPwaStatusStore(environment: PwaStatusEnvironment) {
     return () => listeners.delete(listener);
   };
 
-  const applyUpdate = async () => {
-    if (snapshot.reloadPending) {
-      updateAccepted = true;
-      environment.reload();
-      return;
-    }
-
-    if (!updateServiceWorker) {
+  const applyUpdate = async (prepareForUpdate?: PrepareForUpdate) => {
+    if (!snapshot.reloadPending && !updateServiceWorker) {
       publish({ updateError: "Chưa thể kích hoạt bản cập nhật." });
       return;
     }
 
-    updateAccepted = true;
     publish({ updating: true, updateError: null });
+    if (prepareForUpdate) {
+      try {
+        const prepared = await prepareForUpdate();
+        if (!prepared) {
+          publish({
+            updating: false,
+            updateError:
+              "Chưa tạo được điểm an toàn cho dữ liệu. Bản cập nhật chưa được kích hoạt."
+          });
+          return;
+        }
+      } catch {
+        publish({
+          updating: false,
+          updateError:
+            "Chưa tạo được điểm an toàn cho dữ liệu. Bản cập nhật chưa được kích hoạt."
+        });
+        return;
+      }
+    }
+
+    updateAccepted = true;
+    if (snapshot.reloadPending) {
+      environment.reload();
+      return;
+    }
+
     try {
-      await updateServiceWorker();
+      await updateServiceWorker?.();
     } catch {
       updateAccepted = false;
       publish({
@@ -155,6 +319,48 @@ export function createPwaStatusStore(environment: PwaStatusEnvironment) {
     }
   };
 
+  const requestInstall = async () => {
+    if (!nativeInstallPrompt || snapshot.installMethod !== "native") {
+      publish({
+        installError:
+          "Trình duyệt này cần cài ScottBook bằng hướng dẫn thủ công."
+      });
+      return false;
+    }
+
+    const prompt = nativeInstallPrompt;
+    publish({ installState: "prompting", installError: null });
+    try {
+      await prompt.prompt();
+      const choice = await prompt.userChoice;
+      nativeInstallPrompt = null;
+      installEnvironment?.setDismissed();
+      if (choice.outcome === "accepted") {
+        publish({
+          installState: "installed",
+          installMethod: null,
+          installError: null
+        });
+        return true;
+      }
+
+      publish({
+        installState: "hidden",
+        installMethod: installEnvironment?.getManualMethod() ?? null,
+        installError: null
+      });
+      return false;
+    } catch {
+      nativeInstallPrompt = null;
+      publish({
+        installState: "available",
+        installMethod: installEnvironment?.getManualMethod() ?? "browser",
+        installError: "Chưa mở được hộp thoại cài đặt của trình duyệt."
+      });
+      return false;
+    }
+  };
+
   return {
     initialize,
     subscribe,
@@ -164,7 +370,11 @@ export function createPwaStatusStore(environment: PwaStatusEnvironment) {
       updateServiceWorker = handler;
     },
     notifyNeedRefresh: () =>
-      publish({ needRefresh: true, updateError: null }),
+      publish({
+        needRefresh: true,
+        updateAvailable: true,
+        updateError: null
+      }),
     notifyOfflineReady: () => publish({ offlineReady: true }),
     notifyRegisterError: () =>
       publish({
@@ -175,15 +385,39 @@ export function createPwaStatusStore(environment: PwaStatusEnvironment) {
       if (updateAccepted) {
         environment.reload();
       } else {
-        publish({ needRefresh: true, reloadPending: true, updating: false });
+        publish({
+          needRefresh: true,
+          updateAvailable: true,
+          reloadPending: true,
+          updating: false
+        });
       }
     },
     applyUpdate,
     dismissRefresh: () =>
       publish({ needRefresh: false, updateError: null, updating: false }),
+    showRefresh: () => {
+      if (snapshot.updateAvailable) publish({ needRefresh: true });
+    },
     dismissOfflineReady: () => publish({ offlineReady: false }),
     dismissError: () => publish({ updateError: null }),
-    requestPersistentStorage
+    requestPersistentStorage,
+    requestInstall,
+    dismissInstall: () => {
+      installEnvironment?.setDismissed();
+      publish({ installState: "hidden", installError: null });
+    },
+    showInstallHelp: () => {
+      if (!installEnvironment || snapshot.installState === "installed") return;
+      installEnvironment.clearDismissed();
+      publish({
+        installState: "available",
+        installMethod: nativeInstallPrompt
+          ? "native"
+          : installEnvironment.getManualMethod(),
+        installError: null
+      });
+    }
   };
 }
 

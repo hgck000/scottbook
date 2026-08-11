@@ -248,7 +248,7 @@ export function restoreCapturedStorageSnapshot(
   return succeeded;
 }
 
-function writeDataBundle(
+export function writeScottBookDataBundle(
   storage: RestoreStorage,
   target: ScottBookBackupData,
   safetyCopy: ScottBookBackupData
@@ -322,7 +322,7 @@ export function applyScottBookRestore(
       data: safeCurrentData
     };
     storage.setItem(RESTORE_UNDO_STORAGE_KEY, JSON.stringify(undoRecord));
-    writeDataBundle(storage, safeRestoredData, safeCurrentData);
+    writeScottBookDataBundle(storage, safeRestoredData, safeCurrentData);
     return { ok: true, data: safeRestoredData };
   } catch {
     return failedTransaction(storage, snapshot);
@@ -407,7 +407,7 @@ export function undoLastScottBookRestore(
   }
 
   try {
-    writeDataBundle(storage, undoRecord.data, safeCurrentData);
+    writeScottBookDataBundle(storage, undoRecord.data, safeCurrentData);
     storage.removeItem(RESTORE_UNDO_STORAGE_KEY);
     return { ok: true, data: undoRecord.data };
   } catch {

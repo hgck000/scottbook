@@ -4,6 +4,7 @@ import {
   captureRestoreStorageSnapshot,
   restoreCapturedStorageSnapshot,
   undoLastScottBookRestore,
+  writeScottBookDataBundle,
   type RestoreStorage,
   type RestoreTransactionResult
 } from "../backup/restoreBackup";
@@ -13,6 +14,10 @@ import {
   type ScottBookStorageReport,
   type StorageEstimateReader
 } from "./indexedDbRepository";
+import {
+  tryLoadPrimaryLocalData,
+  validateLocalDataSnapshot
+} from "./localDataSnapshot";
 
 export class ScottBookLocalDataCoordinator {
   private indexedDbAvailable = false;
@@ -50,6 +55,47 @@ export class ScottBookLocalDataCoordinator {
 
   isUsingIndexedDb(): boolean {
     return this.indexedDbAvailable;
+  }
+
+  async prepareForUpdate(data: ScottBookBackupData): Promise<boolean> {
+    const safeData = validateLocalDataSnapshot(data);
+    if (!safeData) return false;
+
+    if (this.bootstrapPromise) {
+      try {
+        await this.bootstrapPromise;
+      } catch {
+        // A valid local snapshot is still sufficient for fallback mode.
+      }
+    }
+
+    let exactLocalSnapshot;
+    try {
+      exactLocalSnapshot = captureRestoreStorageSnapshot(this.localStorage);
+    } catch {
+      return false;
+    }
+
+    const previousData =
+      tryLoadPrimaryLocalData(this.localStorage) ?? safeData;
+    try {
+      writeScottBookDataBundle(this.localStorage, safeData, previousData);
+    } catch {
+      restoreCapturedStorageSnapshot(
+        this.localStorage,
+        exactLocalSnapshot
+      );
+      return false;
+    }
+
+    if (this.indexedDbAvailable) {
+      // The queue flushes all earlier reader writes before this final snapshot.
+      // If IndexedDB rejects it, the complete local transaction above remains
+      // a compatible source for the next version's bootstrap.
+      await this.persist(safeData);
+    }
+
+    return true;
   }
 
   async applyRestore(

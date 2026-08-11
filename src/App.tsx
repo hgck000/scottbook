@@ -49,6 +49,7 @@ import {
   type PwaStatusSnapshot,
   type StoragePersistence
 } from "./features/pwa/pwaStatus";
+import { getInstallCopy } from "./features/pwa/installGuidance";
 import {
   scottBookRepository,
   type IndexedDbBootstrapResult,
@@ -348,6 +349,21 @@ function App() {
     [localDataCoordinator]
   );
 
+  const preparePwaUpdate = useCallback(async () => {
+    const prepared = await localDataCoordinator.prepareForUpdate({
+      libraryState,
+      preferences: { theme, fontSize }
+    });
+    if (!localDataCoordinator.isUsingIndexedDb()) {
+      setLocalDataStatus((current) => ({
+        ...current,
+        phase: "fallback",
+        source: "fallback"
+      }));
+    }
+    return prepared;
+  }, [fontSize, libraryState, localDataCoordinator, theme]);
+
   const goHome = () => {
     window.location.hash = "/";
   };
@@ -386,7 +402,7 @@ function App() {
         }}
       />
     ) : (
-      <NotFound goHome={goHome} />
+      <NotFound goHome={goHome} isOnline={pwaStatus.isOnline} />
     );
   } else if (route.name === "review") {
     content = (
@@ -423,6 +439,7 @@ function App() {
       <PwaStatusNotice
         status={pwaStatus}
         isReading={route.name === "reader"}
+        prepareUpdate={preparePwaUpdate}
       />
     </div>
   );
@@ -430,11 +447,17 @@ function App() {
 
 function PwaStatusNotice({
   status,
-  isReading
+  isReading,
+  prepareUpdate
 }: {
   status: PwaStatusSnapshot;
   isReading: boolean;
+  prepareUpdate: () => Promise<boolean>;
 }) {
+  const installCopy = status.installMethod
+    ? getInstallCopy(status.installMethod)
+    : null;
+
   return (
     <div className="pwa-status-stack">
       {status.needRefresh ? (
@@ -444,8 +467,8 @@ function PwaStatusNotice({
             <strong>Có phiên bản ScottBook mới</strong>
             <p>
               {isReading
-                ? "Vị trí đọc đã được lưu. App chỉ tải lại khi bạn bấm cập nhật."
-                : "Dữ liệu local đã được lưu trước khi chuyển sang bản mới."}
+                ? "ScottBook sẽ chốt vị trí đọc trước khi tải lại bản mới."
+                : "Dữ liệu local sẽ được kiểm tra và chốt trước khi cập nhật."}
             </p>
             {status.updateError ? (
               <p className="notice-error">{status.updateError}</p>
@@ -462,11 +485,58 @@ function PwaStatusNotice({
               <button
                 className="notice-update"
                 type="button"
-                onClick={() => void pwaStatusStore.applyUpdate()}
+                onClick={() =>
+                  void pwaStatusStore.applyUpdate(prepareUpdate)
+                }
                 disabled={status.updating}
               >
                 {status.updating ? "Đang cập nhật…" : "Cập nhật bây giờ"}
               </button>
+            </div>
+          </div>
+        </aside>
+      ) : null}
+
+      {installCopy &&
+      (status.installState === "available" ||
+        status.installState === "prompting") ? (
+        <aside className="install-notice" aria-live="polite">
+          <div className="install-notice-icon" aria-hidden="true">↓</div>
+          <div>
+            <strong>{installCopy.title}</strong>
+            <p>{installCopy.instruction}</p>
+            {status.installError ? (
+              <p className="notice-error">{status.installError}</p>
+            ) : null}
+            <div className="notice-actions">
+              <button
+                className="notice-later"
+                type="button"
+                onClick={pwaStatusStore.dismissInstall}
+                disabled={status.installState === "prompting"}
+              >
+                Để sau
+              </button>
+              {status.installMethod === "native" ? (
+                <button
+                  className="notice-update"
+                  type="button"
+                  onClick={() => void pwaStatusStore.requestInstall()}
+                  disabled={status.installState === "prompting"}
+                >
+                  {status.installState === "prompting"
+                    ? "Đang mở…"
+                    : "Cài ngay"}
+                </button>
+              ) : (
+                <button
+                  className="notice-update"
+                  type="button"
+                  onClick={pwaStatusStore.dismissInstall}
+                >
+                  Đã hiểu
+                </button>
+              )}
             </div>
           </div>
         </aside>
@@ -498,6 +568,21 @@ function PwaStatusNotice({
           </button>
         </aside>
       ) : null}
+
+      <div className="pwa-action-chips">
+        {status.updateAvailable && !status.needRefresh ? (
+          <button type="button" onClick={pwaStatusStore.showRefresh}>
+            <span aria-hidden="true">↻</span>
+            Cập nhật
+          </button>
+        ) : null}
+        {status.installState === "hidden" && status.installMethod ? (
+          <button type="button" onClick={pwaStatusStore.showInstallHelp}>
+            <span aria-hidden="true">↓</span>
+            Cài app
+          </button>
+        ) : null}
+      </div>
 
       <div
         className={`connection-chip${status.isOnline ? "" : " offline"}`}
@@ -1953,11 +2038,26 @@ function AssistancePanel({
   );
 }
 
-function NotFound({ goHome }: { goHome: () => void }) {
+function NotFound({
+  goHome,
+  isOnline
+}: {
+  goHome: () => void;
+  isOnline: boolean;
+}) {
   return (
     <main className="not-found">
-      <span>404</span>
-      <h1>Không tìm thấy bài đọc.</h1>
+      <span>{isOnline ? "404" : "OFFLINE"}</span>
+      <h1>
+        {isOnline
+          ? "Không tìm thấy bài đọc."
+          : "Bài đọc này chưa có trên thiết bị."}
+      </h1>
+      <p>
+        {isOnline
+          ? "Liên kết có thể đã sai. Thư viện dựng sẵn vẫn còn nguyên."
+          : "Bạn đang ngoại tuyến. Hãy về thư viện để mở một bài đã có sẵn trong ScottBook."}
+      </p>
       <button type="button" onClick={goHome}>Về thư viện</button>
     </main>
   );
