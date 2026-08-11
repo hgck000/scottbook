@@ -53,7 +53,10 @@ export type ScottBookStorageReport = {
   eventCount: number;
   cacheCount: number;
   quarantinedCount: number;
+  pressure: StoragePressure;
 };
+
+export type StoragePressure = "unknown" | "normal" | "warning" | "critical";
 
 export type StorageEstimateReader = () => Promise<{
   usage?: number;
@@ -65,6 +68,25 @@ type RepositoryOptions = {
   databaseName?: string;
   now?: () => number;
 };
+
+export function getStoragePressure(
+  usageBytes: number | null,
+  quotaBytes: number | null
+): StoragePressure {
+  if (
+    usageBytes === null ||
+    quotaBytes === null ||
+    usageBytes < 0 ||
+    quotaBytes <= 0
+  ) {
+    return "unknown";
+  }
+
+  const ratio = usageBytes / quotaBytes;
+  if (ratio >= 0.95) return "critical";
+  if (ratio >= 0.8) return "warning";
+  return "normal";
+}
 
 function requestResult<T>(request: IDBRequest<T>): Promise<T> {
   return new Promise((resolve, reject) => {
@@ -513,7 +535,8 @@ export class ScottBookIndexedDbRepository {
         bookCount,
         eventCount,
         cacheCount,
-        quarantinedCount
+        quarantinedCount,
+        pressure: getStoragePressure(usageBytes, quotaBytes)
       };
     } catch {
       return {
@@ -524,7 +547,8 @@ export class ScottBookIndexedDbRepository {
         bookCount: 0,
         eventCount: 0,
         cacheCount: 0,
-        quarantinedCount: 0
+        quarantinedCount: 0,
+        pressure: getStoragePressure(usageBytes, quotaBytes)
       };
     }
   }

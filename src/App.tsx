@@ -19,9 +19,15 @@ import {
   type ScottBookBackupPreview
 } from "./features/backup/restoreBackup";
 import {
+  createLocalDiagnosticReport,
+  downloadLocalDiagnosticReport,
+  readLocalDiagnosticRuntime
+} from "./features/diagnostics/localDiagnostics";
+import {
   advanceAssistance,
   type AssistanceSelection
 } from "./features/reader/assistance";
+import { SentenceLine } from "./features/reader/SentenceLine";
 import {
   getArticleSentenceIds,
   getSentenceProgressPercent,
@@ -179,12 +185,36 @@ function App() {
     source: null,
     quarantinedThisRun: 0
   });
+  const routeKey =
+    route.name === "reader" ? `${route.name}:${route.articleId}` : route.name;
+  const routeTitle =
+    route.name === "library"
+      ? "Thư viện · ScottBook"
+      : route.name === "review"
+        ? "Ôn lại · ScottBook"
+        : "Bài đọc · ScottBook";
+  const previousRouteRef = useRef<string | null>(null);
 
   useEffect(() => {
     const onHashChange = () => setRoute(parseRoute());
     window.addEventListener("hashchange", onHashChange);
     return () => window.removeEventListener("hashchange", onHashChange);
   }, []);
+
+  useEffect(() => {
+    document.title = routeTitle;
+    if (
+      previousRouteRef.current !== null &&
+      previousRouteRef.current !== routeKey
+    ) {
+      const frame = window.requestAnimationFrame(() => {
+        document.getElementById("main-content")?.focus({ preventScroll: true });
+      });
+      previousRouteRef.current = routeKey;
+      return () => window.cancelAnimationFrame(frame);
+    }
+    previousRouteRef.current = routeKey;
+  }, [routeKey, routeTitle]);
 
   useEffect(() => {
     persistLibraryState(window.localStorage, libraryState);
@@ -435,6 +465,21 @@ function App() {
 
   return (
     <div data-theme={theme}>
+      <a
+        className="skip-link"
+        href="#main-content"
+        onClick={(event) => {
+          event.preventDefault();
+          const main = document.getElementById("main-content");
+          main?.focus();
+          main?.scrollIntoView({ block: "start" });
+        }}
+      >
+        Bỏ qua đến nội dung chính
+      </a>
+      <p className="sr-only" aria-live="polite" aria-atomic="true">
+        {routeTitle}
+      </p>
       {content}
       <PwaStatusNotice
         status={pwaStatus}
@@ -710,7 +755,7 @@ function LibraryScreen({
     <div className="app-shell">
       <Sidebar active="library" historyCount={historyCount} />
 
-      <main className="library-page">
+      <main id="main-content" className="library-page" tabIndex={-1}>
         <header className="topbar">
           <div className="mobile-brand">
             <Brand />
@@ -886,7 +931,11 @@ function ReviewScreen({
     <div className="app-shell">
       <Sidebar active="review" historyCount={historyItems.length} />
 
-      <main className="library-page review-page">
+      <main
+        id="main-content"
+        className="library-page review-page"
+        tabIndex={-1}
+      >
         <header className="topbar">
           <div className="mobile-brand">
             <Brand />
@@ -1011,6 +1060,9 @@ function DataProtectionCard({
   const [exportStatus, setExportStatus] = useState<
     "idle" | "working" | "done" | "error"
   >("idle");
+  const [diagnosticStatus, setDiagnosticStatus] = useState<
+    "idle" | "working" | "done" | "error"
+  >("idle");
   const [requestingStorage, setRequestingStorage] = useState(false);
   const [restoreStatus, setRestoreStatus] = useState<
     "idle" | "checking" | "applying" | "success" | "undone" | "error"
@@ -1094,6 +1146,29 @@ function DataProtectionCard({
     setRequestingStorage(true);
     await pwaStatusStore.requestPersistentStorage();
     setRequestingStorage(false);
+  };
+
+  const exportLocalDiagnostics = async () => {
+    setDiagnosticStatus("working");
+    try {
+      let latestStorageReport = storageReport;
+      if (!latestStorageReport) {
+        latestStorageReport = await loadStorageReport();
+        setStorageReport(latestStorageReport);
+      }
+      const report = createLocalDiagnosticReport({
+        libraryState,
+        articles: builtInLibrary,
+        storageReport: latestStorageReport,
+        localData: localDataStatus,
+        storagePersistence,
+        runtime: readLocalDiagnosticRuntime()
+      });
+      downloadLocalDiagnosticReport(report);
+      setDiagnosticStatus("done");
+    } catch {
+      setDiagnosticStatus("error");
+    }
   };
 
   const selectRestoreFile = async (
@@ -1256,6 +1331,13 @@ function DataProtectionCard({
         >
           {restoreMessage}
         </p>
+        <p className="diagnostic-feedback" aria-live="polite">
+          {diagnosticStatus === "done"
+            ? "Đã tải chẩn đoán local đã ẩn nội dung và định danh bài đọc."
+            : diagnosticStatus === "error"
+              ? "Chưa thể tạo file chẩn đoán; không dữ liệu nào được gửi đi."
+              : "Chẩn đoán chỉ chứa phiên bản, số lượng và trạng thái lưu trữ; không có nội dung bài đọc."}
+        </p>
       </div>
       <div className="protection-actions">
         {storagePersistence === "available" ? (
@@ -1275,6 +1357,16 @@ function DataProtectionCard({
           disabled={exportStatus === "working"}
         >
           {exportStatus === "working" ? "Đang tạo…" : "Tải bản sao JSON"}
+        </button>
+        <button
+          className="diagnostic-button"
+          type="button"
+          onClick={() => void exportLocalDiagnostics()}
+          disabled={diagnosticStatus === "working"}
+        >
+          {diagnosticStatus === "working"
+            ? "Đang tổng hợp…"
+            : "Tải chẩn đoán local"}
         </button>
         <label
           className={`restore-file-button${restoreBusy ? " disabled" : ""}`}
@@ -1331,6 +1423,22 @@ function formatStorageBytes(value: number | null | undefined): string {
   return `${(value / 1_073_741_824).toFixed(1)} GB`;
 }
 
+function formatStoragePercent(
+  usageBytes: number | null | undefined,
+  quotaBytes: number | null | undefined
+): string | null {
+  if (
+    usageBytes === null ||
+    usageBytes === undefined ||
+    quotaBytes === null ||
+    quotaBytes === undefined ||
+    quotaBytes <= 0
+  ) {
+    return null;
+  }
+  return `${Math.min(100, Math.round((usageBytes / quotaBytes) * 100))}% quota`;
+}
+
 function StorageOverview({
   localDataStatus,
   report,
@@ -1354,6 +1462,10 @@ function StorageOverview({
     fallback: "IndexedDB không khả dụng; ScottBook tiếp tục dùng localStorage."
   }[localDataStatus.source ?? "fallback"];
   const storageBusy = status === "loading" || status === "clearing";
+  const storagePercent = formatStoragePercent(
+    report?.usageBytes,
+    report?.quotaBytes
+  );
   const modeLabel =
     localDataStatus.phase === "checking"
       ? "Đang khởi tạo"
@@ -1380,10 +1492,8 @@ function StorageOverview({
         <div>
           <span>Dung lượng app</span>
           <strong>{formatStorageBytes(report?.usageBytes)}</strong>
-          <small>
-            {report?.quotaBytes
-              ? `trên ${formatStorageBytes(report.quotaBytes)}`
-              : "toàn bộ origin"}
+          <small className={`storage-pressure ${report?.pressure ?? "unknown"}`}>
+            {storagePercent ?? "toàn bộ origin"}
           </small>
         </div>
         <div>
@@ -1406,6 +1516,14 @@ function StorageOverview({
           <small>import vẫn đang khóa</small>
         </div>
       </div>
+
+      {report?.pressure === "warning" || report?.pressure === "critical" ? (
+        <p className={`storage-pressure-note ${report.pressure}`} role="status">
+          {report.pressure === "critical"
+            ? "Bộ nhớ origin gần đầy. Hãy tải bản sao JSON trước khi xóa cache dịch."
+            : "Dung lượng origin đã vượt 80%. Nên tạo bản sao JSON để giữ đường phục hồi."}
+        </p>
+      ) : null}
 
       <div className="storage-overview-footer">
         <p>
@@ -1752,6 +1870,32 @@ function ReaderScreen({
 
   const selectedContext = findSelectedContext(article, selection);
 
+  const closeAssistance = useCallback((restoreFocus: boolean) => {
+    const selectedKey = selection?.key;
+    setSelection(null);
+    if (!restoreFocus || !selectedKey) return;
+
+    window.requestAnimationFrame(() => {
+      const selectedToken = Array.from(
+        articleBodyRef.current?.querySelectorAll<HTMLButtonElement>(
+          "[data-assistance-key]"
+        ) ?? []
+      ).find((candidate) => candidate.dataset.assistanceKey === selectedKey);
+      selectedToken?.focus();
+    });
+  }, [selection]);
+
+  useEffect(() => {
+    if (!selection) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      closeAssistance(true);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [closeAssistance, selection]);
+
   useEffect(() => {
     if (restoredArticleRef.current === article.id) return;
     restoredArticleRef.current = article.id;
@@ -1888,11 +2032,11 @@ function ReaderScreen({
         </div>
       </header>
 
-      <main className="reader-page">
+      <main id="main-content" className="reader-page" tabIndex={-1}>
         <article className="reader-article" style={{ "--reader-font-size": `${fontSize}px` } as React.CSSProperties}>
           <header className="article-header">
             <span className="reader-level">{article.level} · {article.topic}</span>
-            <h1>{article.title}</h1>
+            <h1 lang="zh-Hans">{article.title}</h1>
             <p className="title-pinyin">{article.titlePinyin}</p>
             <p className="title-translation">{article.titleTranslation}</p>
             <div className="reader-instruction">
@@ -1950,45 +2094,10 @@ function ReaderScreen({
           level={selection.level}
           sentence={selectedContext.sentence}
           token={selectedContext.token}
-          close={() => setSelection(null)}
+          close={() => closeAssistance(true)}
         />
       ) : null}
     </div>
-  );
-}
-
-function SentenceLine({
-  sentence,
-  selection,
-  chooseToken
-}: {
-  sentence: AnnotatedSentence;
-  selection: AssistanceSelection | null;
-  chooseToken: (sentence: AnnotatedSentence, token: WordToken) => void;
-}) {
-  return (
-    <span className="sentence" data-sentence-id={sentence.id}>
-      {sentence.tokens.map((token) => {
-        if (token.kind === "punctuation") {
-          return <span key={token.id}>{token.hanzi}</span>;
-        }
-
-        const key = `${sentence.id}:${token.id}`;
-        const isSelected = selection?.key === key;
-        return (
-          <button
-            key={token.id}
-            className={`word-token${isSelected ? " selected" : ""}`}
-            type="button"
-            onClick={() => chooseToken(sentence, token)}
-            aria-label={`${token.hanzi}; chạm để xem trợ giúp`}
-            aria-pressed={isSelected}
-          >
-            {token.hanzi}
-          </button>
-        );
-      })}
-    </span>
   );
 }
 
@@ -2006,10 +2115,17 @@ function AssistancePanel({
   const sentenceText = sentence.tokens.map((item) => item.hanzi).join("");
 
   return (
-    <aside className="assist-panel" aria-live="polite" aria-label="Trợ giúp đọc">
+    <aside
+      id="reader-assistance"
+      className="assist-panel"
+      role="region"
+      aria-live="polite"
+      aria-atomic="true"
+      aria-label="Trợ giúp đọc"
+    >
       <div className="assist-handle" aria-hidden="true" />
       <div className="assist-word">
-        <span className="assist-hanzi">{token.hanzi}</span>
+        <span className="assist-hanzi" lang="zh-Hans">{token.hanzi}</span>
         <div>
           <p className="assist-label">Pinyin</p>
           <strong className="assist-pinyin">{token.pinyin}</strong>
@@ -2046,7 +2162,7 @@ function NotFound({
   isOnline: boolean;
 }) {
   return (
-    <main className="not-found">
+    <main id="main-content" className="not-found" tabIndex={-1}>
       <span>{isOnline ? "404" : "OFFLINE"}</span>
       <h1>
         {isOnline

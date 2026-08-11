@@ -69,6 +69,42 @@ svg {
   height: 100%;
 }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip-link {
+  position: fixed;
+  z-index: 100;
+  top: 12px;
+  left: 12px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  color: #f6f1e7;
+  background: #193c35;
+  font-size: 0.78rem;
+  font-weight: 850;
+  text-decoration: none;
+  transform: translateY(calc(-100% - 20px));
+  transition: transform 90ms ease;
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+#main-content:focus {
+  outline: none;
+}
+
 .app-shell {
   min-height: 100vh;
   display: grid;
@@ -703,7 +739,7 @@ svg {
   font-size: 1.15rem;
 }
 
-.protection-copy > p:not(.eyebrow):not(.export-feedback) {
+.protection-copy > p:not(.eyebrow):not(.export-feedback):not(.restore-feedback):not(.diagnostic-feedback) {
   max-width: 52rem;
   margin: 7px 0 0;
   color: var(--muted);
@@ -763,6 +799,14 @@ svg {
   font-weight: 700;
 }
 
+.diagnostic-feedback {
+  min-height: 1.2em;
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: 0.67rem;
+  line-height: 1.45;
+}
+
 .protection-actions {
   display: grid;
   gap: 7px;
@@ -794,6 +838,12 @@ svg {
   border: 0;
   color: #f6f1e7;
   background: #193c35;
+}
+
+.diagnostic-button {
+  border: 1px solid color-mix(in srgb, var(--jade) 45%, var(--line));
+  color: var(--jade);
+  background: color-mix(in srgb, var(--jade) 7%, transparent);
 }
 
 .restore-file-button {
@@ -1092,6 +1142,32 @@ svg {
   font-weight: 780;
   letter-spacing: 0.02em;
   text-transform: uppercase;
+}
+
+.storage-metrics .storage-pressure.warning {
+  color: #98622d;
+  font-weight: 800;
+}
+
+.storage-metrics .storage-pressure.critical {
+  color: #a34a3f;
+  font-weight: 850;
+}
+
+.storage-pressure-note {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 11px;
+  color: #98622d;
+  background: color-mix(in srgb, var(--amber) 11%, transparent);
+  font-size: 0.68rem;
+  font-weight: 720;
+  line-height: 1.5;
+}
+
+.storage-pressure-note.critical {
+  color: #a34a3f;
+  background: color-mix(in srgb, var(--coral) 10%, transparent);
 }
 
 .storage-metrics strong {
@@ -1860,6 +1936,8 @@ svg {
 
 .article-body p {
   margin: 0 0 1.45em;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 240px;
 }
 
 .sentence {
@@ -1879,7 +1957,7 @@ svg {
   line-height: inherit;
   letter-spacing: inherit;
   cursor: pointer;
-  transition: color 120ms ease, background 120ms ease, box-shadow 120ms ease;
+  transition: color 90ms ease, background 90ms ease, box-shadow 90ms ease;
 }
 
 .word-token:hover {
