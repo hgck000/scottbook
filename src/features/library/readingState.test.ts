@@ -14,7 +14,8 @@ import {
   persistLibraryState,
   resetArticleProgress,
   toggleFavoriteArticle,
-  updateReadingProgress
+  updateReadingProgress,
+  validateLibraryStateSnapshot
 } from "./readingState";
 
 describe("local library state", () => {
@@ -208,6 +209,70 @@ describe("local library state", () => {
         createEmptyLibraryState()
       )
     ).toBe(false);
+  });
+
+  it("validates external snapshots strictly instead of repairing bad fields", () => {
+    const valid = markArticleOpened(
+      toggleFavoriteArticle(createEmptyLibraryState(), "article-a"),
+      "article-a",
+      100
+    );
+
+    expect(validateLibraryStateSnapshot(valid)).toEqual(valid);
+    expect(
+      validateLibraryStateSnapshot({
+        ...valid,
+        favoriteArticleIds: ["article-a", "article-a"]
+      })
+    ).toBeNull();
+    expect(
+      validateLibraryStateSnapshot({
+        ...valid,
+        historyByArticle: {
+          ...valid.historyByArticle,
+          "article-b": {
+            articleId: "wrong-id",
+            firstOpenedAt: 100,
+            lastOpenedAt: 100,
+            openCount: 1,
+            completedAt: null
+          }
+        }
+      })
+    ).toBeNull();
+    expect(
+      validateLibraryStateSnapshot({ ...valid, unexpected: true })
+    ).toBeNull();
+    expect(
+      validateLibraryStateSnapshot({
+        ...valid,
+        progressByArticle: {
+          "article-b": {
+            articleId: "article-b",
+            sentenceId: "s1",
+            progressPercent: 25,
+            updatedAt: 200
+          }
+        }
+      })
+    ).toBeNull();
+    expect(
+      validateLibraryStateSnapshot({
+        ...valid,
+        favoriteArticleIds: ["__proto__"]
+      })
+    ).toBeNull();
+    expect(
+      validateLibraryStateSnapshot({
+        ...valid,
+        historyByArticle: {
+          "article-a": {
+            ...valid.historyByArticle["article-a"],
+            lastOpenedAt: 1e100
+          }
+        }
+      })
+    ).toBeNull();
   });
 
   it("derives stable sentence anchors and percentages from authored content", () => {

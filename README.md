@@ -26,6 +26,7 @@ Capacitor will use the same frontend in a later sprint.
 - Controlled PWA updates that reload only after the reader accepts.
 - Automatic recovery from the previous valid local record.
 - Versioned JSON backup export protected by a SHA-256 checksum.
+- Validated JSON backup restore with preview, rollback, and one-level undo.
 - Generated service worker precaches the complete prototype.
 - Import is intentionally deferred while its language-processing design is evaluated.
 
@@ -82,8 +83,18 @@ starts.
 Version 0.4 keeps the previous valid v2 record before replacing the primary
 record. If the primary JSON later becomes corrupt, startup falls back to that
 local safety copy before trying the legacy v1 key. The Review screen can also
-request persistent browser storage and download a versioned JSON backup. Backup
-restore/import remains disabled until file validation and rollback are designed.
+request persistent browser storage and download a versioned JSON backup.
+
+Version 0.5 can restore that backup entirely offline. ScottBook rejects files
+larger than 2 MB, malformed JSON, unsupported formats, invalid reading-state
+schemas, and checksum mismatches before showing a preview. Nothing is written
+until the reader confirms. The confirmed restore writes the reading state,
+theme, and font size as one guarded transaction; a failed write rolls every
+touched key back to its exact prior value. A successful restore keeps one local
+undo record so the previous state can be restored after a refresh as well.
+
+Backup restore is not external-content import: ScottBook still does not accept
+TXT, EPUB, pasted books, or unannotated reading content in this version.
 
 ## Controlled PWA updates
 

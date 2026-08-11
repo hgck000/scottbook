@@ -65,5 +65,9 @@ describe("ScottBook routes", () => {
     expect(markup).toContain("Buổi sáng của tôi");
     expect(markup).toContain("Đã hoàn thành");
     expect(markup).toContain("Đặt lại");
+    expect(markup).toContain("Chọn bản sao JSON");
+    expect(markup).toContain("không phải nhập sách TXT/EPUB");
+    expect(markup).toContain("tối đa 2 MB");
+    expect(markup).toContain('accept="application/json,.json"');
   });
 });
