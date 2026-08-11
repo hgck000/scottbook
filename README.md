@@ -20,6 +20,8 @@ Capacitor will use the same frontend in a later sprint.
 - Paper/night themes and adjustable reader text size.
 - Reading position saved as a stable sentence anchor on the current device.
 - A continue-reading card, per-article progress, and a local favorites filter.
+- A local reading-history screen with open counts and latest-reading order.
+- Automatic/manual completion status and a reset-progress action.
 - Generated service worker precaches the complete prototype.
 - Import is intentionally deferred while its language-processing design is evaluated.
 
@@ -63,6 +65,11 @@ Reading progress and favorites are small, device-only records stored in
 `localStorage` under a versioned key. ScottBook stores the last sentence id rather
 than a scroll offset, so resuming still works when the window or font size
 changes. Invalid or outdated stored JSON falls back safely to a clean state.
+
+Version 0.3 adds a v2 local-state schema for reading history and completion.
+Existing v1 progress and favorites migrate automatically on first load; the old
+key is left untouched as a local fallback. Resetting an article removes its
+progress/completion while retaining the fact that it was opened.
 
 No account, cloud sync, analytics, or network request is involved. Larger book
 content and future imports will use a separate IndexedDB layer when that sprint

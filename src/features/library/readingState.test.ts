@@ -1,14 +1,17 @@
 import { describe, expect, it } from "vitest";
 import { builtInLibrary } from "../../content/builtInLibrary";
 import {
+  LEGACY_LIBRARY_STATE_STORAGE_KEY,
   LIBRARY_STATE_STORAGE_KEY,
   createEmptyLibraryState,
   getArticleSentenceIds,
   getSentenceProgressPercent,
   loadLibraryState,
+  markArticleCompleted,
   markArticleOpened,
   parseLibraryState,
   persistLibraryState,
+  resetArticleProgress,
   toggleFavoriteArticle,
   updateReadingProgress
 } from "./readingState";
@@ -17,13 +20,13 @@ describe("local library state", () => {
   it("falls back safely when stored JSON is missing or corrupt", () => {
     expect(parseLibraryState(null)).toEqual(createEmptyLibraryState());
     expect(parseLibraryState("not-json")).toEqual(createEmptyLibraryState());
-    expect(parseLibraryState('{"version":2}')).toEqual(
+    expect(parseLibraryState('{"version":99}')).toEqual(
       createEmptyLibraryState()
     );
   });
 
-  it("keeps valid records and drops malformed stored values", () => {
-    const parsed = parseLibraryState(
+  it("migrates v1 progress and favorites without losing reading data", () => {
+    const migrated = parseLibraryState(
       JSON.stringify({
         version: 1,
         favoriteArticleIds: ["article-a", "article-a", 42],
@@ -45,9 +48,10 @@ describe("local library state", () => {
       })
     );
 
-    expect(parsed.favoriteArticleIds).toEqual(["article-a"]);
-    expect(parsed.lastOpenedArticleId).toBe("article-a");
-    expect(parsed.progressByArticle).toEqual({
+    expect(migrated.version).toBe(2);
+    expect(migrated.favoriteArticleIds).toEqual(["article-a"]);
+    expect(migrated.lastOpenedArticleId).toBe("article-a");
+    expect(migrated.progressByArticle).toEqual({
       "article-a": {
         articleId: "article-a",
         sentenceId: "s2",
@@ -55,19 +59,38 @@ describe("local library state", () => {
         updatedAt: 123
       }
     });
+    expect(migrated.historyByArticle["article-a"]).toEqual({
+      articleId: "article-a",
+      firstOpenedAt: 123,
+      lastOpenedAt: 123,
+      openCount: 1,
+      completedAt: null
+    });
   });
 
-  it("opens and toggles favorite articles without duplicating ids", () => {
-    const opened = markArticleOpened(createEmptyLibraryState(), "article-a");
-    const favorite = toggleFavoriteArticle(opened, "article-a");
+  it("records open count and toggles favorites without duplicating ids", () => {
+    const firstOpen = markArticleOpened(
+      createEmptyLibraryState(),
+      "article-a",
+      100
+    );
+    const secondOpen = markArticleOpened(firstOpen, "article-a", 200);
+    const favorite = toggleFavoriteArticle(secondOpen, "article-a");
     const removed = toggleFavoriteArticle(favorite, "article-a");
 
-    expect(opened.lastOpenedArticleId).toBe("article-a");
+    expect(secondOpen.lastOpenedArticleId).toBe("article-a");
+    expect(secondOpen.historyByArticle["article-a"]).toEqual({
+      articleId: "article-a",
+      firstOpenedAt: 100,
+      lastOpenedAt: 200,
+      openCount: 2,
+      completedAt: null
+    });
     expect(favorite.favoriteArticleIds).toEqual(["article-a"]);
     expect(removed.favoriteArticleIds).toEqual([]);
   });
 
-  it("records a sentence anchor, clamps percentage, and ignores duplicates", () => {
+  it("records a sentence anchor, clamps percentage, and marks completion", () => {
     const progress = {
       articleId: "article-a",
       sentenceId: "s4",
@@ -77,8 +100,7 @@ describe("local library state", () => {
     const updated = updateReadingProgress(createEmptyLibraryState(), progress);
     const duplicate = updateReadingProgress(updated, {
       ...progress,
-      progressPercent: 100,
-      updatedAt: 999
+      progressPercent: 100
     });
 
     expect(updated.lastOpenedArticleId).toBe("article-a");
@@ -86,25 +108,62 @@ describe("local library state", () => {
       ...progress,
       progressPercent: 100
     });
+    expect(updated.historyByArticle["article-a"]?.completedAt).toBe(456);
     expect(duplicate).toBe(updated);
   });
 
-  it("loads and persists through a small storage adapter", () => {
-    let serialized: string | null = null;
+  it("can complete an article explicitly and reset only its progress", () => {
+    const opened = markArticleOpened(
+      createEmptyLibraryState(),
+      "article-a",
+      100
+    );
+    const inProgress = updateReadingProgress(opened, {
+      articleId: "article-a",
+      sentenceId: "s2",
+      progressPercent: 50,
+      updatedAt: 200
+    });
+    const completed = markArticleCompleted(
+      inProgress,
+      "article-a",
+      "s4",
+      300
+    );
+    const reset = resetArticleProgress(completed, "article-a");
+
+    expect(completed.progressByArticle["article-a"]?.progressPercent).toBe(100);
+    expect(completed.historyByArticle["article-a"]?.completedAt).toBe(300);
+    expect(reset.progressByArticle["article-a"]).toBeUndefined();
+    expect(reset.historyByArticle["article-a"]?.completedAt).toBeNull();
+    expect(reset.historyByArticle["article-a"]?.openCount).toBe(1);
+    expect(reset.lastOpenedArticleId).toBeNull();
+  });
+
+  it("loads a legacy storage key and persists the migrated v2 state", () => {
+    const legacy = JSON.stringify({
+      version: 1,
+      favoriteArticleIds: ["article-a"],
+      progressByArticle: {},
+      lastOpenedArticleId: null
+    });
+    let current: string | null = null;
     const storage = {
-      getItem: (key: string) =>
-        key === LIBRARY_STATE_STORAGE_KEY ? serialized : null,
+      getItem: (key: string) => {
+        if (key === LIBRARY_STATE_STORAGE_KEY) return current;
+        return key === LEGACY_LIBRARY_STATE_STORAGE_KEY ? legacy : null;
+      },
       setItem: (key: string, value: string) => {
-        if (key === LIBRARY_STATE_STORAGE_KEY) serialized = value;
+        if (key === LIBRARY_STATE_STORAGE_KEY) current = value;
       }
     };
-    const state = toggleFavoriteArticle(
-      createEmptyLibraryState(),
-      "article-a"
-    );
 
-    expect(persistLibraryState(storage, state)).toBe(true);
-    expect(loadLibraryState(storage)).toEqual(state);
+    const migrated = loadLibraryState(storage);
+    expect(migrated.version).toBe(2);
+    expect(migrated.favoriteArticleIds).toEqual(["article-a"]);
+    expect(persistLibraryState(storage, migrated)).toBe(true);
+    expect(current).not.toBeNull();
+    expect(loadLibraryState(storage)).toEqual(migrated);
   });
 
   it("keeps the app usable when browser storage is unavailable", () => {
