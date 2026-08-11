@@ -21,6 +21,9 @@ Capacitor will use the same frontend in a later sprint.
 - Reading position saved as a stable sentence anchor on the current device.
 - A continue-reading card, per-article progress, and a local favorites filter.
 - A local reading-history screen with open counts and latest-reading order.
+- Assistance history that distinguishes “needed pinyin” from “needed meaning”.
+- Local review filters, pin, known/relearn, recent contexts, and safe deletion.
+- An opt-out switch that stops recording history without disabling assistance.
 - Automatic/manual completion status and a reset-progress action.
 - Explicit online/offline and first-install offline-ready notices.
 - Controlled PWA updates that reload only after the reader accepts.
@@ -29,14 +32,14 @@ Capacitor will use the same frontend in a later sprint.
 - Automatic recovery from the previous valid local record.
 - Versioned JSON backup export protected by a SHA-256 checksum.
 - Validated JSON backup restore with preview, rollback, and one-level undo.
-- IndexedDB v2 mirror with migration, corrupt-record quarantine, and fallback.
+- IndexedDB v3 mirror with migration, corrupt-record quarantine, and fallback.
 - On-device storage usage plus an isolated translation-cache clear action.
 - Storage-pressure warnings at 80% and 95%, with backup-first recovery guidance.
 - Keyboard navigation, route focus, and progressive screen-reader descriptions.
 - A redacted local diagnostic download with counts and capability flags only.
 - A restrictive content-security policy plus automated API, license, and dependency audits.
 - A 20,000-Hanzi reader fixture that guards the long-document render budget.
-- Eight production-browser journeys across desktop and mobile Chrome profiles.
+- Ten production-browser journeys across desktop and mobile Chrome profiles.
 - Root and configurable subpath PWA builds with an artifact contract check.
 - GitHub Actions builds on Ubuntu, Windows, and macOS and retains QA evidence.
 - Generated service worker precaches the complete prototype.
@@ -94,8 +97,8 @@ content therefore fails both the local production build and GitHub Actions.
 
 ## Local reading data
 
-Reading progress, favorites, and reader settings are device-only records. In
-version 0.6 they are mirrored transactionally to IndexedDB v2 while the proven
+Reading progress, favorites, and reader settings are device-only records. Since
+version 0.6 they are mirrored transactionally to IndexedDB while the proven
 versioned `localStorage` records remain as a compatibility and browser fallback.
 ScottBook stores the last sentence id rather than a scroll offset, so resuming
 still works when the window or font size changes.
@@ -139,6 +142,18 @@ transaction rejects, all touched `localStorage` keys return to their exact
 previous bytes. The Review screen reports origin usage, schema/cache/quarantine
 counts, and can clear only the translation-cache store. That action cannot
 delete books, progress, favorites, or settings.
+
+Version 0.10 upgrades the local schema to IndexedDB v3 and activates the
+reserved learning-events area. Opening pinyin and opening contextual meaning
+are recorded as different needs. Repeated encounters aggregate under the same
+authored word while retaining up to eight recent sentence contexts. The Review
+screen can filter by need, pin an item, mark it known, return it to learning, or
+delete it without touching books or reading progress. Recording can be paused;
+reader assistance itself continues to work.
+
+Assistance history is included in checksummed backup, restore, one-level undo,
+diagnostic counts, and localStorage fallback. Valid v0.9 backups without this
+field migrate to an empty assistance history instead of being rejected.
 
 ## Controlled PWA updates
 
@@ -207,6 +222,11 @@ The intentionally visible blockers are in
 [`docs/release/KNOWN-LIMITATIONS.md`](docs/release/KNOWN-LIMITATIONS.md).
 Android APK signing, the final content count, and Safari/iPhone/Android
 real-device evidence remain unresolved. Import remains disabled.
+
+Version 0.10 adds a fifth critical journey for the editable local Review list,
+so the desktop/mobile matrix now runs ten browser cases. Its implementation and
+remaining limits are recorded in
+[`docs/release/SCOTTBOOK-v0.10.0.md`](docs/release/SCOTTBOOK-v0.10.0.md).
 
 ## Install ScottBook
 

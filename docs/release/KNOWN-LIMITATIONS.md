@@ -12,8 +12,8 @@ This list is intentionally release-blocking evidence, not a hidden backlog.
 - Reader customization currently provides Paper/Night themes and font size;
   line height, margins, content width, OLED, and a full settings screen are not
   implemented.
-- “Ôn lại” currently summarizes reading history. It is not yet the planned
-  assistance-event vocabulary review screen.
+- “Ôn lại” now records assistance, contexts, pin/known state, and local filters.
+  It does not yet implement spaced repetition, quizzes, or CSV/Anki export.
 - Search, Discover, and a separate article-detail screen are not implemented.
 
 ## Platform gaps
