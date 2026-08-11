@@ -1,12 +1,14 @@
 import { version as appVersion } from "../../../package.json";
 import type { LibraryState } from "../library/readingState";
 import type { ReaderPreferences } from "../preferences/readerPreferences";
+import type { AssistanceHistoryState } from "../review/assistanceHistory";
 
 export type { ReaderPreferences } from "../preferences/readerPreferences";
 
 export type ScottBookBackupData = {
   libraryState: LibraryState;
   preferences: ReaderPreferences;
+  assistanceHistory: AssistanceHistoryState;
 };
 
 export type ScottBookBackup = {

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createEmptyLibraryState } from "../library/readingState";
+import { createEmptyAssistanceHistory } from "../review/assistanceHistory";
 import {
   createScottBookBackup,
   verifyScottBookBackup,
@@ -11,14 +12,15 @@ describe("ScottBook JSON backup", () => {
     const backup = await createScottBookBackup(
       {
         libraryState: createEmptyLibraryState(),
-        preferences: { theme: "night", fontSize: 29 }
+        preferences: { theme: "night", fontSize: 29 },
+        assistanceHistory: createEmptyAssistanceHistory()
       },
       "2026-08-11T02:00:00.000Z"
     );
 
     expect(backup.format).toBe("scottbook-backup");
     expect(backup.formatVersion).toBe(1);
-    expect(backup.appVersion).toBe("0.9.0");
+    expect(backup.appVersion).toBe("0.10.0");
     expect(backup.exportedAt).toBe("2026-08-11T02:00:00.000Z");
     expect(backup.data.preferences).toEqual({ theme: "night", fontSize: 29 });
     expect(backup.checksum).toEqual({
@@ -31,7 +33,8 @@ describe("ScottBook JSON backup", () => {
   it("detects a backup changed after its checksum was created", async () => {
     const backup = await createScottBookBackup({
       libraryState: createEmptyLibraryState(),
-      preferences: { theme: "paper", fontSize: 25 }
+      preferences: { theme: "paper", fontSize: 25 },
+      assistanceHistory: createEmptyAssistanceHistory()
     });
     const tampered: ScottBookBackup = {
       ...backup,

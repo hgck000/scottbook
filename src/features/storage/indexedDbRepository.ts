@@ -1,10 +1,14 @@
 import type { ScottBookBackupData } from "../backup/exportBackup";
 import { validateLibraryStateSnapshot } from "../library/readingState";
 import { isReaderPreferences } from "../preferences/readerPreferences";
+import {
+  createEmptyAssistanceHistory,
+  validateAssistanceHistorySnapshot
+} from "../review/assistanceHistory";
 import { validateLocalDataSnapshot } from "./localDataSnapshot";
 
 export const SCOTTBOOK_DATABASE_NAME = "scottbook-local-data";
-export const SCOTTBOOK_DATABASE_VERSION = 2;
+export const SCOTTBOOK_DATABASE_VERSION = 3;
 
 export const SCOTTBOOK_STORE_NAMES = {
   books: "books",
@@ -18,6 +22,7 @@ export const SCOTTBOOK_STORE_NAMES = {
 
 const LIBRARY_STATE_RECORD_ID = "library-state";
 const READER_PREFERENCES_RECORD_ID = "reader-preferences";
+const ASSISTANCE_HISTORY_RECORD_ID = "assistance-history";
 
 type SnapshotRecord = {
   id: string;
@@ -164,6 +169,20 @@ function parsePreferencesRecord(value: unknown): {
     : { data: null, corrupt: true };
 }
 
+function parseAssistanceRecord(value: unknown): {
+  data: ScottBookBackupData["assistanceHistory"] | null;
+  corrupt: boolean;
+} {
+  if (value === undefined) {
+    return { data: createEmptyAssistanceHistory(), corrupt: false };
+  }
+  if (!isSnapshotRecord(value, ASSISTANCE_HISTORY_RECORD_ID)) {
+    return { data: null, corrupt: true };
+  }
+  const data = validateAssistanceHistorySnapshot(value.value);
+  return { data, corrupt: data === null };
+}
+
 export class ScottBookIndexedDbRepository {
   private readonly factory: IDBFactory | undefined;
   private readonly databaseName: string;
@@ -276,7 +295,11 @@ export class ScottBookIndexedDbRepository {
 
     try {
       const readTransaction = database.transaction(
-        [SCOTTBOOK_STORE_NAMES.progress, SCOTTBOOK_STORE_NAMES.settings],
+        [
+          SCOTTBOOK_STORE_NAMES.progress,
+          SCOTTBOOK_STORE_NAMES.settings,
+          SCOTTBOOK_STORE_NAMES.events
+        ],
         "readonly"
       );
       const readDone = transactionDone(readTransaction);
@@ -286,14 +309,19 @@ export class ScottBookIndexedDbRepository {
       const preferencesRequest = readTransaction
         .objectStore(SCOTTBOOK_STORE_NAMES.settings)
         .get(READER_PREFERENCES_RECORD_ID);
-      const [rawLibrary, rawPreferences] = await Promise.all([
+      const assistanceRequest = readTransaction
+        .objectStore(SCOTTBOOK_STORE_NAMES.events)
+        .get(ASSISTANCE_HISTORY_RECORD_ID);
+      const [rawLibrary, rawPreferences, rawAssistance] = await Promise.all([
         requestResult(libraryRequest),
         requestResult(preferencesRequest),
+        requestResult(assistanceRequest),
         readDone
       ]);
 
       const library = parseLibraryRecord(rawLibrary);
       const preferences = parsePreferencesRecord(rawPreferences);
+      const assistance = parseAssistanceRecord(rawAssistance);
       const corruptRecords: CorruptRecord[] = [];
       if (library.corrupt) {
         corruptRecords.push({
@@ -311,25 +339,39 @@ export class ScottBookIndexedDbRepository {
           payload: rawPreferences
         });
       }
+      if (assistance.corrupt) {
+        corruptRecords.push({
+          storeName: SCOTTBOOK_STORE_NAMES.events,
+          recordKey: ASSISTANCE_HISTORY_RECORD_ID,
+          reason: "Invalid assistance-history record",
+          payload: rawAssistance
+        });
+      }
 
       let data: ScottBookBackupData;
       let source: IndexedDbBootstrapResult["source"];
       if (safePreferred) {
         data = safePreferred;
         source = "local-storage";
-      } else if (library.data && preferences.data) {
+      } else if (library.data && preferences.data && assistance.data) {
         data = {
           libraryState: library.data,
-          preferences: preferences.data
+          preferences: preferences.data,
+          assistanceHistory:
+            assistance.data ?? safeFallback.assistanceHistory
         };
         source = "indexed-db";
       } else {
         data = {
           libraryState: library.data ?? safeFallback.libraryState,
-          preferences: preferences.data ?? safeFallback.preferences
+          preferences: preferences.data ?? safeFallback.preferences,
+          assistanceHistory:
+            assistance.data ?? safeFallback.assistanceHistory
         };
         source =
-          rawLibrary === undefined && rawPreferences === undefined
+          rawLibrary === undefined &&
+          rawPreferences === undefined &&
+          rawAssistance === undefined
             ? "default"
             : "recovered";
       }
@@ -361,6 +403,7 @@ export class ScottBookIndexedDbRepository {
       [
         SCOTTBOOK_STORE_NAMES.progress,
         SCOTTBOOK_STORE_NAMES.settings,
+        SCOTTBOOK_STORE_NAMES.events,
         SCOTTBOOK_STORE_NAMES.meta,
         SCOTTBOOK_STORE_NAMES.quarantine
       ],
@@ -380,6 +423,13 @@ export class ScottBookIndexedDbRepository {
         transaction.objectStore(SCOTTBOOK_STORE_NAMES.settings).put({
           id: READER_PREFERENCES_RECORD_ID,
           value: data.preferences,
+          updatedAt
+        })
+      ),
+      requestResult(
+        transaction.objectStore(SCOTTBOOK_STORE_NAMES.events).put({
+          id: ASSISTANCE_HISTORY_RECORD_ID,
+          value: data.assistanceHistory,
           updatedAt
         })
       ),
@@ -416,6 +466,7 @@ export class ScottBookIndexedDbRepository {
       [
         SCOTTBOOK_STORE_NAMES.progress,
         SCOTTBOOK_STORE_NAMES.settings,
+        SCOTTBOOK_STORE_NAMES.events,
         SCOTTBOOK_STORE_NAMES.meta
       ],
       "readwrite"
@@ -434,6 +485,13 @@ export class ScottBookIndexedDbRepository {
         transaction.objectStore(SCOTTBOOK_STORE_NAMES.settings).put({
           id: READER_PREFERENCES_RECORD_ID,
           value: safeData.preferences,
+          updatedAt
+        })
+      ),
+      requestResult(
+        transaction.objectStore(SCOTTBOOK_STORE_NAMES.events).put({
+          id: ASSISTANCE_HISTORY_RECORD_ID,
+          value: safeData.assistanceHistory,
           updatedAt
         })
       ),
@@ -516,7 +574,9 @@ export class ScottBookIndexedDbRepository {
             transaction.objectStore(SCOTTBOOK_STORE_NAMES.books).count()
           ),
           requestResult(
-            transaction.objectStore(SCOTTBOOK_STORE_NAMES.events).count()
+            transaction
+              .objectStore(SCOTTBOOK_STORE_NAMES.events)
+              .get(ASSISTANCE_HISTORY_RECORD_ID)
           ),
           requestResult(
             transaction.objectStore(SCOTTBOOK_STORE_NAMES.cache).count()
@@ -527,13 +587,16 @@ export class ScottBookIndexedDbRepository {
           done
         ]);
 
+      const assistance = parseAssistanceRecord(eventCount);
       return {
         indexedDbAvailable: true,
         schemaVersion: SCOTTBOOK_DATABASE_VERSION,
         usageBytes,
         quotaBytes,
         bookCount,
-        eventCount,
+        eventCount: assistance.data
+          ? Object.keys(assistance.data.items).length
+          : 0,
         cacheCount,
         quarantinedCount,
         pressure: getStoragePressure(usageBytes, quotaBytes)

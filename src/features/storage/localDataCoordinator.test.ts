@@ -13,6 +13,11 @@ import {
   READER_FONT_SIZE_STORAGE_KEY,
   READER_THEME_STORAGE_KEY
 } from "../preferences/readerPreferences";
+import {
+  ASSISTANCE_HISTORY_BACKUP_STORAGE_KEY,
+  ASSISTANCE_HISTORY_STORAGE_KEY,
+  createEmptyAssistanceHistory
+} from "../review/assistanceHistory";
 import { ScottBookIndexedDbRepository } from "./indexedDbRepository";
 import { ScottBookLocalDataCoordinator } from "./localDataCoordinator";
 
@@ -79,7 +84,8 @@ function createData(
       articleId,
       100
     ),
-    preferences: { theme, fontSize: theme === "paper" ? 25 : 29 }
+    preferences: { theme, fontSize: theme === "paper" ? 25 : 29 },
+    assistanceHistory: createEmptyAssistanceHistory()
   };
 }
 
@@ -88,7 +94,9 @@ function createStorage(data: ScottBookBackupData): MemoryStorage {
     [LIBRARY_STATE_STORAGE_KEY]: JSON.stringify(data.libraryState),
     [LIBRARY_STATE_BACKUP_STORAGE_KEY]: "exact-safety-copy",
     [READER_THEME_STORAGE_KEY]: JSON.stringify(data.preferences.theme),
-    [READER_FONT_SIZE_STORAGE_KEY]: JSON.stringify(data.preferences.fontSize)
+    [READER_FONT_SIZE_STORAGE_KEY]: JSON.stringify(data.preferences.fontSize),
+    [ASSISTANCE_HISTORY_STORAGE_KEY]: JSON.stringify(data.assistanceHistory),
+    [ASSISTANCE_HISTORY_BACKUP_STORAGE_KEY]: "exact-assistance-safety-copy"
   });
 }
 

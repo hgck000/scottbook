@@ -13,6 +13,7 @@ import {
   READER_FONT_SIZE_STORAGE_KEY,
   READER_THEME_STORAGE_KEY
 } from "../preferences/readerPreferences";
+import { createEmptyAssistanceHistory } from "../review/assistanceHistory";
 import {
   createScottBookBackup,
   type ScottBookBackupData
@@ -75,7 +76,8 @@ function createCurrentData(): ScottBookBackupData {
       progressPercent: 50,
       updatedAt: 200
     }),
-    preferences: { theme: "night", fontSize: 28 }
+    preferences: { theme: "night", fontSize: 28 },
+    assistanceHistory: createEmptyAssistanceHistory()
   };
 }
 
@@ -99,7 +101,8 @@ function createRestoredData(): ScottBookBackupData {
       "s4",
       600
     ),
-    preferences: { theme: "paper", fontSize: 24 }
+    preferences: { theme: "paper", fontSize: 24 },
+    assistanceHistory: createEmptyAssistanceHistory()
   };
 }
 
@@ -138,7 +141,8 @@ describe("ScottBook backup restore", () => {
     } as LibraryState;
     const signed = await createScottBookBackup({
       libraryState: invalidState,
-      preferences: { theme: "paper", fontSize: 25 }
+      preferences: { theme: "paper", fontSize: 25 },
+      assistanceHistory: createEmptyAssistanceHistory()
     });
 
     await expect(
@@ -161,8 +165,52 @@ describe("ScottBook backup restore", () => {
         historyCount: 2,
         completedCount: 1,
         activeProgressCount: 1,
+        assistanceItemCount: 0,
         theme: "paper",
         fontSize: 24
+      }
+    });
+  });
+
+  it("migrates a valid v0.9 backup that has no assistance history", async () => {
+    const current = await createScottBookBackup(createCurrentData());
+    const legacy = JSON.parse(JSON.stringify(current)) as {
+      format: string;
+      formatVersion: number;
+      appVersion: string;
+      exportedAt: string;
+      data: Record<string, unknown>;
+      checksum: { algorithm: "SHA-256"; value: string };
+    };
+    delete legacy.data.assistanceHistory;
+    const unsigned = {
+      format: legacy.format,
+      formatVersion: legacy.formatVersion,
+      appVersion: legacy.appVersion,
+      exportedAt: legacy.exportedAt,
+      data: legacy.data
+    };
+    const digest = await crypto.subtle.digest(
+      "SHA-256",
+      new TextEncoder().encode(JSON.stringify(unsigned))
+    );
+    legacy.checksum.value = Array.from(
+      new Uint8Array(digest),
+      (byte) => byte.toString(16).padStart(2, "0")
+    ).join("");
+
+    const result = await parseScottBookBackupText(JSON.stringify(legacy));
+    expect(result).toMatchObject({
+      ok: true,
+      preview: { assistanceItemCount: 0 },
+      backup: {
+        data: {
+          assistanceHistory: {
+            version: 1,
+            recordingEnabled: true,
+            items: {}
+          }
+        }
       }
     });
   });

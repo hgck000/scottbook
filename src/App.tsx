@@ -50,6 +50,17 @@ import {
   type ReaderTheme
 } from "./features/preferences/readerPreferences";
 import {
+  deleteAssistanceItem,
+  markAssistanceKnown,
+  persistAssistanceHistory,
+  recordAssistance,
+  setAssistanceRecording,
+  toggleAssistancePinned,
+  type AssistanceHistoryState,
+  type AssistanceLevel,
+  type AssistanceReviewItem
+} from "./features/review/assistanceHistory";
+import {
   pwaStatusStore,
   usePwaStatus,
   type PwaStatusSnapshot,
@@ -173,6 +184,10 @@ function App() {
   const [libraryState, setLibraryState] = useState<LibraryState>(
     bootstrapData.fallback.libraryState
   );
+  const [assistanceHistory, setAssistanceHistory] =
+    useState<AssistanceHistoryState>(
+      bootstrapData.fallback.assistanceHistory
+    );
   const [localDataCoordinator] = useState(
     () =>
       new ScottBookLocalDataCoordinator(
@@ -219,6 +234,10 @@ function App() {
   useEffect(() => {
     persistLibraryState(window.localStorage, libraryState);
   }, [libraryState]);
+
+  useEffect(() => {
+    persistAssistanceHistory(window.localStorage, assistanceHistory);
+  }, [assistanceHistory]);
 
   const openArticle = (articleId: string) => {
     setLibraryState((current) =>
@@ -267,6 +286,7 @@ function App() {
     setLibraryState(data.libraryState);
     setTheme(data.preferences.theme);
     setFontSize(data.preferences.fontSize);
+    setAssistanceHistory(data.assistanceHistory);
   }, [setFontSize, setTheme]);
 
   useEffect(() => {
@@ -302,7 +322,8 @@ function App() {
     void localDataCoordinator
       .persist({
         libraryState,
-        preferences: { theme, fontSize }
+        preferences: { theme, fontSize },
+        assistanceHistory
       })
       .then((succeeded) => {
         if (
@@ -319,14 +340,22 @@ function App() {
     return () => {
       active = false;
     };
-  }, [fontSize, libraryState, localDataCoordinator, localDataStatus.phase, theme]);
+  }, [
+    assistanceHistory,
+    fontSize,
+    libraryState,
+    localDataCoordinator,
+    localDataStatus.phase,
+    theme
+  ]);
 
   const applyBackupRestore = useCallback(
     async (restoredData: ScottBookBackupData) => {
       const result = await localDataCoordinator.applyRestore(
         {
           libraryState,
-          preferences: { theme, fontSize }
+          preferences: { theme, fontSize },
+          assistanceHistory
         },
         restoredData
       );
@@ -341,6 +370,7 @@ function App() {
       return result;
     },
     [
+      assistanceHistory,
       fontSize,
       libraryState,
       localDataCoordinator,
@@ -352,7 +382,8 @@ function App() {
   const undoBackupRestore = useCallback(async () => {
     const result = await localDataCoordinator.undoRestore({
       libraryState,
-      preferences: { theme, fontSize }
+      preferences: { theme, fontSize },
+      assistanceHistory
     });
     if (result.ok) replaceLocalData(result.data);
     if (!localDataCoordinator.isUsingIndexedDb()) {
@@ -363,7 +394,14 @@ function App() {
       }));
     }
     return result;
-  }, [fontSize, libraryState, localDataCoordinator, replaceLocalData, theme]);
+  }, [
+    assistanceHistory,
+    fontSize,
+    libraryState,
+    localDataCoordinator,
+    replaceLocalData,
+    theme
+  ]);
 
   const loadStorageReport = useCallback(() => {
     const storageManager =
@@ -382,7 +420,8 @@ function App() {
   const preparePwaUpdate = useCallback(async () => {
     const prepared = await localDataCoordinator.prepareForUpdate({
       libraryState,
-      preferences: { theme, fontSize }
+      preferences: { theme, fontSize },
+      assistanceHistory
     });
     if (!localDataCoordinator.isUsingIndexedDb()) {
       setLocalDataStatus((current) => ({
@@ -392,7 +431,36 @@ function App() {
       }));
     }
     return prepared;
-  }, [fontSize, libraryState, localDataCoordinator, theme]);
+  }, [assistanceHistory, fontSize, libraryState, localDataCoordinator, theme]);
+
+  const saveAssistance = useCallback(
+    (
+      article: BuiltInArticle,
+      sentence: AnnotatedSentence,
+      token: WordToken,
+      level: AssistanceLevel
+    ) => {
+      const sentenceText = sentence.tokens.map((item) => item.hanzi).join("");
+      setAssistanceHistory((current) =>
+        recordAssistance(current, {
+          articleId: article.id,
+          sentenceId: sentence.id,
+          sentenceText,
+          sentenceTranslation: sentence.translation,
+          hanzi: token.hanzi,
+          pinyin: token.pinyin,
+          meaning: token.meaning,
+          level,
+          occurredAt: Date.now()
+        })
+      );
+    },
+    []
+  );
+
+  const activeReviewCount = Object.values(assistanceHistory.items).filter(
+    (item) => item.knownAt === null
+  ).length;
 
   const goHome = () => {
     window.location.hash = "/";
@@ -430,6 +498,9 @@ function App() {
           const lastSentenceId = sentenceIds.at(-1);
           if (lastSentenceId) completeArticle(article.id, lastSentenceId);
         }}
+        saveAssistance={(sentence, token, level) =>
+          saveAssistance(article, sentence, token, level)
+        }
       />
     ) : (
       <NotFound goHome={goHome} isOnline={pwaStatus.isOnline} />
@@ -441,6 +512,28 @@ function App() {
         fontSize={fontSize}
         toggleTheme={toggleTheme}
         libraryState={libraryState}
+        assistanceHistory={assistanceHistory}
+        reviewCount={activeReviewCount}
+        setRecordingEnabled={(enabled) =>
+          setAssistanceHistory((current) =>
+            setAssistanceRecording(current, enabled)
+          )
+        }
+        toggleReviewPinned={(itemId) =>
+          setAssistanceHistory((current) =>
+            toggleAssistancePinned(current, itemId)
+          )
+        }
+        markReviewKnown={(itemId, known) =>
+          setAssistanceHistory((current) =>
+            markAssistanceKnown(current, itemId, known ? Date.now() : null)
+          )
+        }
+        deleteReviewItem={(itemId) =>
+          setAssistanceHistory((current) =>
+            deleteAssistanceItem(current, itemId)
+          )
+        }
         openArticle={openArticle}
         resetProgress={resetProgress}
         storagePersistence={pwaStatus.storagePersistence}
@@ -458,6 +551,7 @@ function App() {
         toggleTheme={toggleTheme}
         openArticle={openArticle}
         libraryState={libraryState}
+        reviewCount={activeReviewCount}
         toggleFavorite={toggleFavorite}
       />
     );
@@ -653,10 +747,10 @@ function Brand() {
 
 function Sidebar({
   active,
-  historyCount
+  reviewCount
 }: {
   active: "library" | "review";
-  historyCount: number;
+  reviewCount: number;
 }) {
   return (
     <aside className="sidebar">
@@ -677,7 +771,7 @@ function Sidebar({
         >
           <span aria-hidden="true">◎</span>
           Ôn lại
-          {historyCount > 0 ? <small>{historyCount}</small> : null}
+          {reviewCount > 0 ? <small>{reviewCount}</small> : null}
         </a>
       </nav>
       <div className="sidebar-note">
@@ -691,10 +785,10 @@ function Sidebar({
 
 function MobileNavigation({
   active,
-  historyCount
+  reviewCount
 }: {
   active: "library" | "review";
-  historyCount: number;
+  reviewCount: number;
 }) {
   return (
     <nav className="mobile-tabbar" aria-label="Điều hướng chính trên điện thoại">
@@ -713,7 +807,7 @@ function MobileNavigation({
       >
         <span aria-hidden="true">◎</span>
         Ôn lại
-        {historyCount > 0 ? <small>{historyCount}</small> : null}
+        {reviewCount > 0 ? <small>{reviewCount}</small> : null}
       </a>
     </nav>
   );
@@ -724,12 +818,14 @@ function LibraryScreen({
   toggleTheme,
   openArticle,
   libraryState,
+  reviewCount,
   toggleFavorite
 }: {
   theme: ReaderTheme;
   toggleTheme: () => void;
   openArticle: (articleId: string) => void;
   libraryState: LibraryState;
+  reviewCount: number;
   toggleFavorite: (articleId: string) => void;
 }) {
   const [filter, setFilter] = useState<"all" | "favorites">("all");
@@ -747,13 +843,9 @@ function LibraryScreen({
   const continueProgress = continueArticle
     ? libraryState.progressByArticle[continueArticle.id]
     : undefined;
-  const historyCount = builtInLibrary.filter(
-    (article) => libraryState.historyByArticle[article.id]
-  ).length;
-
   return (
     <div className="app-shell">
-      <Sidebar active="library" historyCount={historyCount} />
+      <Sidebar active="library" reviewCount={reviewCount} />
 
       <main id="main-content" className="library-page" tabIndex={-1}>
         <header className="topbar">
@@ -870,7 +962,7 @@ function LibraryScreen({
           <span className="research-pill">Đang nghiên cứu</span>
         </section>
       </main>
-      <MobileNavigation active="library" historyCount={historyCount} />
+      <MobileNavigation active="library" reviewCount={reviewCount} />
     </div>
   );
 }
@@ -888,6 +980,12 @@ function ReviewScreen({
   fontSize,
   toggleTheme,
   libraryState,
+  assistanceHistory,
+  reviewCount,
+  setRecordingEnabled,
+  toggleReviewPinned,
+  markReviewKnown,
+  deleteReviewItem,
   openArticle,
   resetProgress,
   storagePersistence,
@@ -901,6 +999,12 @@ function ReviewScreen({
   fontSize: number;
   toggleTheme: () => void;
   libraryState: LibraryState;
+  assistanceHistory: AssistanceHistoryState;
+  reviewCount: number;
+  setRecordingEnabled: (enabled: boolean) => void;
+  toggleReviewPinned: (itemId: string) => void;
+  markReviewKnown: (itemId: string, known: boolean) => void;
+  deleteReviewItem: (itemId: string) => void;
   openArticle: (articleId: string) => void;
   resetProgress: (articleId: string) => void;
   storagePersistence: StoragePersistence;
@@ -929,7 +1033,7 @@ function ReviewScreen({
 
   return (
     <div className="app-shell">
-      <Sidebar active="review" historyCount={historyItems.length} />
+      <Sidebar active="review" reviewCount={reviewCount} />
 
       <main
         id="main-content"
@@ -940,7 +1044,7 @@ function ReviewScreen({
           <div className="mobile-brand">
             <Brand />
           </div>
-          <p className="eyebrow">Lịch sử trên thiết bị</p>
+          <p className="eyebrow">Ôn lại trên thiết bị</p>
           <button
             className="icon-button theme-button"
             type="button"
@@ -957,27 +1061,45 @@ function ReviewScreen({
 
         <section className="review-hero">
           <div>
-            <span className="hero-stamp">本地记录 · Lưu trên máy</span>
-            <h1>Những bài bạn đã đi qua.</h1>
+            <span className="hero-stamp">学习记录 · Học từ lúc đọc</span>
+            <h1>Những từ bạn đã thật sự cần trợ giúp.</h1>
             <p>
-              Xem lại tiến độ, quay về câu gần nhất hoặc bắt đầu lại một bài.
-              Không dữ liệu nào được gửi lên mạng.
+              ScottBook phân biệt lúc bạn chỉ cần cách đọc với lúc bạn cần cả
+              nghĩa. Mọi ngữ cảnh đều nằm trên thiết bị này.
             </p>
           </div>
-          <div className="review-stats" aria-label="Tóm tắt lịch sử đọc">
+          <div className="review-stats" aria-label="Tóm tắt trợ giúp đọc">
             <div>
-              <strong>{historyItems.length}</strong>
-              <span>Đã mở</span>
+              <strong>
+                {Object.values(assistanceHistory.items).filter(
+                  (item) => item.knownAt === null && item.meaningCount === 0
+                ).length}
+              </strong>
+              <span>Cần cách đọc</span>
             </div>
             <div>
-              <strong>{completedCount}</strong>
-              <span>Hoàn thành</span>
+              <strong>
+                {Object.values(assistanceHistory.items).filter(
+                  (item) => item.knownAt === null && item.meaningCount > 0
+                ).length}
+              </strong>
+              <span>Chưa hiểu nghĩa</span>
             </div>
           </div>
         </section>
 
+        <AssistanceReviewSection
+          history={assistanceHistory}
+          setRecordingEnabled={setRecordingEnabled}
+          togglePinned={toggleReviewPinned}
+          markKnown={markReviewKnown}
+          deleteItem={deleteReviewItem}
+          openArticle={openArticle}
+        />
+
         <DataProtectionCard
           libraryState={libraryState}
+          assistanceHistory={assistanceHistory}
           theme={theme}
           fontSize={fontSize}
           storagePersistence={storagePersistence}
@@ -991,10 +1113,12 @@ function ReviewScreen({
         <section className="history-section" aria-labelledby="history-heading">
           <div className="section-heading">
             <div>
-              <p className="eyebrow">Ôn lại</p>
+              <p className="eyebrow">Tiến độ</p>
               <h2 id="history-heading">Lịch sử đọc gần đây</h2>
             </div>
-            <span className="offline-pill">Chỉ trên thiết bị này</span>
+            <span className="offline-pill">
+              {historyItems.length} bài · {completedCount} hoàn thành
+            </span>
           </div>
 
           {historyItems.length > 0 ? (
@@ -1029,13 +1153,255 @@ function ReviewScreen({
         </section>
       </main>
 
-      <MobileNavigation active="review" historyCount={historyItems.length} />
+      <MobileNavigation active="review" reviewCount={reviewCount} />
     </div>
+  );
+}
+
+type AssistanceReviewFilter = "reading" | "meaning" | "known";
+
+function AssistanceReviewSection({
+  history,
+  setRecordingEnabled,
+  togglePinned,
+  markKnown,
+  deleteItem,
+  openArticle
+}: {
+  history: AssistanceHistoryState;
+  setRecordingEnabled: (enabled: boolean) => void;
+  togglePinned: (itemId: string) => void;
+  markKnown: (itemId: string, known: boolean) => void;
+  deleteItem: (itemId: string) => void;
+  openArticle: (articleId: string) => void;
+}) {
+  const [filter, setFilter] = useState<AssistanceReviewFilter>("reading");
+  const allItems = Object.values(history.items);
+  const counts = {
+    reading: allItems.filter(
+      (item) => item.knownAt === null && item.meaningCount === 0
+    ).length,
+    meaning: allItems.filter(
+      (item) => item.knownAt === null && item.meaningCount > 0
+    ).length,
+    known: allItems.filter((item) => item.knownAt !== null).length
+  };
+  const visibleItems = allItems
+    .filter((item) => {
+      if (filter === "known") return item.knownAt !== null;
+      if (item.knownAt !== null) return false;
+      return filter === "meaning"
+        ? item.meaningCount > 0
+        : item.meaningCount === 0;
+    })
+    .sort(
+      (left, right) =>
+        Number(right.pinned) - Number(left.pinned) ||
+        right.lastSeenAt - left.lastSeenAt ||
+        left.hanzi.localeCompare(right.hanzi, "zh-Hans")
+    );
+  const emptyCopy = {
+    reading: "Chưa có từ nào bạn chỉ mở pinyin.",
+    meaning: "Chưa có từ nào bạn phải mở đến nghĩa.",
+    known: "Chưa có từ nào được đánh dấu đã biết."
+  }[filter];
+
+  return (
+    <section
+      className="assistance-review-section"
+      aria-labelledby="assistance-review-heading"
+    >
+      <div className="section-heading assistance-review-heading">
+        <div>
+          <p className="eyebrow">Dấu vết học tập</p>
+          <h2 id="assistance-review-heading">Từ và cụm từng cần trợ giúp</h2>
+        </div>
+        <label className="recording-toggle">
+          <input
+            type="checkbox"
+            checked={history.recordingEnabled}
+            onChange={(event) => setRecordingEnabled(event.currentTarget.checked)}
+          />
+          <span>
+            <strong>Ghi lịch sử trợ giúp</strong>
+            <small>
+              {history.recordingEnabled
+                ? "Đang lưu cục bộ"
+                : "Đã tạm dừng"}
+            </small>
+          </span>
+        </label>
+      </div>
+
+      <div
+        className="review-filters"
+        role="group"
+        aria-label="Lọc từ cần ôn"
+      >
+        <button
+          type="button"
+          className={filter === "reading" ? "active" : ""}
+          aria-pressed={filter === "reading"}
+          onClick={() => setFilter("reading")}
+        >
+          Cần cách đọc <span>{counts.reading}</span>
+        </button>
+        <button
+          type="button"
+          className={filter === "meaning" ? "active" : ""}
+          aria-pressed={filter === "meaning"}
+          onClick={() => setFilter("meaning")}
+        >
+          Chưa hiểu nghĩa <span>{counts.meaning}</span>
+        </button>
+        <button
+          type="button"
+          className={filter === "known" ? "active" : ""}
+          aria-pressed={filter === "known"}
+          onClick={() => setFilter("known")}
+        >
+          Đã biết <span>{counts.known}</span>
+        </button>
+      </div>
+
+      {visibleItems.length > 0 ? (
+        <div className="review-word-list">
+          {visibleItems.map((item) => (
+            <AssistanceReviewCard
+              key={item.id}
+              item={item}
+              togglePinned={() => togglePinned(item.id)}
+              markKnown={(known) => markKnown(item.id, known)}
+              deleteItem={() => {
+                if (
+                  window.confirm(
+                    `Xóa “${item.hanzi}” khỏi lịch sử trợ giúp? Sách và tiến độ đọc vẫn được giữ.`
+                  )
+                ) {
+                  deleteItem(item.id);
+                }
+              }}
+              openArticle={openArticle}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="empty-review-state" role="status">
+          <span aria-hidden="true">字</span>
+          <div>
+            <strong>{emptyCopy}</strong>
+            <p>
+              Chạm vào một từ trong bài đọc; ScottBook chỉ ghi mức trợ giúp bạn
+              thực sự đã mở.
+            </p>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function AssistanceReviewCard({
+  item,
+  togglePinned,
+  markKnown,
+  deleteItem,
+  openArticle
+}: {
+  item: AssistanceReviewItem;
+  togglePinned: () => void;
+  markKnown: (known: boolean) => void;
+  deleteItem: () => void;
+  openArticle: (articleId: string) => void;
+}) {
+  const latestContext = item.contexts[0];
+  const article = latestContext
+    ? builtInLibrary.find((candidate) => candidate.id === latestContext.articleId)
+    : undefined;
+  const status =
+    item.knownAt !== null
+      ? "Đã biết"
+      : item.meaningCount > 0
+        ? "Chưa hiểu nghĩa"
+        : "Cần cách đọc";
+
+  return (
+    <article className={`review-word-card${item.pinned ? " pinned" : ""}`}>
+      <header>
+        <div className="review-word-identity">
+          <strong lang="zh-Hans">{item.hanzi}</strong>
+          <div>
+            <span>{item.pinyin}</span>
+            <p>{item.meaning}</p>
+          </div>
+        </div>
+        <span
+          className={`review-word-status${item.knownAt !== null ? " known" : ""}`}
+        >
+          {status}
+        </span>
+      </header>
+
+      {latestContext ? (
+        <blockquote>
+          <p lang="zh-Hans">{latestContext.sentenceText}</p>
+          <p>{latestContext.sentenceTranslation}</p>
+          <footer>
+            {article?.titleTranslation ?? "Bài dựng sẵn"} · gặp trong{" "}
+            {item.contexts.length} ngữ cảnh
+          </footer>
+        </blockquote>
+      ) : null}
+
+      <div className="review-word-footer">
+        <p>
+          Mở pinyin <strong>{item.pinyinCount}</strong> lần · mở nghĩa{" "}
+          <strong>{item.meaningCount}</strong> lần · gần nhất{" "}
+          {historyDateFormatter.format(item.lastSeenAt)}
+        </p>
+        <div>
+          {latestContext ? (
+            <button
+              type="button"
+              onClick={() => openArticle(latestContext.articleId)}
+              aria-label={`Mở bài chứa ${item.hanzi}`}
+            >
+              Mở bài
+            </button>
+          ) : null}
+          <button
+            type="button"
+            aria-pressed={item.pinned}
+            aria-label={`${item.pinned ? "Bỏ ghim" : "Ghim"} ${item.hanzi}`}
+            onClick={togglePinned}
+          >
+            {item.pinned ? "Bỏ ghim" : "Ghim"}
+          </button>
+          <button
+            type="button"
+            className="known-button"
+            aria-label={`${item.knownAt === null ? "Đã biết" : "Cần học lại"} ${item.hanzi}`}
+            onClick={() => markKnown(item.knownAt === null)}
+          >
+            {item.knownAt === null ? "Đã biết" : "Cần học lại"}
+          </button>
+          <button
+            type="button"
+            className="delete-review-button"
+            onClick={deleteItem}
+            aria-label={`Xóa ${item.hanzi} khỏi lịch sử trợ giúp`}
+          >
+            Xóa
+          </button>
+        </div>
+      </div>
+    </article>
   );
 }
 
 function DataProtectionCard({
   libraryState,
+  assistanceHistory,
   theme,
   fontSize,
   storagePersistence,
@@ -1046,6 +1412,7 @@ function DataProtectionCard({
   clearTranslationCache
 }: {
   libraryState: LibraryState;
+  assistanceHistory: AssistanceHistoryState;
   theme: ReaderTheme;
   fontSize: number;
   storagePersistence: StoragePersistence;
@@ -1133,7 +1500,8 @@ function DataProtectionCard({
     try {
       const backup = await createScottBookBackup({
         libraryState,
-        preferences: { theme, fontSize }
+        preferences: { theme, fontSize },
+        assistanceHistory
       });
       downloadScottBookBackup(backup);
       setExportStatus("done");
@@ -1158,6 +1526,7 @@ function DataProtectionCard({
       }
       const report = createLocalDiagnosticReport({
         libraryState,
+        assistanceHistory,
         articles: builtInLibrary,
         storageReport: latestStorageReport,
         localData: localDataStatus,
@@ -1323,7 +1692,7 @@ function DataProtectionCard({
             ? "Đã tải bản sao JSON có checksum."
             : exportStatus === "error"
               ? "Chưa thể tạo bản sao. Dữ liệu trong app không bị thay đổi."
-              : "Bản sao chứa tiến độ, yêu thích và tùy chỉnh giao diện."}
+              : "Bản sao chứa tiến độ, từ cần ôn, yêu thích và tùy chỉnh giao diện."}
         </p>
         <p
           className={`restore-feedback${restoreStatus === "error" ? " error" : ""}${restoreStatus === "success" || restoreStatus === "undone" ? " success" : ""}`}
@@ -1470,7 +1839,7 @@ function StorageOverview({
     localDataStatus.phase === "checking"
       ? "Đang khởi tạo"
       : localDataStatus.phase === "ready"
-        ? `IndexedDB v${report?.schemaVersion ?? 2}`
+        ? `IndexedDB v${report?.schemaVersion ?? 3}`
         : "localStorage fallback";
 
   return (
@@ -1511,9 +1880,9 @@ function StorageOverview({
           </small>
         </div>
         <div>
-          <span>Sách ngoài</span>
-          <strong>{report?.bookCount ?? 0}</strong>
-          <small>import vẫn đang khóa</small>
+          <span>Từ đã ghi</span>
+          <strong>{report?.eventCount ?? 0}</strong>
+          <small>lịch sử trợ giúp cục bộ</small>
         </div>
       </div>
 
@@ -1528,7 +1897,8 @@ function StorageOverview({
       <div className="storage-overview-footer">
         <p>
           Xóa cache chỉ tác động vùng dịch tạm; bài đọc, tiến độ, yêu thích và
-          cài đặt nằm ở các store khác.
+          cài đặt nằm ở các store khác. Có {report?.bookCount ?? 0} sách ngoài;
+          import vẫn đang khóa.
         </p>
         <div>
           <button type="button" onClick={onRefresh} disabled={storageBusy}>
@@ -1600,6 +1970,10 @@ function RestorePreview({
         <div>
           <dt>Cỡ chữ</dt>
           <dd>{preview.fontSize}px</dd>
+        </div>
+        <div>
+          <dt>Từ cần ôn</dt>
+          <dd>{preview.assistanceItemCount}</dd>
         </div>
       </dl>
 
@@ -1852,7 +2226,8 @@ function ReaderScreen({
   progressPercent,
   saveReadingPosition,
   isCompleted,
-  completeArticle
+  completeArticle,
+  saveAssistance
 }: {
   article: BuiltInArticle;
   fontSize: number;
@@ -1871,6 +2246,11 @@ function ReaderScreen({
   ) => void;
   isCompleted: boolean;
   completeArticle: () => void;
+  saveAssistance: (
+    sentence: AnnotatedSentence,
+    token: WordToken,
+    level: AssistanceLevel
+  ) => void;
 }) {
   const [selection, setSelection] = useState<AssistanceSelection | null>(null);
   const articleBodyRef = useRef<HTMLDivElement>(null);
@@ -1974,7 +2354,15 @@ function ReaderScreen({
 
   const chooseToken = (sentence: AnnotatedSentence, token: WordToken) => {
     const key = `${sentence.id}:${token.id}`;
-    setSelection((current) => advanceAssistance(current, key));
+    const next = advanceAssistance(selection, key);
+    setSelection(next);
+    if (next) {
+      saveAssistance(
+        sentence,
+        token,
+        next.level === 1 ? "pinyin" : "meaning"
+      );
+    }
   };
 
   const clampFontSize = (next: number) =>

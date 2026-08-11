@@ -704,6 +704,268 @@ svg {
   text-transform: uppercase;
 }
 
+.assistance-review-section {
+  margin-top: 24px;
+  padding: clamp(20px, 3vw, 30px);
+  border: 1px solid var(--line);
+  border-radius: 26px;
+  background: color-mix(in srgb, var(--paper-raised) 74%, transparent);
+}
+
+.assistance-review-heading {
+  align-items: center;
+}
+
+.recording-toggle {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 8px 13px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  color: var(--ink);
+  background: var(--paper);
+  cursor: pointer;
+}
+
+.recording-toggle input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: #1d5147;
+}
+
+.recording-toggle span {
+  display: grid;
+  gap: 1px;
+}
+
+.recording-toggle strong {
+  font-size: 0.72rem;
+}
+
+.recording-toggle small {
+  color: var(--muted);
+  font-size: 0.62rem;
+}
+
+.review-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 22px 0 18px;
+}
+
+.review-filters button {
+  min-height: 42px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  background: transparent;
+  font-size: 0.72rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.review-filters button span {
+  display: inline-grid;
+  min-width: 21px;
+  min-height: 21px;
+  place-items: center;
+  margin-left: 5px;
+  border-radius: 999px;
+  color: var(--ink);
+  background: var(--jade-soft);
+  font-size: 0.62rem;
+}
+
+.review-filters button.active {
+  border-color: #193c35;
+  color: #f6f1e7;
+  background: #193c35;
+}
+
+.review-filters button.active span {
+  color: #193c35;
+  background: #f6f1e7;
+}
+
+.review-word-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(360px, 100%), 1fr));
+  gap: 14px;
+}
+
+.review-word-card {
+  display: grid;
+  align-content: start;
+  gap: 16px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--paper);
+}
+
+.review-word-card.pinned {
+  border-color: color-mix(in srgb, var(--amber) 55%, var(--line));
+  box-shadow: inset 4px 0 0 var(--amber);
+}
+
+.review-word-card > header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.review-word-identity {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.review-word-identity > strong {
+  color: var(--ink);
+  font-family: "Noto Serif SC", "Songti SC", SimSun, serif;
+  font-size: 2rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.review-word-identity span {
+  color: var(--jade);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.review-word-identity p {
+  margin: 3px 0 0;
+  color: var(--ink);
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.review-word-status {
+  flex: 0 0 auto;
+  padding: 6px 9px;
+  border-radius: 999px;
+  color: #8a5a18;
+  background: color-mix(in srgb, var(--amber) 18%, transparent);
+  font-size: 0.6rem;
+  font-weight: 850;
+  letter-spacing: 0.035em;
+  text-transform: uppercase;
+}
+
+.review-word-status.known {
+  color: var(--jade);
+  background: var(--jade-soft);
+}
+
+.review-word-card blockquote {
+  margin: 0;
+  padding: 13px 14px;
+  border-left: 3px solid var(--jade);
+  border-radius: 0 13px 13px 0;
+  background: color-mix(in srgb, var(--jade-soft) 48%, transparent);
+}
+
+.review-word-card blockquote p {
+  margin: 0;
+  color: var(--ink);
+  font-size: 0.78rem;
+  line-height: 1.55;
+}
+
+.review-word-card blockquote p + p {
+  margin-top: 4px;
+  color: var(--muted);
+}
+
+.review-word-card blockquote footer {
+  margin-top: 7px;
+  color: var(--muted);
+  font-size: 0.62rem;
+}
+
+.review-word-footer {
+  display: grid;
+  gap: 11px;
+}
+
+.review-word-footer > p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.64rem;
+  line-height: 1.45;
+}
+
+.review-word-footer > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.review-word-footer button {
+  min-height: 38px;
+  padding: 0 11px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: var(--muted);
+  background: transparent;
+  font-size: 0.67rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.review-word-footer .known-button {
+  border-color: color-mix(in srgb, var(--jade) 45%, var(--line));
+  color: var(--jade);
+}
+
+.review-word-footer .delete-review-button {
+  margin-left: auto;
+  color: var(--coral);
+}
+
+.empty-review-state {
+  min-height: 130px;
+  display: flex;
+  align-items: center;
+  gap: 17px;
+  padding: 20px;
+  border: 1px dashed color-mix(in srgb, var(--jade) 35%, var(--line));
+  border-radius: 18px;
+  color: var(--muted);
+}
+
+.empty-review-state > span {
+  width: 58px;
+  height: 58px;
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 17px;
+  color: var(--jade);
+  background: var(--jade-soft);
+  font-family: Georgia, serif;
+  font-size: 1.55rem;
+}
+
+.empty-review-state strong {
+  color: var(--ink);
+}
+
+.empty-review-state p {
+  max-width: 48rem;
+  margin: 5px 0 0;
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
 .history-section {
   padding-top: 48px;
 }
@@ -982,7 +1244,7 @@ svg {
 
 .restore-preferences {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
   margin: 0;
 }
@@ -2338,6 +2600,24 @@ svg {
     min-height: 90px;
   }
 
+  .assistance-review-section {
+    padding: 18px;
+    border-radius: 22px;
+  }
+
+  .assistance-review-heading {
+    display: grid;
+    gap: 14px;
+  }
+
+  .recording-toggle {
+    justify-self: stretch;
+  }
+
+  .review-word-list {
+    grid-template-columns: 1fr;
+  }
+
   .history-section {
     padding-top: 40px;
   }
@@ -2530,6 +2810,36 @@ svg {
 
   .section-heading {
     display: grid;
+  }
+
+  .review-filters {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .review-filters button {
+    width: 100%;
+  }
+
+  .review-word-card > header,
+  .review-word-footer > div {
+    display: grid;
+  }
+
+  .review-word-status {
+    justify-self: start;
+  }
+
+  .review-word-footer .delete-review-button {
+    margin-left: 0;
+  }
+
+  .restore-preferences {
+    grid-template-columns: 1fr;
+  }
+
+  .empty-review-state {
+    align-items: start;
   }
 
   .continue-section {

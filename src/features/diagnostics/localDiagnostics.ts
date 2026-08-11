@@ -2,6 +2,7 @@ import { version as appVersion } from "../../../package.json";
 import type { BuiltInArticle } from "../../content/types";
 import type { LibraryState } from "../library/readingState";
 import type { StoragePersistence } from "../pwa/pwaStatus";
+import type { AssistanceHistoryState } from "../review/assistanceHistory";
 import type {
   IndexedDbBootstrapResult,
   ScottBookStorageReport
@@ -18,6 +19,7 @@ export type LocalDiagnosticRuntime = {
 
 export type LocalDiagnosticInput = {
   libraryState: LibraryState;
+  assistanceHistory: AssistanceHistoryState;
   articles: readonly BuiltInArticle[];
   storageReport: ScottBookStorageReport | null;
   localData: {
@@ -49,6 +51,13 @@ export type ScottBookLocalDiagnosticReport = {
     favoriteCount: number;
     progressCount: number;
     historyCount: number;
+  };
+  learning: {
+    reviewItemCount: number;
+    readingHelpCount: number;
+    meaningHelpCount: number;
+    knownCount: number;
+    recordingEnabled: boolean;
   };
   storage: ScottBookStorageReport | null;
   localData: LocalDiagnosticInput["localData"] & {
@@ -90,6 +99,7 @@ export function createLocalDiagnosticReport(
       }
     }
   }
+  const reviewItems = Object.values(input.assistanceHistory.items);
 
   return {
     format: "scottbook-local-diagnostics",
@@ -111,6 +121,17 @@ export function createLocalDiagnosticReport(
       favoriteCount: input.libraryState.favoriteArticleIds.length,
       progressCount: Object.keys(input.libraryState.progressByArticle).length,
       historyCount: Object.keys(input.libraryState.historyByArticle).length
+    },
+    learning: {
+      reviewItemCount: reviewItems.length,
+      readingHelpCount: reviewItems.filter(
+        (item) => item.knownAt === null && item.meaningCount === 0
+      ).length,
+      meaningHelpCount: reviewItems.filter(
+        (item) => item.knownAt === null && item.meaningCount > 0
+      ).length,
+      knownCount: reviewItems.filter((item) => item.knownAt !== null).length,
+      recordingEnabled: input.assistanceHistory.recordingEnabled
     },
     storage: input.storageReport ? { ...input.storageReport } : null,
     localData: {

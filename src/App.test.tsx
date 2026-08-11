@@ -3,11 +3,26 @@ import { renderToStaticMarkup } from "react-dom/server";
 import App from "./App";
 import { LIBRARY_STATE_STORAGE_KEY } from "./features/library/readingState";
 import { getInstallCopy } from "./features/pwa/installGuidance";
+import {
+  ASSISTANCE_HISTORY_STORAGE_KEY,
+  createEmptyAssistanceHistory,
+  recordAssistance
+} from "./features/review/assistanceHistory";
 
-function installWindow(hash: string, libraryState?: unknown) {
+function installWindow(
+  hash: string,
+  libraryState?: unknown,
+  assistanceHistory?: unknown
+) {
   const values = new Map<string, string>();
   if (libraryState) {
     values.set(LIBRARY_STATE_STORAGE_KEY, JSON.stringify(libraryState));
+  }
+  if (assistanceHistory) {
+    values.set(
+      ASSISTANCE_HISTORY_STORAGE_KEY,
+      JSON.stringify(assistanceHistory)
+    );
   }
 
   vi.stubGlobal("window", {
@@ -88,6 +103,41 @@ describe("ScottBook routes", () => {
     expect(markup).toContain("Không tìm thấy bài đọc");
     expect(markup).toContain("Thư viện dựng sẵn vẫn còn nguyên");
     expect(markup).toContain("Về thư viện");
+  });
+
+  it("renders distinct pinyin and meaning review evidence", () => {
+    const pinyin = recordAssistance(createEmptyAssistanceHistory(), {
+      articleId: "hsk1-my-morning",
+      sentenceId: "s1",
+      sentenceText: "早上六点，我起床。",
+      sentenceTranslation: "Sáu giờ sáng, tôi thức dậy.",
+      hanzi: "早上",
+      pinyin: "zǎoshang",
+      meaning: "buổi sáng",
+      level: "pinyin",
+      occurredAt: 100
+    });
+    const meaning = recordAssistance(pinyin, {
+      articleId: "hsk1-my-morning",
+      sentenceId: "s2",
+      sentenceText: "我学习中文。",
+      sentenceTranslation: "Tôi học tiếng Trung.",
+      hanzi: "学习",
+      pinyin: "xuéxí",
+      meaning: "học tập",
+      level: "meaning",
+      occurredAt: 200
+    });
+    installWindow("#/review", undefined, meaning);
+
+    const markup = renderToStaticMarkup(<App />);
+
+    expect(markup).toContain("Từ và cụm từng cần trợ giúp");
+    expect(markup).toContain("Cần cách đọc");
+    expect(markup).toContain("Chưa hiểu nghĩa");
+    expect(markup).toContain("zǎoshang");
+    expect(markup).toContain("Ghi lịch sử trợ giúp");
+    expect(markup).toContain("Xóa 早上 khỏi lịch sử trợ giúp");
   });
 
   it("keeps a screen-reader name on the compact mobile back button", () => {

@@ -69,7 +69,7 @@ test("exports, restores, and undoes a local backup", async ({ page }) => {
   const pageErrors = collectPageErrors(page);
   await page.goto("/#/review");
   await dismissInstallNotice(page);
-  await expect(page.getByText("IndexedDB v2", { exact: true })).toBeVisible();
+  await expect(page.getByText("IndexedDB v3", { exact: true })).toBeVisible();
 
   const downloadPromise = page.waitForEvent("download");
   await page.getByRole("button", { name: "Tải bản sao JSON" }).click();
@@ -101,6 +101,47 @@ test("exports, restores, and undoes a local backup", async ({ page }) => {
     "data-theme",
     "night"
   );
+  expect(pageErrors).toEqual([]);
+});
+
+test("turns assistance into an editable local review list", async ({ page }) => {
+  const pageErrors = collectPageErrors(page);
+  await page.goto("/");
+  await dismissInstallNotice(page);
+  await page
+    .getByRole("button", { name: "Mở bài Buổi sáng của tôi" })
+    .click();
+
+  const tokens = page.locator("[data-reader-token]");
+  await tokens.nth(0).click();
+  await tokens.nth(0).click();
+  await tokens.nth(1).click();
+
+  await page.getByRole("button", { name: "Về thư viện" }).click();
+  await page.locator('a[href="#/review"]:visible').click();
+  await expect(
+    page.getByRole("heading", { name: "Từ và cụm từng cần trợ giúp" })
+  ).toBeVisible();
+  await expect(page.getByText("liù diǎn", { exact: true })).toBeVisible();
+
+  await page.getByRole("button", { name: /Chưa hiểu nghĩa 1/ }).click();
+  await expect(page.getByText("zǎoshang", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Ghim 早上", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Đã biết 早上", exact: true })
+    .click();
+  await expect(page.getByText("zǎoshang", { exact: true })).toHaveCount(0);
+
+  await page.getByRole("button", { name: /Đã biết 1/ }).click();
+  await expect(page.getByText("zǎoshang", { exact: true })).toBeVisible();
+  page.once("dialog", (dialog) => dialog.accept());
+  await page
+    .getByRole("button", { name: "Xóa 早上 khỏi lịch sử trợ giúp" })
+    .click();
+  await expect(page.getByText("zǎoshang", { exact: true })).toHaveCount(0);
+  await expect(
+    page.getByText("Wǒ de zǎoshang · Buổi sáng của tôi", { exact: true })
+  ).toBeVisible();
   expect(pageErrors).toEqual([]);
 });
 

@@ -11,6 +11,13 @@ import {
   isReaderPreferences,
   isReaderTheme
 } from "../preferences/readerPreferences";
+import {
+  ASSISTANCE_HISTORY_STORAGE_KEY,
+  createEmptyAssistanceHistory,
+  loadAssistanceHistory,
+  parseAssistanceHistory,
+  validateAssistanceHistorySnapshot
+} from "../review/assistanceHistory";
 
 type LocalStorageReader = Pick<Storage, "getItem">;
 
@@ -22,8 +29,9 @@ export function validateLocalDataSnapshot(
   }
 
   const candidate = value as Record<string, unknown>;
+  const hasAssistanceHistory = Object.hasOwn(candidate, "assistanceHistory");
   if (
-    Object.keys(candidate).length !== 2 ||
+    Object.keys(candidate).length !== (hasAssistanceHistory ? 3 : 2) ||
     !Object.hasOwn(candidate, "libraryState") ||
     !Object.hasOwn(candidate, "preferences")
   ) {
@@ -32,10 +40,15 @@ export function validateLocalDataSnapshot(
 
   const libraryState = validateLibraryStateSnapshot(candidate.libraryState);
   if (!libraryState || !isReaderPreferences(candidate.preferences)) return null;
+  const assistanceHistory = hasAssistanceHistory
+    ? validateAssistanceHistorySnapshot(candidate.assistanceHistory)
+    : createEmptyAssistanceHistory();
+  if (!assistanceHistory) return null;
 
   return {
     libraryState,
-    preferences: { ...candidate.preferences }
+    preferences: { ...candidate.preferences },
+    assistanceHistory
   };
 }
 
@@ -62,7 +75,8 @@ export function loadLocalDataFallback(
 ): ScottBookBackupData {
   return {
     libraryState: loadLibraryState(storage),
-    preferences: readPreferences(storage) ?? { theme: "paper", fontSize: 25 }
+    preferences: readPreferences(storage) ?? { theme: "paper", fontSize: 25 },
+    assistanceHistory: loadAssistanceHistory(storage)
   };
 }
 
@@ -76,7 +90,17 @@ export function tryLoadPrimaryLocalData(
 ): ScottBookBackupData | null {
   const libraryState = tryLoadPrimaryLibraryState(storage);
   const preferences = readPreferences(storage);
-  return libraryState && preferences
-    ? { libraryState, preferences }
+  let assistanceHistory;
+  try {
+    const serialized = storage.getItem(ASSISTANCE_HISTORY_STORAGE_KEY);
+    assistanceHistory =
+      serialized === null
+        ? createEmptyAssistanceHistory()
+        : parseAssistanceHistory(serialized);
+  } catch {
+    return null;
+  }
+  return libraryState && preferences && assistanceHistory
+    ? { libraryState, preferences, assistanceHistory }
     : null;
 }

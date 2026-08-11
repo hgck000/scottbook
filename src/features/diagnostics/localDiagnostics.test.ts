@@ -6,6 +6,10 @@ import {
   toggleFavoriteArticle,
   updateReadingProgress
 } from "../library/readingState";
+import {
+  createEmptyAssistanceHistory,
+  recordAssistance
+} from "../review/assistanceHistory";
 import { createLocalDiagnosticReport } from "./localDiagnostics";
 
 describe("local diagnostic export", () => {
@@ -26,10 +30,24 @@ describe("local diagnostic export", () => {
     const report = createLocalDiagnosticReport(
       {
         libraryState,
+        assistanceHistory: recordAssistance(
+          createEmptyAssistanceHistory(),
+          {
+            articleId: privateArticleId,
+            sentenceId: "private-sentence-id-must-not-leak",
+            sentenceText: "私密句子",
+            sentenceTranslation: "câu riêng tư",
+            hanzi: "私密",
+            pinyin: "sīmì",
+            meaning: "riêng tư",
+            level: "meaning",
+            occurredAt: 200
+          }
+        ),
         articles: builtInLibrary,
         storageReport: {
           indexedDbAvailable: true,
-          schemaVersion: 2,
+          schemaVersion: 3,
           usageBytes: 8_192,
           quotaBytes: 1_048_576,
           bookCount: 0,
@@ -60,7 +78,7 @@ describe("local diagnostic export", () => {
     expect(report).toMatchObject({
       format: "scottbook-local-diagnostics",
       formatVersion: 1,
-      appVersion: "0.9.0",
+      appVersion: "0.10.0",
       generatedAt: "2026-08-11T04:00:00.000Z",
       privacy: {
         transmitted: false,
@@ -68,13 +86,21 @@ describe("local diagnostic export", () => {
         containsArticleIds: false,
         containsUserAgent: false
       },
-      reading: { favoriteCount: 1, progressCount: 1, historyCount: 1 }
+      reading: { favoriteCount: 1, progressCount: 1, historyCount: 1 },
+      learning: {
+        reviewItemCount: 1,
+        readingHelpCount: 0,
+        meaningHelpCount: 1,
+        knownCount: 0,
+        recordingEnabled: true
+      }
     });
     expect(report.content.builtInArticleCount).toBe(builtInLibrary.length);
     expect(report.content.sentenceCount).toBeGreaterThan(0);
     expect(report.content.wordTokenCount).toBeGreaterThan(0);
     expect(serialized).not.toContain(privateArticleId);
     expect(serialized).not.toContain("private-sentence-id-must-not-leak");
+    expect(serialized).not.toContain("私密句子");
     expect(serialized).not.toContain(builtInLibrary[0]?.title ?? "missing");
     expect(serialized).not.toMatch(/https?:\/\//);
   });

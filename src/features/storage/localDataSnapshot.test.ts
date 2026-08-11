@@ -10,6 +10,10 @@ import {
   READER_THEME_STORAGE_KEY
 } from "../preferences/readerPreferences";
 import {
+  ASSISTANCE_HISTORY_STORAGE_KEY,
+  createEmptyAssistanceHistory
+} from "../review/assistanceHistory";
+import {
   loadLocalDataFallback,
   tryLoadPrimaryLocalData
 } from "./localDataSnapshot";
@@ -39,7 +43,8 @@ describe("localStorage migration snapshot", () => {
 
     expect(tryLoadPrimaryLocalData(storage)).toEqual({
       libraryState,
-      preferences: { theme: "night", fontSize: 29 }
+      preferences: { theme: "night", fontSize: 29 },
+      assistanceHistory: createEmptyAssistanceHistory()
     });
   });
 
@@ -63,8 +68,19 @@ describe("localStorage migration snapshot", () => {
 
     expect(loadLocalDataFallback(storage)).toEqual({
       libraryState: createEmptyLibraryState(),
-      preferences: { theme: "paper", fontSize: 25 }
+      preferences: { theme: "paper", fontSize: 25 },
+      assistanceHistory: createEmptyAssistanceHistory()
     });
+    expect(tryLoadPrimaryLocalData(storage)).toBeNull();
+  });
+
+  it("does not let corrupt assistance history replace a healthy IndexedDB copy", () => {
+    const storage = new MemoryStorage();
+    storage.set(LIBRARY_STATE_STORAGE_KEY, createEmptyLibraryState());
+    storage.set(READER_THEME_STORAGE_KEY, "paper");
+    storage.set(READER_FONT_SIZE_STORAGE_KEY, 25);
+    storage.values.set(ASSISTANCE_HISTORY_STORAGE_KEY, "corrupt-json");
+
     expect(tryLoadPrimaryLocalData(storage)).toBeNull();
   });
 });

@@ -7,6 +7,10 @@ import {
   toggleFavoriteArticle
 } from "../library/readingState";
 import {
+  createEmptyAssistanceHistory,
+  recordAssistance
+} from "../review/assistanceHistory";
+import {
   SCOTTBOOK_DATABASE_VERSION,
   SCOTTBOOK_STORE_NAMES,
   ScottBookIndexedDbRepository,
@@ -38,7 +42,8 @@ function createData(
       articleId,
       100
     ),
-    preferences: { theme, fontSize: theme === "paper" ? 25 : 28 }
+    preferences: { theme, fontSize: theme === "paper" ? 25 : 28 },
+    assistanceHistory: createEmptyAssistanceHistory()
   };
 }
 
@@ -46,7 +51,8 @@ async function createVersionOneFixture(
   factory: IDBFactory,
   databaseName: string,
   libraryValue: unknown,
-  preferencesValue: unknown
+  preferencesValue: unknown,
+  assistanceValue?: unknown
 ): Promise<void> {
   await new Promise<void>((resolve, reject) => {
     const request = factory.open(databaseName, 1);
@@ -61,7 +67,7 @@ async function createVersionOneFixture(
         SCOTTBOOK_STORE_NAMES.settings,
         { keyPath: "id" }
       );
-      database.createObjectStore(SCOTTBOOK_STORE_NAMES.events, {
+      const events = database.createObjectStore(SCOTTBOOK_STORE_NAMES.events, {
         keyPath: "id",
         autoIncrement: true
       });
@@ -73,6 +79,13 @@ async function createVersionOneFixture(
         value: preferencesValue,
         updatedAt: 10
       });
+      if (assistanceValue !== undefined) {
+        events.put({
+          id: "assistance-history",
+          value: assistanceValue,
+          updatedAt: 10
+        });
+      }
     };
     request.onsuccess = () => {
       request.result.close();
@@ -103,6 +116,17 @@ describe("IndexedDB local-data repository", () => {
     const factory = new IDBFactory();
     const databaseName = "migration-from-local-storage";
     const data = createData("article-a", "night");
+    data.assistanceHistory = recordAssistance(data.assistanceHistory, {
+      articleId: "article-a",
+      sentenceId: "s1",
+      sentenceText: "早上好。",
+      sentenceTranslation: "Chào buổi sáng.",
+      hanzi: "早上",
+      pinyin: "zǎoshang",
+      meaning: "buổi sáng",
+      level: "meaning",
+      occurredAt: 500
+    });
     const repository = new ScottBookIndexedDbRepository({
       factory,
       databaseName,
@@ -122,7 +146,8 @@ describe("IndexedDB local-data repository", () => {
     const loaded = await reopened.bootstrap(
       {
         libraryState: createEmptyLibraryState(),
-        preferences: { theme: "paper", fontSize: 25 }
+        preferences: { theme: "paper", fontSize: 25 },
+        assistanceHistory: createEmptyAssistanceHistory()
       },
       null
     );
@@ -134,7 +159,7 @@ describe("IndexedDB local-data repository", () => {
     await reopened.close();
   });
 
-  it("upgrades a v1 fixture to v2 without losing valid records", async () => {
+  it("upgrades a v1 fixture to v3 without losing valid records", async () => {
     const factory = new IDBFactory();
     const databaseName = "schema-v1-to-v2";
     const data = createData("article-v1", "night");
@@ -201,6 +226,34 @@ describe("IndexedDB local-data repository", () => {
     await repository.close();
   });
 
+  it("quarantines corrupt assistance history without losing reading data", async () => {
+    const factory = new IDBFactory();
+    const databaseName = "corrupt-assistance-isolation";
+    const fallback = createData("safe-reading", "paper");
+    await createVersionOneFixture(
+      factory,
+      databaseName,
+      fallback.libraryState,
+      fallback.preferences,
+      { version: 1, recordingEnabled: true, items: { unsafe: {} } }
+    );
+
+    const repository = new ScottBookIndexedDbRepository({
+      factory,
+      databaseName,
+      now: () => 3_500
+    });
+    const result = await repository.bootstrap(fallback, null);
+    expect(result).toMatchObject({
+      available: true,
+      source: "recovered",
+      quarantinedThisRun: 1,
+      data: fallback
+    });
+    expect((await repository.getStorageReport()).eventCount).toBe(0);
+    await repository.close();
+  });
+
   it("clears only translation cache records", async () => {
     const factory = new IDBFactory();
     const databaseName = "isolated-cache-clear";
@@ -232,7 +285,7 @@ describe("IndexedDB local-data repository", () => {
     }));
     expect(report).toMatchObject({
       indexedDbAvailable: true,
-      schemaVersion: 2,
+      schemaVersion: 3,
       usageBytes: 4_096,
       quotaBytes: 1_048_576,
       bookCount: 1,

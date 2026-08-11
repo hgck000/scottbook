@@ -6,6 +6,10 @@ import {
   READER_FONT_SIZE_STORAGE_KEY,
   READER_THEME_STORAGE_KEY
 } from "../preferences/readerPreferences";
+import {
+  ASSISTANCE_HISTORY_BACKUP_STORAGE_KEY,
+  ASSISTANCE_HISTORY_STORAGE_KEY
+} from "../review/assistanceHistory";
 import { validateLocalDataSnapshot } from "../storage/localDataSnapshot";
 import {
   verifyScottBookBackup,
@@ -23,6 +27,7 @@ export type ScottBookBackupPreview = {
   historyCount: number;
   completedCount: number;
   activeProgressCount: number;
+  assistanceItemCount: number;
   theme: ScottBookBackupData["preferences"]["theme"];
   fontSize: number;
 };
@@ -66,6 +71,8 @@ const TRANSACTION_KEYS = [
   LIBRARY_STATE_BACKUP_STORAGE_KEY,
   READER_THEME_STORAGE_KEY,
   READER_FONT_SIZE_STORAGE_KEY,
+  ASSISTANCE_HISTORY_STORAGE_KEY,
+  ASSISTANCE_HISTORY_BACKUP_STORAGE_KEY,
   RESTORE_UNDO_STORAGE_KEY
 ] as const;
 
@@ -119,6 +126,7 @@ function buildPreview(backup: ScottBookBackup): ScottBookBackupPreview {
     completedCount: historyEntries.filter((entry) => entry.completedAt !== null)
       .length,
     activeProgressCount,
+    assistanceItemCount: Object.keys(backup.data.assistanceHistory.items).length,
     theme: preferences.theme,
     fontSize: preferences.fontSize
   };
@@ -258,12 +266,20 @@ export function writeScottBookDataBundle(
     JSON.stringify(safetyCopy.libraryState)
   );
   storage.setItem(
+    ASSISTANCE_HISTORY_BACKUP_STORAGE_KEY,
+    JSON.stringify(safetyCopy.assistanceHistory)
+  );
+  storage.setItem(
     READER_THEME_STORAGE_KEY,
     JSON.stringify(target.preferences.theme)
   );
   storage.setItem(
     READER_FONT_SIZE_STORAGE_KEY,
     JSON.stringify(target.preferences.fontSize)
+  );
+  storage.setItem(
+    ASSISTANCE_HISTORY_STORAGE_KEY,
+    JSON.stringify(target.assistanceHistory)
   );
   // The main reading record is written last so it stays untouched if an
   // earlier preparatory write fails.
