@@ -18,6 +18,8 @@ Capacitor will use the same frontend in a later sprint.
 - Every built-in sentence already contains a Vietnamese translation.
 - No translation, pinyin, analytics, or content API call at reading time.
 - Paper/night themes and adjustable reader text size.
+- Reading position saved as a stable sentence anchor on the current device.
+- A continue-reading card, per-article progress, and a local favorites filter.
 - Generated service worker precaches the complete prototype.
 - Import is intentionally deferred while its language-processing design is evaluated.
 
@@ -54,6 +56,17 @@ invalid without a Vietnamese translation.
 
 `npm run build` first executes the content validation test. Incomplete reference
 content therefore fails both the local production build and GitHub Actions.
+
+## Local reading data
+
+Reading progress and favorites are small, device-only records stored in
+`localStorage` under a versioned key. ScottBook stores the last sentence id rather
+than a scroll offset, so resuming still works when the window or font size
+changes. Invalid or outdated stored JSON falls back safely to a clean state.
+
+No account, cloud sync, analytics, or network request is involved. Larger book
+content and future imports will use a separate IndexedDB layer when that sprint
+starts.
 
 ## GitHub linking
 
