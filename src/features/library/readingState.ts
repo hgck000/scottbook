@@ -1,6 +1,8 @@
 import type { BuiltInArticle } from "../../content/types";
 
 export const LIBRARY_STATE_STORAGE_KEY = "scottbook.libraryState.v2";
+export const LIBRARY_STATE_BACKUP_STORAGE_KEY =
+  "scottbook.libraryState.backup.v2";
 export const LEGACY_LIBRARY_STATE_STORAGE_KEY = "scottbook.libraryState.v1";
 
 export type ReadingProgress = {
@@ -27,7 +29,7 @@ export type LibraryState = {
 };
 
 type StorageReader = Pick<Storage, "getItem">;
-type StorageWriter = Pick<Storage, "setItem">;
+type StorageWriter = Pick<Storage, "getItem" | "setItem">;
 
 export function createEmptyLibraryState(): LibraryState {
   return {
@@ -200,6 +202,11 @@ export function loadLibraryState(storage: StorageReader): LibraryState {
     );
     if (current) return current;
 
+    const backup = tryParseLibraryState(
+      storage.getItem(LIBRARY_STATE_BACKUP_STORAGE_KEY)
+    );
+    if (backup) return backup;
+
     return (
       tryParseLibraryState(
         storage.getItem(LEGACY_LIBRARY_STATE_STORAGE_KEY)
@@ -215,6 +222,18 @@ export function persistLibraryState(
   state: LibraryState
 ): boolean {
   try {
+    const currentSerialized = storage.getItem(LIBRARY_STATE_STORAGE_KEY);
+    if (currentSerialized && tryParseLibraryState(currentSerialized)) {
+      try {
+        storage.setItem(
+          LIBRARY_STATE_BACKUP_STORAGE_KEY,
+          currentSerialized
+        );
+      } catch {
+        // A failed safety copy must not block the newer valid state.
+      }
+    }
+
     storage.setItem(LIBRARY_STATE_STORAGE_KEY, JSON.stringify(state));
     return true;
   } catch {

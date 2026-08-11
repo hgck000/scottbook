@@ -6,6 +6,10 @@ import type {
   WordToken
 } from "./content/types";
 import {
+  createScottBookBackup,
+  downloadScottBookBackup
+} from "./features/backup/exportBackup";
+import {
   advanceAssistance,
   type AssistanceSelection
 } from "./features/reader/assistance";
@@ -22,6 +26,12 @@ import {
   type LibraryState,
   type ReadingHistoryEntry
 } from "./features/library/readingState";
+import {
+  pwaStatusStore,
+  usePwaStatus,
+  type PwaStatusSnapshot,
+  type StoragePersistence
+} from "./features/pwa/pwaStatus";
 
 type Theme = "paper" | "night";
 
@@ -101,6 +111,7 @@ function ChevronIcon() {
 }
 
 function App() {
+  const pwaStatus = usePwaStatus();
   const [route, setRoute] = useState<Route>(parseRoute);
   const [theme, setTheme] = useStoredState<Theme>("scottbook.theme", "paper");
   const [fontSize, setFontSize] = useStoredState<number>(
@@ -208,10 +219,12 @@ function App() {
     content = (
       <ReviewScreen
         theme={theme}
+        fontSize={fontSize}
         toggleTheme={toggleTheme}
         libraryState={libraryState}
         openArticle={openArticle}
         resetProgress={resetProgress}
+        storagePersistence={pwaStatus.storagePersistence}
       />
     );
   } else {
@@ -226,7 +239,97 @@ function App() {
     );
   }
 
-  return <div data-theme={theme}>{content}</div>;
+  return (
+    <div data-theme={theme}>
+      {content}
+      <PwaStatusNotice
+        status={pwaStatus}
+        isReading={route.name === "reader"}
+      />
+    </div>
+  );
+}
+
+function PwaStatusNotice({
+  status,
+  isReading
+}: {
+  status: PwaStatusSnapshot;
+  isReading: boolean;
+}) {
+  return (
+    <div className="pwa-status-stack">
+      {status.needRefresh ? (
+        <aside className="update-notice" aria-live="polite">
+          <div className="notice-icon" aria-hidden="true">↻</div>
+          <div>
+            <strong>Có phiên bản ScottBook mới</strong>
+            <p>
+              {isReading
+                ? "Vị trí đọc đã được lưu. App chỉ tải lại khi bạn bấm cập nhật."
+                : "Dữ liệu local đã được lưu trước khi chuyển sang bản mới."}
+            </p>
+            {status.updateError ? (
+              <p className="notice-error">{status.updateError}</p>
+            ) : null}
+            <div className="notice-actions">
+              <button
+                className="notice-later"
+                type="button"
+                onClick={pwaStatusStore.dismissRefresh}
+                disabled={status.updating}
+              >
+                Để sau
+              </button>
+              <button
+                className="notice-update"
+                type="button"
+                onClick={() => void pwaStatusStore.applyUpdate()}
+                disabled={status.updating}
+              >
+                {status.updating ? "Đang cập nhật…" : "Cập nhật bây giờ"}
+              </button>
+            </div>
+          </div>
+        </aside>
+      ) : null}
+
+      {status.offlineReady ? (
+        <aside className="offline-ready-notice" aria-live="polite">
+          <span aria-hidden="true">✓</span>
+          <p>ScottBook đã sẵn sàng để đọc khi mất mạng.</p>
+          <button
+            type="button"
+            onClick={pwaStatusStore.dismissOfflineReady}
+            aria-label="Đóng thông báo offline"
+          >
+            ×
+          </button>
+        </aside>
+      ) : null}
+
+      {!status.needRefresh && status.updateError ? (
+        <aside className="pwa-error-notice" aria-live="polite">
+          <p>{status.updateError}</p>
+          <button
+            type="button"
+            onClick={pwaStatusStore.dismissError}
+            aria-label="Đóng thông báo lỗi cập nhật"
+          >
+            ×
+          </button>
+        </aside>
+      ) : null}
+
+      <div
+        className={`connection-chip${status.isOnline ? "" : " offline"}`}
+        role="status"
+      >
+        <span aria-hidden="true" />
+        {status.isOnline ? "Đã kết nối" : "Đang ngoại tuyến"}
+      </div>
+    </div>
+  );
 }
 
 function Brand() {
@@ -474,16 +577,20 @@ const historyDateFormatter = new Intl.DateTimeFormat("vi-VN", {
 
 function ReviewScreen({
   theme,
+  fontSize,
   toggleTheme,
   libraryState,
   openArticle,
-  resetProgress
+  resetProgress,
+  storagePersistence
 }: {
   theme: Theme;
+  fontSize: number;
   toggleTheme: () => void;
   libraryState: LibraryState;
   openArticle: (articleId: string) => void;
   resetProgress: (articleId: string) => void;
+  storagePersistence: StoragePersistence;
 }) {
   const historyItems: Array<{
     article: BuiltInArticle;
@@ -545,6 +652,13 @@ function ReviewScreen({
           </div>
         </section>
 
+        <DataProtectionCard
+          libraryState={libraryState}
+          theme={theme}
+          fontSize={fontSize}
+          storagePersistence={storagePersistence}
+        />
+
         <section className="history-section" aria-labelledby="history-heading">
           <div className="section-heading">
             <div>
@@ -588,6 +702,104 @@ function ReviewScreen({
 
       <MobileNavigation active="review" historyCount={historyItems.length} />
     </div>
+  );
+}
+
+function DataProtectionCard({
+  libraryState,
+  theme,
+  fontSize,
+  storagePersistence
+}: {
+  libraryState: LibraryState;
+  theme: Theme;
+  fontSize: number;
+  storagePersistence: StoragePersistence;
+}) {
+  const [exportStatus, setExportStatus] = useState<
+    "idle" | "working" | "done" | "error"
+  >("idle");
+  const [requestingStorage, setRequestingStorage] = useState(false);
+
+  const exportBackup = async () => {
+    setExportStatus("working");
+    try {
+      const backup = await createScottBookBackup({
+        libraryState,
+        preferences: { theme, fontSize }
+      });
+      downloadScottBookBackup(backup);
+      setExportStatus("done");
+    } catch {
+      setExportStatus("error");
+    }
+  };
+
+  const requestPersistentStorage = async () => {
+    setRequestingStorage(true);
+    await pwaStatusStore.requestPersistentStorage();
+    setRequestingStorage(false);
+  };
+
+  const persistenceLabel = {
+    checking: "Đang kiểm tra bộ nhớ",
+    available: "Bộ nhớ tiêu chuẩn",
+    granted: "Lưu trữ bền vững đã bật",
+    unsupported: "Trình duyệt tự quản lý bộ nhớ"
+  }[storagePersistence];
+
+  return (
+    <section
+      className="data-protection-card"
+      aria-labelledby="protection-heading"
+    >
+      <div className="protection-icon" aria-hidden="true">◇</div>
+      <div className="protection-copy">
+        <p className="eyebrow">An toàn dữ liệu local</p>
+        <h2 id="protection-heading">Bảo vệ tiến độ trước khi cập nhật</h2>
+        <p>
+          Mỗi lần ghi, ScottBook giữ lại bản hợp lệ trước đó để tự phục hồi.
+          Bản xuất JSON có checksum SHA-256 để phát hiện file bị sửa hoặc hỏng.
+        </p>
+        <div className="protection-statuses">
+          <span className={storagePersistence === "granted" ? "granted" : ""}>
+            <i aria-hidden="true" />
+            {persistenceLabel}
+          </span>
+          <span>
+            <i aria-hidden="true" />
+            Backup local tự động
+          </span>
+        </div>
+        <p className="export-feedback" aria-live="polite">
+          {exportStatus === "done"
+            ? "Đã tải bản sao JSON có checksum."
+            : exportStatus === "error"
+              ? "Chưa thể tạo bản sao. Dữ liệu trong app không bị thay đổi."
+              : "Hiện chỉ xuất bản sao; chưa nhập ngược file vào app."}
+        </p>
+      </div>
+      <div className="protection-actions">
+        {storagePersistence === "available" ? (
+          <button
+            className="persistence-button"
+            type="button"
+            onClick={() => void requestPersistentStorage()}
+            disabled={requestingStorage}
+          >
+            {requestingStorage ? "Đang yêu cầu…" : "Bật lưu trữ bền vững"}
+          </button>
+        ) : null}
+        <button
+          className="backup-button"
+          type="button"
+          onClick={() => void exportBackup()}
+          disabled={exportStatus === "working"}
+        >
+          {exportStatus === "working" ? "Đang tạo…" : "Tải bản sao JSON"}
+        </button>
+      </div>
+    </section>
   );
 }
 
