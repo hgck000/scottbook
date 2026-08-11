@@ -40,6 +40,25 @@ class MemoryStorage {
   }
 }
 
+class FailOnceStorage extends MemoryStorage {
+  private failed = false;
+
+  constructor(
+    initial: Record<string, string>,
+    private readonly failedKey: string
+  ) {
+    super(initial);
+  }
+
+  override setItem(key: string, value: string): void {
+    if (key === this.failedKey && !this.failed) {
+      this.failed = true;
+      throw new Error("simulated localStorage rejection");
+    }
+    super.setItem(key, value);
+  }
+}
+
 class ControllableRepository extends ScottBookIndexedDbRepository {
   failQueuedWrites = false;
 
@@ -173,5 +192,69 @@ describe("local-data coordinator", () => {
     expect(JSON.parse(storage.getItem(LIBRARY_STATE_STORAGE_KEY) ?? "")).toEqual(
       restored.libraryState
     );
+  });
+
+  it("flushes the latest compatible snapshot before a PWA update", async () => {
+    const factory = new IDBFactory();
+    const databaseName = "pwa-update-checkpoint";
+    const initial = createData("before-update", "paper");
+    const latest = createData("latest-reader-position", "night");
+    const storage = createStorage(initial);
+    const repository = new ScottBookIndexedDbRepository({ factory, databaseName });
+    const coordinator = new ScottBookLocalDataCoordinator(repository, storage);
+    await coordinator.bootstrap(initial, initial);
+
+    await expect(coordinator.prepareForUpdate(latest)).resolves.toBe(true);
+    expect(JSON.parse(storage.getItem(LIBRARY_STATE_STORAGE_KEY) ?? "")).toEqual(
+      latest.libraryState
+    );
+    expect(JSON.parse(storage.getItem(READER_THEME_STORAGE_KEY) ?? "")).toBe(
+      "night"
+    );
+    await repository.close();
+
+    const reopened = new ScottBookIndexedDbRepository({ factory, databaseName });
+    const loaded = await reopened.bootstrap(initial, null);
+    expect(loaded.data).toEqual(latest);
+    await reopened.close();
+  });
+
+  it("rolls local bytes back when the update safety write is rejected", async () => {
+    const current = createData("safe-before-update", "paper");
+    const latest = createData("rejected-update-state", "night");
+    const initialStorage = createStorage(current).entries();
+    const storage = new FailOnceStorage(
+      initialStorage,
+      READER_FONT_SIZE_STORAGE_KEY
+    );
+    const repository = new ScottBookIndexedDbRepository({
+      factory: undefined,
+      databaseName: "failed-local-update-checkpoint"
+    });
+    const coordinator = new ScottBookLocalDataCoordinator(repository, storage);
+    await coordinator.bootstrap(current, current);
+    const before = storage.entries();
+
+    await expect(coordinator.prepareForUpdate(latest)).resolves.toBe(false);
+    expect(storage.entries()).toEqual(before);
+  });
+
+  it("can update from a complete local snapshot if the IndexedDB flush fails", async () => {
+    const factory = new IDBFactory();
+    const databaseName = "pwa-update-indexeddb-fallback";
+    const current = createData("indexeddb-current", "paper");
+    const latest = createData("local-update-fallback", "night");
+    const storage = createStorage(current);
+    const repository = new ControllableRepository({ factory, databaseName });
+    const coordinator = new ScottBookLocalDataCoordinator(repository, storage);
+    await coordinator.bootstrap(current, current);
+    repository.failQueuedWrites = true;
+
+    await expect(coordinator.prepareForUpdate(latest)).resolves.toBe(true);
+    expect(coordinator.isUsingIndexedDb()).toBe(false);
+    expect(JSON.parse(storage.getItem(LIBRARY_STATE_STORAGE_KEY) ?? "")).toEqual(
+      latest.libraryState
+    );
+    await repository.close();
   });
 });

@@ -24,6 +24,8 @@ Capacitor will use the same frontend in a later sprint.
 - Automatic/manual completion status and a reset-progress action.
 - Explicit online/offline and first-install offline-ready notices.
 - Controlled PWA updates that reload only after the reader accepts.
+- Native install prompt plus iPhone/iPad, MacBook, and browser guidance.
+- Pre-update data checkpoint that blocks unsafe service-worker reloads.
 - Automatic recovery from the previous valid local record.
 - Versioned JSON backup export protected by a SHA-256 checksum.
 - Validated JSON backup restore with preview, rollback, and one-level undo.
@@ -121,6 +123,33 @@ The generated service worker uses prompt mode. A waiting version displays a
 when another tab activates the worker, the current tab defers reloading until
 the user accepts. This keeps the active reader position and local writes safe
 from an unexpected mid-session refresh.
+
+Version 0.7 adds a compatibility gate before every accepted update. ScottBook
+validates the current library/settings schema, writes the newest state as a
+guarded `localStorage` transaction, and waits for queued IndexedDB writes before
+activating the waiting service worker. A failed local safety write blocks the
+update and keeps the current app running. If IndexedDB alone fails, the complete
+local snapshot becomes the next version's migration source.
+
+An update dismissed with “Để sau” remains reachable through a compact update
+action; there is no background reload loop. Missing article routes render an
+explicit online/offline recovery screen instead of a blank page.
+
+## Install ScottBook
+
+Chromium browsers on Android, Windows, macOS, and Linux can expose ScottBook's
+native install dialog directly in the app. The invitation can be dismissed
+persistently and reopened from the small “Cài app” action.
+
+On iPhone and iPad, open ScottBook in Safari, choose **Share**, then **Add to Home
+Screen**. On macOS Safari, choose **Share → Add to Dock**; Chrome and Edge use
+their install action in the address bar. The manifest includes 192 px, 512 px,
+maskable, and Apple touch icons.
+
+All three built-in reference articles are compiled into the precached app shell,
+so they remain available in airplane mode without a separate download. External
+TXT/EPUB content and cache-on-demand imported books remain intentionally
+disabled until the import research phase is approved.
 
 ## GitHub linking
 

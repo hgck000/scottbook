@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import App from "./App";
 import { LIBRARY_STATE_STORAGE_KEY } from "./features/library/readingState";
+import { getInstallCopy } from "./features/pwa/installGuidance";
 
 function installWindow(hash: string, libraryState?: unknown) {
   const values = new Map<string, string>();
@@ -72,5 +73,28 @@ describe("ScottBook routes", () => {
     expect(markup).toContain("Dung lượng và vùng cache tách biệt");
     expect(markup).toContain("Xóa cache dịch");
     expect(markup).toContain("import vẫn đang khóa");
+  });
+
+  it("renders a clear recovery screen for an unavailable article", () => {
+    installWindow("#/read/not-in-the-built-in-library");
+
+    const markup = renderToStaticMarkup(<App />);
+
+    expect(markup).toContain("Không tìm thấy bài đọc");
+    expect(markup).toContain("Thư viện dựng sẵn vẫn còn nguyên");
+    expect(markup).toContain("Về thư viện");
+  });
+});
+
+describe("PWA install guidance", () => {
+  it("uses platform-specific instructions without promising an APK", () => {
+    expect(getInstallCopy("ios").instruction).toContain(
+      "Thêm vào Màn hình chính"
+    );
+    expect(getInstallCopy("macos").instruction).toContain("Thêm vào Dock");
+    expect(getInstallCopy("native").title).toContain("Cài ScottBook");
+    expect(getInstallCopy("browser").instruction).toContain(
+      "Cài đặt ứng dụng"
+    );
   });
 });

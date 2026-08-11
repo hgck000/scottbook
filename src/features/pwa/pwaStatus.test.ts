@@ -1,5 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
-import { createPwaStatusStore } from "./pwaStatus";
+import {
+  createPwaStatusStore,
+  detectManualInstallMethod,
+  type PwaNativeInstallPrompt
+} from "./pwaStatus";
 
 describe("controlled PWA lifecycle", () => {
   it("tracks connection changes and reloads only after an accepted update", async () => {
@@ -85,5 +89,162 @@ describe("controlled PWA lifecycle", () => {
     expect(store.getSnapshot().updateError).toContain(
       "Dữ liệu đọc vẫn được giữ nguyên"
     );
+  });
+
+  it("creates a data safety point before activating or reloading", async () => {
+    const order: string[] = [];
+    const reload = vi.fn(() => order.push("reload"));
+    const store = createPwaStatusStore({
+      getOnline: () => true,
+      addConnectionListener: () => () => undefined,
+      reload
+    });
+    store.setUpdateServiceWorker(async () => {
+      order.push("activate");
+    });
+    store.notifyNeedRefresh();
+
+    await store.applyUpdate(async () => {
+      order.push("prepare");
+      return true;
+    });
+    expect(order).toEqual(["prepare", "activate"]);
+
+    store.handleServiceWorkerNeedsReload();
+    expect(reload).toHaveBeenCalledOnce();
+  });
+
+  it("blocks activation when the data safety point cannot be written", async () => {
+    const updateServiceWorker = vi.fn(async () => undefined);
+    const store = createPwaStatusStore({
+      getOnline: () => true,
+      addConnectionListener: () => () => undefined,
+      reload: () => undefined
+    });
+    store.setUpdateServiceWorker(updateServiceWorker);
+    store.notifyNeedRefresh();
+
+    await store.applyUpdate(async () => false);
+
+    expect(updateServiceWorker).not.toHaveBeenCalled();
+    expect(store.getSnapshot()).toMatchObject({
+      updating: false,
+      needRefresh: true,
+      updateAvailable: true
+    });
+    expect(store.getSnapshot().updateError).toContain("điểm an toàn");
+  });
+
+  it("keeps a dismissed update reachable from the compact action", () => {
+    const store = createPwaStatusStore({
+      getOnline: () => true,
+      addConnectionListener: () => () => undefined,
+      reload: () => undefined
+    });
+    store.notifyNeedRefresh();
+    store.dismissRefresh();
+    expect(store.getSnapshot()).toMatchObject({
+      needRefresh: false,
+      updateAvailable: true
+    });
+
+    store.showRefresh();
+    expect(store.getSnapshot().needRefresh).toBe(true);
+  });
+});
+
+describe("PWA installation", () => {
+  it("detects Apple mobile devices including iPadOS desktop user agents", () => {
+    expect(
+      detectManualInstallMethod("Mozilla/5.0 (iPhone)", "iPhone", 5)
+    ).toBe("ios");
+    expect(
+      detectManualInstallMethod("Mozilla/5.0 (Macintosh)", "MacIntel", 5)
+    ).toBe("ios");
+    expect(
+      detectManualInstallMethod("Mozilla/5.0 (Macintosh)", "MacIntel", 0)
+    ).toBe("macos");
+    expect(
+      detectManualInstallMethod("Mozilla/5.0 (Linux; Android 16)", "Linux", 5)
+    ).toBe("browser");
+  });
+
+  it("captures and resolves the native browser install prompt", async () => {
+    let promptListener: (prompt: PwaNativeInstallPrompt) => void =
+      () => undefined;
+    let dismissed = false;
+    const prompt = vi.fn(async () => undefined);
+    const store = createPwaStatusStore({
+      getOnline: () => true,
+      addConnectionListener: () => () => undefined,
+      reload: () => undefined,
+      install: {
+        isInstalled: () => false,
+        getManualMethod: () => "browser",
+        isDismissed: () => dismissed,
+        setDismissed: () => {
+          dismissed = true;
+        },
+        clearDismissed: () => {
+          dismissed = false;
+        },
+        addPromptListener: (listener) => {
+          promptListener = listener;
+          return () => undefined;
+        },
+        addInstalledListener: () => () => undefined
+      }
+    });
+    store.initialize();
+    promptListener({
+      prompt,
+      userChoice: Promise.resolve({ outcome: "accepted" })
+    });
+    expect(store.getSnapshot()).toMatchObject({
+      installState: "available",
+      installMethod: "native"
+    });
+
+    await expect(store.requestInstall()).resolves.toBe(true);
+    expect(prompt).toHaveBeenCalledOnce();
+    expect(dismissed).toBe(true);
+    expect(store.getSnapshot()).toMatchObject({
+      installState: "installed",
+      installMethod: null
+    });
+  });
+
+  it("persists dismissal but leaves manual guidance reopenable", () => {
+    let dismissed = true;
+    const store = createPwaStatusStore({
+      getOnline: () => true,
+      addConnectionListener: () => () => undefined,
+      reload: () => undefined,
+      install: {
+        isInstalled: () => false,
+        getManualMethod: () => "ios",
+        isDismissed: () => dismissed,
+        setDismissed: () => {
+          dismissed = true;
+        },
+        clearDismissed: () => {
+          dismissed = false;
+        },
+        addPromptListener: () => () => undefined,
+        addInstalledListener: () => () => undefined
+      }
+    });
+    expect(store.getSnapshot()).toMatchObject({
+      installState: "hidden",
+      installMethod: "ios"
+    });
+
+    store.showInstallHelp();
+    expect(dismissed).toBe(false);
+    expect(store.getSnapshot().installState).toBe("available");
+
+    store.dismissInstall();
+    expect(dismissed).toBe(true);
+    expect(store.getSnapshot().installState).toBe("hidden");
   });
 });
