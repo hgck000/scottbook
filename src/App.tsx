@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { builtInLibrary } from "./content/builtInLibrary";
 import type {
   AnnotatedSentence,
@@ -9,6 +9,16 @@ import {
   advanceAssistance,
   type AssistanceSelection
 } from "./features/reader/assistance";
+import {
+  getArticleSentenceIds,
+  getSentenceProgressPercent,
+  loadLibraryState,
+  markArticleOpened,
+  persistLibraryState,
+  toggleFavoriteArticle,
+  updateReadingProgress,
+  type LibraryState
+} from "./features/library/readingState";
 
 type Theme = "paper" | "night";
 
@@ -25,10 +35,9 @@ function parseRoute(): Route {
 
 function useStoredState<T>(key: string, initial: T) {
   const [value, setValue] = useState<T>(() => {
-    const stored = window.localStorage.getItem(key);
-    if (stored === null) return initial;
-
     try {
+      const stored = window.localStorage.getItem(key);
+      if (stored === null) return initial;
       return JSON.parse(stored) as T;
     } catch {
       return initial;
@@ -36,7 +45,11 @@ function useStoredState<T>(key: string, initial: T) {
   });
 
   useEffect(() => {
-    window.localStorage.setItem(key, JSON.stringify(value));
+    try {
+      window.localStorage.setItem(key, JSON.stringify(value));
+    } catch {
+      // The current session still works when browser storage is unavailable.
+    }
   }, [key, value]);
 
   return [value, setValue] as const;
@@ -88,6 +101,9 @@ function App() {
     "scottbook.readerFontSize",
     25
   );
+  const [libraryState, setLibraryState] = useState<LibraryState>(() =>
+    loadLibraryState(window.localStorage)
+  );
 
   useEffect(() => {
     const onHashChange = () => setRoute(parseRoute());
@@ -95,9 +111,32 @@ function App() {
     return () => window.removeEventListener("hashchange", onHashChange);
   }, []);
 
+  useEffect(() => {
+    persistLibraryState(window.localStorage, libraryState);
+  }, [libraryState]);
+
   const openArticle = (articleId: string) => {
+    setLibraryState((current) => markArticleOpened(current, articleId));
     window.location.hash = `/read/${encodeURIComponent(articleId)}`;
   };
+
+  const toggleFavorite = useCallback((articleId: string) => {
+    setLibraryState((current) => toggleFavoriteArticle(current, articleId));
+  }, []);
+
+  const saveReadingPosition = useCallback(
+    (articleId: string, sentenceId: string, progressPercent: number) => {
+      setLibraryState((current) =>
+        updateReadingProgress(current, {
+          articleId,
+          sentenceId,
+          progressPercent,
+          updatedAt: Date.now()
+        })
+      );
+    },
+    []
+  );
 
   const goHome = () => {
     window.location.hash = "/";
@@ -110,14 +149,23 @@ function App() {
   let content;
   if (route.name === "reader") {
     const article = builtInLibrary.find((item) => item.id === route.articleId);
+    const readingProgress = article
+      ? libraryState.progressByArticle[article.id]
+      : undefined;
     content = article ? (
       <ReaderScreen
+        key={article.id}
         article={article}
         fontSize={fontSize}
         setFontSize={setFontSize}
         theme={theme}
         toggleTheme={toggleTheme}
         goHome={goHome}
+        isFavorite={libraryState.favoriteArticleIds.includes(article.id)}
+        toggleFavorite={() => toggleFavorite(article.id)}
+        resumeSentenceId={readingProgress?.sentenceId}
+        progressPercent={readingProgress?.progressPercent ?? 0}
+        saveReadingPosition={saveReadingPosition}
       />
     ) : (
       <NotFound goHome={goHome} />
@@ -128,6 +176,8 @@ function App() {
         theme={theme}
         toggleTheme={toggleTheme}
         openArticle={openArticle}
+        libraryState={libraryState}
+        toggleFavorite={toggleFavorite}
       />
     );
   }
@@ -149,12 +199,32 @@ function Brand() {
 function LibraryScreen({
   theme,
   toggleTheme,
-  openArticle
+  openArticle,
+  libraryState,
+  toggleFavorite
 }: {
   theme: Theme;
   toggleTheme: () => void;
   openArticle: (articleId: string) => void;
+  libraryState: LibraryState;
+  toggleFavorite: (articleId: string) => void;
 }) {
+  const [filter, setFilter] = useState<"all" | "favorites">("all");
+  const favoriteIds = libraryState.favoriteArticleIds;
+  const favoriteArticles = builtInLibrary.filter((article) =>
+    favoriteIds.includes(article.id)
+  );
+  const visibleArticles =
+    filter === "favorites"
+      ? favoriteArticles
+      : builtInLibrary;
+  const continueArticle = builtInLibrary.find(
+    (article) => article.id === libraryState.lastOpenedArticleId
+  );
+  const continueProgress = continueArticle
+    ? libraryState.progressByArticle[continueArticle.id]
+    : undefined;
+
   return (
     <div className="app-shell">
       <aside className="sidebar">
@@ -208,6 +278,14 @@ function LibraryScreen({
           </div>
         </section>
 
+        {continueArticle ? (
+          <ContinueReadingCard
+            article={continueArticle}
+            progressPercent={continueProgress?.progressPercent ?? 0}
+            onOpen={() => openArticle(continueArticle.id)}
+          />
+        ) : null}
+
         <section className="library-section" aria-labelledby="reference-heading">
           <div className="section-heading">
             <div>
@@ -217,16 +295,52 @@ function LibraryScreen({
             <span className="offline-pill">Không cần mạng</span>
           </div>
 
-          <div className="book-grid">
-            {builtInLibrary.map((article, index) => (
-              <ArticleCard
-                key={article.id}
-                article={article}
-                index={index}
-                onOpen={() => openArticle(article.id)}
-              />
-            ))}
+          <div className="library-filters" role="group" aria-label="Lọc thư viện">
+            <button
+              className={filter === "all" ? "active" : ""}
+              type="button"
+              onClick={() => setFilter("all")}
+              aria-pressed={filter === "all"}
+            >
+              Tất cả <span>{builtInLibrary.length}</span>
+            </button>
+            <button
+              className={filter === "favorites" ? "active" : ""}
+              type="button"
+              onClick={() => setFilter("favorites")}
+              aria-pressed={filter === "favorites"}
+            >
+              Yêu thích <span>{favoriteArticles.length}</span>
+            </button>
           </div>
+
+          {visibleArticles.length > 0 ? (
+            <div className="book-grid">
+              {visibleArticles.map((article, index) => (
+                <ArticleCard
+                  key={article.id}
+                  article={article}
+                  index={index}
+                  onOpen={() => openArticle(article.id)}
+                  isFavorite={favoriteIds.includes(article.id)}
+                  onToggleFavorite={() => toggleFavorite(article.id)}
+                  progressPercent={
+                    libraryState.progressByArticle[article.id]
+                      ?.progressPercent ?? 0
+                  }
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="empty-library-state">
+              <span aria-hidden="true">♡</span>
+              <strong>Chưa có bài yêu thích.</strong>
+              <p>Nhấn biểu tượng trái tim trên một bài để giữ nó ở đây.</p>
+              <button type="button" onClick={() => setFilter("all")}>
+                Xem tất cả bài
+              </button>
+            </div>
+          )}
         </section>
 
         <section className="import-note" aria-labelledby="import-heading">
@@ -249,11 +363,17 @@ function LibraryScreen({
 function ArticleCard({
   article,
   index,
-  onOpen
+  onOpen,
+  isFavorite,
+  onToggleFavorite,
+  progressPercent
 }: {
   article: BuiltInArticle;
   index: number;
   onOpen: () => void;
+  isFavorite: boolean;
+  onToggleFavorite: () => void;
+  progressPercent: number;
 }) {
   const wordCount = article.paragraphs.reduce(
     (total, paragraph) =>
@@ -267,26 +387,91 @@ function ArticleCard({
   );
 
   return (
-    <button
+    <article
       className={`article-card accent-${article.accent}`}
-      type="button"
-      onClick={onOpen}
       style={{ "--delay": `${index * 70}ms` } as React.CSSProperties}
     >
-      <span className="card-topline">
-        <span className="level-badge">{article.level}</span>
-        <span>{article.estimatedMinutes} phút</span>
-      </span>
-      <span className="card-glyph" aria-hidden="true">{article.title.slice(0, 1)}</span>
-      <span className="article-title">{article.title}</span>
-      <span className="article-pinyin">{article.titlePinyin}</span>
-      <span className="article-translation">{article.titleTranslation}</span>
-      <span className="article-summary">{article.summary}</span>
-      <span className="card-footer">
-        <span>{article.topic} · {wordCount} cụm</span>
-        <span className="card-arrow"><ChevronIcon /></span>
-      </span>
-    </button>
+      <button className="article-card-open" type="button" onClick={onOpen}>
+        <span className="card-topline">
+          <span className="level-badge">{article.level}</span>
+          <span>{article.estimatedMinutes} phút</span>
+        </span>
+        <span className="card-glyph" aria-hidden="true">
+          {article.title.slice(0, 1)}
+        </span>
+        <span className="article-title">{article.title}</span>
+        <span className="article-pinyin">{article.titlePinyin}</span>
+        <span className="article-translation">{article.titleTranslation}</span>
+        <span className="article-summary">{article.summary}</span>
+        {progressPercent > 0 ? (
+          <span
+            className="card-progress"
+            aria-label={`Đã đọc ${progressPercent}%`}
+          >
+            <span className="progress-copy">Đã đọc {progressPercent}%</span>
+            <span className="progress-track" aria-hidden="true">
+              <span style={{ width: `${progressPercent}%` }} />
+            </span>
+          </span>
+        ) : null}
+        <span className="card-footer">
+          <span>
+            {article.topic} · {wordCount} cụm
+          </span>
+          <span className="card-arrow">
+            <ChevronIcon />
+          </span>
+        </span>
+      </button>
+      <button
+        className={`favorite-button${isFavorite ? " active" : ""}`}
+        type="button"
+        onClick={onToggleFavorite}
+        aria-label={`${isFavorite ? "Bỏ" : "Thêm"} ${article.titleTranslation} ${
+          isFavorite ? "khỏi" : "vào"
+        } mục yêu thích`}
+        aria-pressed={isFavorite}
+      >
+        <span aria-hidden="true">{isFavorite ? "♥" : "♡"}</span>
+      </button>
+    </article>
+  );
+}
+
+function ContinueReadingCard({
+  article,
+  progressPercent,
+  onOpen
+}: {
+  article: BuiltInArticle;
+  progressPercent: number;
+  onOpen: () => void;
+}) {
+  return (
+    <section
+      className={`continue-section accent-${article.accent}`}
+      aria-labelledby="continue-heading"
+    >
+      <div className="continue-glyph" aria-hidden="true">
+        {article.title.slice(0, 1)}
+      </div>
+      <div className="continue-copy">
+        <p className="eyebrow">Đọc tiếp trên thiết bị này</p>
+        <h2 id="continue-heading">{article.title}</h2>
+        <p>
+          {progressPercent > 0
+            ? `ScottBook đã giữ lại vị trí gần nhất · ${progressPercent}% bài đọc.`
+            : "Bài vừa mở đã sẵn sàng để bạn tiếp tục."}
+        </p>
+        <span className="progress-track" aria-hidden="true">
+          <span style={{ width: `${progressPercent}%` }} />
+        </span>
+      </div>
+      <button type="button" onClick={onOpen}>
+        {progressPercent > 0 ? "Tiếp tục đọc" : "Bắt đầu đọc"}
+        <span aria-hidden="true">→</span>
+      </button>
+    </section>
   );
 }
 
@@ -296,7 +481,12 @@ function ReaderScreen({
   setFontSize,
   theme,
   toggleTheme,
-  goHome
+  goHome,
+  isFavorite,
+  toggleFavorite,
+  resumeSentenceId,
+  progressPercent,
+  saveReadingPosition
 }: {
   article: BuiltInArticle;
   fontSize: number;
@@ -304,10 +494,89 @@ function ReaderScreen({
   theme: Theme;
   toggleTheme: () => void;
   goHome: () => void;
+  isFavorite: boolean;
+  toggleFavorite: () => void;
+  resumeSentenceId?: string;
+  progressPercent: number;
+  saveReadingPosition: (
+    articleId: string,
+    sentenceId: string,
+    progressPercent: number
+  ) => void;
 }) {
   const [selection, setSelection] = useState<AssistanceSelection | null>(null);
+  const articleBodyRef = useRef<HTMLDivElement>(null);
+  const restoredArticleRef = useRef<string | null>(null);
+  const initialResumeSentenceRef = useRef(resumeSentenceId);
 
   const selectedContext = findSelectedContext(article, selection);
+
+  useEffect(() => {
+    if (restoredArticleRef.current === article.id) return;
+    restoredArticleRef.current = article.id;
+
+    if (!resumeSentenceId) return;
+    const sentence = Array.from(
+      articleBodyRef.current?.querySelectorAll<HTMLElement>(".sentence") ?? []
+    ).find((candidate) => candidate.dataset.sentenceId === resumeSentenceId);
+    if (!sentence) return;
+
+    const frame = window.requestAnimationFrame(() => {
+      sentence.scrollIntoView({ block: "center", behavior: "auto" });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [article.id, resumeSentenceId]);
+
+  useEffect(() => {
+    const articleBody = articleBodyRef.current;
+    if (!articleBody) return;
+
+    const sentenceIds = getArticleSentenceIds(article);
+    const sentenceElements = Array.from(
+      articleBody.querySelectorAll<HTMLElement>(".sentence")
+    );
+    if (sentenceElements.length === 0) return;
+
+    const recordSentence = (sentenceId: string) => {
+      saveReadingPosition(
+        article.id,
+        sentenceId,
+        getSentenceProgressPercent(sentenceIds, sentenceId)
+      );
+    };
+
+    if (!("IntersectionObserver" in window)) {
+      const fallbackSentenceId =
+        initialResumeSentenceRef.current &&
+        sentenceIds.includes(initialResumeSentenceRef.current)
+          ? initialResumeSentenceRef.current
+          : sentenceIds[0];
+      if (fallbackSentenceId) recordSentence(fallbackSentenceId);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const readingLine = window.innerHeight * 0.32;
+        const nearestSentence = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort(
+            (left, right) =>
+              Math.abs(left.boundingClientRect.top - readingLine) -
+              Math.abs(right.boundingClientRect.top - readingLine)
+          )[0]?.target as HTMLElement | undefined;
+        const sentenceId = nearestSentence?.dataset.sentenceId;
+        if (sentenceId) recordSentence(sentenceId);
+      },
+      {
+        rootMargin: "-20% 0px -62% 0px",
+        threshold: [0, 0.25, 0.75]
+      }
+    );
+
+    sentenceElements.forEach((sentence) => observer.observe(sentence));
+    return () => observer.disconnect();
+  }, [article, saveReadingPosition]);
 
   const chooseToken = (sentence: AnnotatedSentence, token: WordToken) => {
     const key = `${sentence.id}:${token.id}`;
@@ -328,6 +597,15 @@ function ReaderScreen({
           <span>{article.level}</span>
         </div>
         <div className="reader-actions">
+          <button
+            className={`icon-button reader-favorite${isFavorite ? " active" : ""}`}
+            type="button"
+            onClick={toggleFavorite}
+            aria-label={isFavorite ? "Bỏ bài khỏi yêu thích" : "Thêm bài vào yêu thích"}
+            aria-pressed={isFavorite}
+          >
+            <span aria-hidden="true">{isFavorite ? "♥" : "♡"}</span>
+          </button>
           <button
             className="text-control"
             type="button"
@@ -356,6 +634,16 @@ function ReaderScreen({
             {theme === "paper" ? "☾" : "☀"}
           </button>
         </div>
+        <div
+          className="reader-progress"
+          role="progressbar"
+          aria-label="Tiến độ bài đọc"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={progressPercent}
+        >
+          <span style={{ width: `${progressPercent}%` }} />
+        </div>
       </header>
 
       <main className="reader-page">
@@ -374,7 +662,7 @@ function ReaderScreen({
             </div>
           </header>
 
-          <div className="article-body">
+          <div className="article-body" ref={articleBodyRef}>
             {article.paragraphs.map((paragraph) => (
               <p key={paragraph.id}>
                 {paragraph.sentences.map((sentence) => (
