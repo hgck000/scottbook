@@ -69,5 +69,8 @@ describe("ScottBook routes", () => {
     expect(markup).toContain("không phải nhập sách TXT/EPUB");
     expect(markup).toContain("tối đa 2 MB");
     expect(markup).toContain('accept="application/json,.json"');
+    expect(markup).toContain("Dung lượng và vùng cache tách biệt");
+    expect(markup).toContain("Xóa cache dịch");
+    expect(markup).toContain("import vẫn đang khóa");
   });
 });

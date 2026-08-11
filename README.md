@@ -27,6 +27,8 @@ Capacitor will use the same frontend in a later sprint.
 - Automatic recovery from the previous valid local record.
 - Versioned JSON backup export protected by a SHA-256 checksum.
 - Validated JSON backup restore with preview, rollback, and one-level undo.
+- IndexedDB v2 mirror with migration, corrupt-record quarantine, and fallback.
+- On-device storage usage plus an isolated translation-cache clear action.
 - Generated service worker precaches the complete prototype.
 - Import is intentionally deferred while its language-processing design is evaluated.
 
@@ -66,19 +68,21 @@ content therefore fails both the local production build and GitHub Actions.
 
 ## Local reading data
 
-Reading progress and favorites are small, device-only records stored in
-`localStorage` under a versioned key. ScottBook stores the last sentence id rather
-than a scroll offset, so resuming still works when the window or font size
-changes. Invalid or outdated stored JSON falls back safely to a clean state.
+Reading progress, favorites, and reader settings are device-only records. In
+version 0.6 they are mirrored transactionally to IndexedDB v2 while the proven
+versioned `localStorage` records remain as a compatibility and browser fallback.
+ScottBook stores the last sentence id rather than a scroll offset, so resuming
+still works when the window or font size changes.
 
 Version 0.3 adds a v2 local-state schema for reading history and completion.
 Existing v1 progress and favorites migrate automatically on first load; the old
 key is left untouched as a local fallback. Resetting an article removes its
 progress/completion while retaining the fact that it was opened.
 
-No account, cloud sync, analytics, or network request is involved. Larger book
-content and future imports will use a separate IndexedDB layer when that sprint
-starts.
+No account, cloud sync, analytics, or network request is involved. IndexedDB now
+has isolated stores reserved for books, progress, settings, learning events,
+translation cache, metadata, and quarantined records. External-book import is
+still disabled.
 
 Version 0.4 keeps the previous valid v2 record before replacing the primary
 record. If the primary JSON later becomes corrupt, startup falls back to that
@@ -95,6 +99,20 @@ undo record so the previous state can be restored after a refresh as well.
 
 Backup restore is not external-content import: ScottBook still does not accept
 TXT, EPUB, pasted books, or unannotated reading content in this version.
+
+Version 0.6 migrates a complete valid v0.5 local snapshot into IndexedDB on the
+first open. A v1 database fixture upgrades to v2 without losing valid progress
+or settings. Invalid IndexedDB progress/settings records are moved to a
+quarantine store instead of being used to overwrite good data; a valid half of
+the snapshot is preserved while the damaged half falls back safely. If
+IndexedDB is unavailable, ScottBook continues with the existing `localStorage`
+path.
+
+Restore and one-level undo now coordinate both storage layers. If the IndexedDB
+transaction rejects, all touched `localStorage` keys return to their exact
+previous bytes. The Review screen reports origin usage, schema/cache/quarantine
+counts, and can clear only the translation-cache store. That action cannot
+delete books, progress, favorites, or settings.
 
 ## Controlled PWA updates
 
