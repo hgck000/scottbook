@@ -21,7 +21,9 @@ Capacitor will use the same frontend in a later sprint.
 - A persisted `字 / 词 / 句` assistance selector works entirely from that
   authored offline data.
 - No translation, pinyin, analytics, or content API call at reading time.
-- Paper/night themes and adjustable reader text size.
+- A full responsive reader-settings panel with Paper, Night, and pure-black
+  OLED themes; 18–38 px text; serif/sans type; three line spacings; and three
+  content widths.
 - Reading position saved as a stable sentence anchor on the current device.
 - A continue-reading card, per-article progress, and a local favorites filter.
 - A local reading-history screen with open counts and latest-reading order.
@@ -44,7 +46,7 @@ Capacitor will use the same frontend in a later sprint.
 - A redacted local diagnostic download with counts and capability flags only.
 - A restrictive content-security policy plus automated API, license, and dependency audits.
 - A 20,000-Hanzi reader fixture that guards the long-document render budget.
-- Twelve production-browser journeys across desktop and mobile Chrome profiles.
+- Fourteen production-browser journeys across desktop and mobile Chrome profiles.
 - Root and configurable subpath PWA builds with an artifact contract check.
 - GitHub Actions builds on Ubuntu, Windows, and macOS and retains QA evidence.
 - Generated service worker precaches the complete prototype.
@@ -170,6 +172,15 @@ character remain separate review records. Backup, restore, undo, the IndexedDB
 mirror, pre-update checkpoints, and redacted diagnostic counts all carry the
 new scope without enabling any network service.
 
+Version 0.12 adds a responsive reader-settings panel. Theme, text size,
+serif/sans type, line spacing, and content width persist entirely on device.
+Existing v0.11 preferences migrate to Paper-compatible typography defaults;
+the selected assistance scope remains unchanged. Backup, restore preview,
+confirmed restore, one-level undo, pre-update checkpoints, localStorage
+fallback, and the IndexedDB v3 mirror all carry the complete six-field reader
+preference record. A corrupt new preference cannot replace a healthy local
+snapshot.
+
 ## Controlled PWA updates
 
 The generated service worker uses prompt mode. A waiting version displays a
@@ -250,6 +261,12 @@ character, word/phrase, and sentence help, persisting the selection, and
 reviewing records from different scopes. The desktop/mobile matrix now runs
 twelve browser cases. Its implementation, migrations, and evidence are recorded
 in [`docs/release/SCOTTBOOK-v0.11.0.md`](docs/release/SCOTTBOOK-v0.11.0.md).
+
+Version 0.12 adds a seventh critical journey for Paper/Night/OLED themes,
+reader typography, line spacing, content width, persistence, and safe reset.
+The desktop/mobile matrix now runs fourteen browser cases. Its implementation,
+migrations, and evidence are recorded in
+[`docs/release/SCOTTBOOK-v0.12.0.md`](docs/release/SCOTTBOOK-v0.12.0.md).
 
 ## Install ScottBook
 

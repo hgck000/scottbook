@@ -12,9 +12,9 @@ This list is intentionally release-blocking evidence, not a hidden backlog.
   or an approved import pipeline.
 - The authored translation language is Vietnamese. Choosing another target
   language is not implemented yet.
-- Reader customization currently provides Paper/Night themes and font size;
-  line height, margins, content width, OLED, and a full settings screen are not
-  implemented.
+- Reader customization now provides Paper/Night/OLED themes, text size,
+  serif/sans type, line spacing, and content width. Uploaded fonts, per-article
+  overrides, and automatic device-specific profiles are not implemented.
 - “Ôn lại” now keeps character/word/sentence scope, assistance contexts,
   pin/known state, and local filters. It does not yet implement spaced
   repetition, quizzes, or CSV/Anki export.
