@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { builtInLibrary } from "../../content/builtInLibrary";
 import {
   LEGACY_LIBRARY_STATE_STORAGE_KEY,
+  LIBRARY_STATE_BACKUP_STORAGE_KEY,
   LIBRARY_STATE_STORAGE_KEY,
   createEmptyLibraryState,
   getArticleSentenceIds,
@@ -166,6 +167,28 @@ describe("local library state", () => {
     expect(loadLibraryState(storage)).toEqual(migrated);
   });
 
+  it("keeps the previous valid state and recovers when the main record is corrupt", () => {
+    const values = new Map<string, string>();
+    const storage = {
+      getItem: (key: string) => values.get(key) ?? null,
+      setItem: (key: string, value: string) => values.set(key, value)
+    };
+    const first = toggleFavoriteArticle(
+      createEmptyLibraryState(),
+      "article-a"
+    );
+    const second = toggleFavoriteArticle(first, "article-b");
+
+    expect(persistLibraryState(storage, first)).toBe(true);
+    expect(persistLibraryState(storage, second)).toBe(true);
+    expect(
+      parseLibraryState(values.get(LIBRARY_STATE_BACKUP_STORAGE_KEY) ?? null)
+    ).toEqual(first);
+
+    values.set(LIBRARY_STATE_STORAGE_KEY, "corrupt-json");
+    expect(loadLibraryState(storage)).toEqual(first);
+  });
+
   it("keeps the app usable when browser storage is unavailable", () => {
     expect(
       loadLibraryState({
@@ -177,6 +200,7 @@ describe("local library state", () => {
     expect(
       persistLibraryState(
         {
+          getItem: () => null,
           setItem: () => {
             throw new Error("storage denied");
           }

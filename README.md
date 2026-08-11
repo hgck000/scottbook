@@ -22,6 +22,10 @@ Capacitor will use the same frontend in a later sprint.
 - A continue-reading card, per-article progress, and a local favorites filter.
 - A local reading-history screen with open counts and latest-reading order.
 - Automatic/manual completion status and a reset-progress action.
+- Explicit online/offline and first-install offline-ready notices.
+- Controlled PWA updates that reload only after the reader accepts.
+- Automatic recovery from the previous valid local record.
+- Versioned JSON backup export protected by a SHA-256 checksum.
 - Generated service worker precaches the complete prototype.
 - Import is intentionally deferred while its language-processing design is evaluated.
 
@@ -74,6 +78,20 @@ progress/completion while retaining the fact that it was opened.
 No account, cloud sync, analytics, or network request is involved. Larger book
 content and future imports will use a separate IndexedDB layer when that sprint
 starts.
+
+Version 0.4 keeps the previous valid v2 record before replacing the primary
+record. If the primary JSON later becomes corrupt, startup falls back to that
+local safety copy before trying the legacy v1 key. The Review screen can also
+request persistent browser storage and download a versioned JSON backup. Backup
+restore/import remains disabled until file validation and rollback are designed.
+
+## Controlled PWA updates
+
+The generated service worker uses prompt mode. A waiting version displays a
+"Có phiên bản ScottBook mới" notice; it cannot reload the page by itself. Even
+when another tab activates the worker, the current tab defers reloading until
+the user accepts. This keeps the active reader position and local writes safe
+from an unexpected mid-session refresh.
 
 ## GitHub linking
 
