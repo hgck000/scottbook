@@ -7,13 +7,17 @@ This list is intentionally release-blocking evidence, not a hidden backlog.
 - The offline library contains three authored pilot articles, not the proposed
   target of 30. The HSK versioning system and final 1.0 content count are not yet
   approved.
-- Assistance selects authored word tokens. A user-facing `字 / 词 / 句` scope
-  switch is not implemented.
+- Character, word/phrase, and sentence assistance is available for the three
+  authored pilot articles. It is not yet backed by a content-authoring editor
+  or an approved import pipeline.
+- The authored translation language is Vietnamese. Choosing another target
+  language is not implemented yet.
 - Reader customization currently provides Paper/Night themes and font size;
   line height, margins, content width, OLED, and a full settings screen are not
   implemented.
-- “Ôn lại” now records assistance, contexts, pin/known state, and local filters.
-  It does not yet implement spaced repetition, quizzes, or CSV/Anki export.
+- “Ôn lại” now keeps character/word/sentence scope, assistance contexts,
+  pin/known state, and local filters. It does not yet implement spaced
+  repetition, quizzes, or CSV/Anki export.
 - Search, Discover, and a separate article-detail screen are not implemented.
 
 ## Platform gaps
