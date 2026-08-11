@@ -258,6 +258,61 @@ test("personalizes the reader layout and restores safe defaults", async ({
   expect(pageErrors).toEqual([]);
 });
 
+test("searches and filters the authored offline library", async ({ page }) => {
+  const pageErrors = collectPageErrors(page);
+  await page.goto("/");
+  await dismissInstallNotice(page);
+
+  const search = page.getByRole("searchbox", {
+    name: "Tìm trong thư viện offline"
+  });
+  await search.fill("xian lijie");
+  await expect(
+    page.getByRole("button", { name: "Mở bài Hiểu trước, rồi mới dịch" })
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Mở bài Buổi sáng của tôi" })
+  ).toHaveCount(0);
+
+  await page.getByRole("button", { name: "Xóa nội dung tìm kiếm" }).click();
+  const levelFilters = page.getByRole("group", {
+    name: "Lọc theo cấp độ HSK"
+  });
+  await levelFilters.getByRole("button", { name: /HSK 2/ }).click();
+  await expect(
+    page.getByRole("button", { name: "Mở bài Kế hoạch cuối tuần" })
+  ).toBeVisible();
+  await expect(
+    page.locator(".discovery-results [role='status']")
+  ).toContainText("1 bài phù hợp");
+
+  await page
+    .getByRole("button", {
+      name: "Thêm Kế hoạch cuối tuần vào mục yêu thích"
+    })
+    .click();
+  const statusFilters = page.getByRole("group", {
+    name: "Lọc theo trạng thái đọc"
+  });
+  await statusFilters.getByRole("button", { name: /Yêu thích/ }).click();
+  await expect(
+    page.getByRole("button", { name: "Mở bài Kế hoạch cuối tuần" })
+  ).toBeVisible();
+
+  await search.fill("không có bài này");
+  await expect(
+    page.getByText("Không tìm thấy bài phù hợp.", { exact: true })
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Xóa bộ lọc", exact: true }).first().click();
+  await expect(
+    page.getByRole("button", { name: "Mở bài Buổi sáng của tôi" })
+  ).toBeVisible();
+  await expect(
+    page.locator(".discovery-results [role='status']")
+  ).toContainText("3 bài phù hợp");
+  expect(pageErrors).toEqual([]);
+});
+
 test("migrates an anonymized v1 reading snapshot", async ({ page }) => {
   const pageErrors = collectPageErrors(page);
   await page.addInitScript(

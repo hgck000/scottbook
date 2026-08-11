@@ -49,6 +49,12 @@ import {
   type ReadingHistoryEntry
 } from "./features/library/readingState";
 import {
+  countArticlesByLevel,
+  filterLibraryArticles,
+  type LibraryLevelFilter,
+  type LibraryStatusFilter
+} from "./features/library/libraryDiscovery";
+import {
   DEFAULT_READER_PREFERENCES,
   MAX_READER_FONT_SIZE,
   MIN_READER_FONT_SIZE,
@@ -928,15 +934,53 @@ function LibraryScreen({
   reviewCount: number;
   toggleFavorite: (articleId: string) => void;
 }) {
-  const [filter, setFilter] = useState<"all" | "favorites">("all");
+  const [query, setQuery] = useState("");
+  const [levelFilter, setLevelFilter] =
+    useState<LibraryLevelFilter>("all");
+  const [statusFilter, setStatusFilter] =
+    useState<LibraryStatusFilter>("all");
   const favoriteIds = libraryState.favoriteArticleIds;
-  const favoriteArticles = builtInLibrary.filter((article) =>
-    favoriteIds.includes(article.id)
+  const levelCounts = useMemo(
+    () => countArticlesByLevel(builtInLibrary),
+    []
   );
-  const visibleArticles =
-    filter === "favorites"
-      ? favoriteArticles
-      : builtInLibrary;
+  const statusCounts = useMemo(
+    () => ({
+      all: builtInLibrary.length,
+      "in-progress": filterLibraryArticles(builtInLibrary, libraryState, {
+        query: "",
+        level: "all",
+        status: "in-progress"
+      }).length,
+      completed: filterLibraryArticles(builtInLibrary, libraryState, {
+        query: "",
+        level: "all",
+        status: "completed"
+      }).length,
+      favorites: filterLibraryArticles(builtInLibrary, libraryState, {
+        query: "",
+        level: "all",
+        status: "favorites"
+      }).length
+    }),
+    [libraryState]
+  );
+  const visibleArticles = useMemo(
+    () =>
+      filterLibraryArticles(builtInLibrary, libraryState, {
+        query,
+        level: levelFilter,
+        status: statusFilter
+      }),
+    [levelFilter, libraryState, query, statusFilter]
+  );
+  const filtersActive =
+    query.trim().length > 0 || levelFilter !== "all" || statusFilter !== "all";
+  const resetDiscovery = () => {
+    setQuery("");
+    setLevelFilter("all");
+    setStatusFilter("all");
+  };
   const continueArticle = builtInLibrary.find(
     (article) => article.id === libraryState.lastOpenedArticleId
   );
@@ -998,23 +1042,92 @@ function LibraryScreen({
             <span className="offline-pill">Không cần mạng</span>
           </div>
 
-          <div className="library-filters" role="group" aria-label="Lọc thư viện">
-            <button
-              className={filter === "all" ? "active" : ""}
-              type="button"
-              onClick={() => setFilter("all")}
-              aria-pressed={filter === "all"}
-            >
-              Tất cả <span>{builtInLibrary.length}</span>
-            </button>
-            <button
-              className={filter === "favorites" ? "active" : ""}
-              type="button"
-              onClick={() => setFilter("favorites")}
-              aria-pressed={filter === "favorites"}
-            >
-              Yêu thích <span>{favoriteArticles.length}</span>
-            </button>
+          <div className="library-discovery">
+            <label className="library-search">
+              <span aria-hidden="true">⌕</span>
+              <input
+                type="search"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Tìm Hanzi, pinyin hoặc nghĩa tiếng Việt"
+                aria-label="Tìm trong thư viện offline"
+                autoComplete="off"
+              />
+              {query ? (
+                <button
+                  type="button"
+                  onClick={() => setQuery("")}
+                  aria-label="Xóa nội dung tìm kiếm"
+                >
+                  ×
+                </button>
+              ) : null}
+            </label>
+
+            <div className="discovery-filter-row">
+              <span>Cấp độ</span>
+              <div
+                className="discovery-filter-buttons"
+                role="group"
+                aria-label="Lọc theo cấp độ HSK"
+              >
+                {([
+                  { value: "all", label: "Tất cả", count: builtInLibrary.length },
+                  { value: "HSK 1", label: "HSK 1", count: levelCounts["HSK 1"] },
+                  { value: "HSK 2", label: "HSK 2", count: levelCounts["HSK 2"] },
+                  { value: "HSK 3", label: "HSK 3", count: levelCounts["HSK 3"] }
+                ] as const).map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    className={levelFilter === option.value ? "active" : ""}
+                    aria-pressed={levelFilter === option.value}
+                    onClick={() => setLevelFilter(option.value)}
+                  >
+                    {option.label} <small>{option.count}</small>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="discovery-filter-row">
+              <span>Trạng thái</span>
+              <div
+                className="discovery-filter-buttons"
+                role="group"
+                aria-label="Lọc theo trạng thái đọc"
+              >
+                {([
+                  { value: "all", label: "Tất cả" },
+                  { value: "in-progress", label: "Đang đọc" },
+                  { value: "completed", label: "Đã xong" },
+                  { value: "favorites", label: "Yêu thích" }
+                ] as const).map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    className={statusFilter === option.value ? "active" : ""}
+                    aria-pressed={statusFilter === option.value}
+                    onClick={() => setStatusFilter(option.value)}
+                  >
+                    {option.label} <small>{statusCounts[option.value]}</small>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="discovery-results">
+              <p role="status" aria-live="polite">
+                <strong>{visibleArticles.length}</strong> bài phù hợp
+              </p>
+              {filtersActive ? (
+                <button type="button" onClick={resetDiscovery}>
+                  Xóa bộ lọc
+                </button>
+              ) : (
+                <span>Tìm ngay trong dữ liệu đã lưu offline</span>
+              )}
+            </div>
           </div>
 
           {visibleArticles.length > 0 ? (
@@ -1039,11 +1152,11 @@ function LibraryScreen({
             </div>
           ) : (
             <div className="empty-library-state">
-              <span aria-hidden="true">♡</span>
-              <strong>Chưa có bài yêu thích.</strong>
-              <p>Nhấn biểu tượng trái tim trên một bài để giữ nó ở đây.</p>
-              <button type="button" onClick={() => setFilter("all")}>
-                Xem tất cả bài
+              <span aria-hidden="true">⌕</span>
+              <strong>Không tìm thấy bài phù hợp.</strong>
+              <p>Thử từ khóa khác hoặc xóa các bộ lọc đang chọn.</p>
+              <button type="button" onClick={resetDiscovery}>
+                Xóa bộ lọc
               </button>
             </div>
           )}
