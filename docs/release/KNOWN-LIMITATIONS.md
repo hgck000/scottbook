@@ -46,7 +46,8 @@ This list is intentionally release-blocking evidence, not a hidden backlog.
   safely retains one release key. That private key must never enter the repo or
   a `git am` patch.
 - Safari/iPhone Home Screen and installed Android PWA behavior require real
-  device verification; Chrome viewport emulation is not equivalent.
+  device verification; the persistent readiness indicator and foreground
+  update checks do not turn Chrome viewport emulation into equivalent evidence.
 - The generated artifact supports root hosting and configured subpath hosting,
   but production HTTPS hosting and cache headers are deployment responsibilities.
 

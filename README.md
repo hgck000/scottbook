@@ -53,8 +53,9 @@ Capacitor will use the same frontend in a later sprint.
   lets the reader keep an item active or mark it known.
 - An opt-out switch that stops recording history without disabling assistance.
 - Automatic/manual completion status and a reset-progress action.
-- Explicit online/offline and first-install offline-ready notices.
+- Explicit online/offline plus persistent app-shell readiness status.
 - Controlled PWA updates that reload only after the reader accepts.
+- Throttled service-worker checks after foregrounding, reconnecting, or one hour.
 - Native install prompt plus iPhone/iPad, MacBook, and browser guidance.
 - Pre-update data checkpoint that blocks unsafe service-worker reloads.
 - Automatic recovery from the previous valid local record.
@@ -412,6 +413,18 @@ or network provider. Its sixteenth critical journey brings the desktop/mobile
 browser matrix to thirty-two cases. The release contract and manual checks are
 recorded in
 [`docs/release/SCOTTBOOK-v0.23.0.md`](docs/release/SCOTTBOOK-v0.23.0.md).
+
+Version 0.24 hardens the installed PWA lifecycle. Its compact status preserves
+the difference between preparing, ready, unavailable, and currently offline
+even after the first-cache notice has been dismissed or the app has reloaded.
+An open installation also checks its same-origin service worker after returning
+to the foreground, reconnecting, or reaching an hourly interval. Checks are
+visible/online-only and throttled; they never reload the Reader directly. A
+newer build still uses the existing user-approved update and local checkpoint
+flow. No reading data or personal content enters the request. Its seventeenth
+critical journey brings the desktop/mobile browser matrix to thirty-four cases.
+The release contract and manual checks are recorded in
+[`docs/release/SCOTTBOOK-v0.24.0.md`](docs/release/SCOTTBOOK-v0.24.0.md).
 
 ## Install ScottBook
 
