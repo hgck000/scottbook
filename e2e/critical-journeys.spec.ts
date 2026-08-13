@@ -313,6 +313,53 @@ test("searches and filters the authored offline library", async ({ page }) => {
   expect(pageErrors).toEqual([]);
 });
 
+test("filters Discover and reviews an article before starting to read", async ({
+  page
+}) => {
+  const pageErrors = collectPageErrors(page);
+  await page.goto("/#/discover");
+  await dismissInstallNotice(page);
+
+  await expect(
+    page.getByRole("heading", { name: /Chọn nhịp đọc/ })
+  ).toBeVisible();
+  await page
+    .getByRole("group", { name: "Lọc Khám phá theo cấp độ HSK" })
+    .getByRole("button", { name: /HSK 2/ })
+    .click();
+  await page
+    .getByRole("group", { name: "Lọc Khám phá theo chủ đề" })
+    .getByRole("button", { name: /Học tập/ })
+    .click();
+  await page
+    .getByRole("group", { name: "Lọc Khám phá theo độ dài bài đọc" })
+    .getByRole("button", { name: /Vừa · 3 phút/ })
+    .click();
+  await expect(
+    page.locator(".discover-filter-panel [role='status']")
+  ).toContainText("1 bài phù hợp");
+
+  await page
+    .getByRole("button", { name: "Xem thông tin Đi thư viện" })
+    .click();
+  await expect(page.getByRole("heading", { name: "去图书馆" })).toBeVisible();
+  await expect(page.getByText("Cụm đã chú giải", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText(/Mở trang này không thay đổi tiến độ/)
+  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Chưa bắt đầu" })).toBeVisible();
+
+  await page
+    .getByRole("button", { name: "Thêm Đi thư viện vào mục yêu thích" })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Bỏ Đi thư viện khỏi mục yêu thích" })
+  ).toHaveAttribute("aria-pressed", "true");
+  await page.getByRole("button", { name: "Đọc ngay Đi thư viện" }).click();
+  await expect(page.getByRole("heading", { name: "去图书馆" })).toBeVisible();
+  expect(pageErrors).toEqual([]);
+});
+
 test("reads a newly authored article from the expanded content pack", async ({
   page
 }) => {

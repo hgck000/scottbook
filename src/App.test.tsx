@@ -49,6 +49,7 @@ describe("ScottBook routes", () => {
     expect(markup).toContain("Thư viện tham khảo");
     expect(markup).toContain("Bắt đầu với một đoạn ngắn");
     expect(markup).toContain('href="#/review"');
+    expect(markup).toContain('href="#/discover"');
     expect(markup).toContain("Bỏ qua đến nội dung chính");
     expect(markup).toContain('id="main-content"');
     expect(markup).toContain('tabindex="-1"');
@@ -56,6 +57,36 @@ describe("ScottBook routes", () => {
     expect(markup).toContain('aria-label="Lọc theo cấp độ HSK"');
     expect(markup).toContain('aria-label="Lọc theo trạng thái đọc"');
     expect(markup).toContain("<strong>9</strong> bài phù hợp");
+  });
+
+  it("filters the offline discover catalog without touching reading history", () => {
+    installWindow("#/discover");
+
+    const markup = renderToStaticMarkup(<App />);
+
+    expect(markup).toContain("Khám phá thư viện");
+    expect(markup).toContain("Chọn nhịp đọc");
+    expect(markup).toContain("36</strong><span>Câu đã chú giải");
+    expect(markup).toContain('aria-label="Lọc Khám phá theo cấp độ HSK"');
+    expect(markup).toContain('aria-label="Lọc Khám phá theo chủ đề"');
+    expect(markup).toContain('aria-label="Lọc Khám phá theo độ dài bài đọc"');
+    expect(markup).toContain("Xem thông tin Đi thư viện");
+    expect(markup).toContain("Chạm vào bài để xem thông tin trước khi đọc");
+  });
+
+  it("renders an article detail route before reading starts", () => {
+    installWindow("#/article/hsk2-library-visit");
+
+    const markup = renderToStaticMarkup(<App />);
+
+    expect(markup).toContain("Thông tin bài đọc");
+    expect(markup).toContain("去图书馆");
+    expect(markup).toContain("Qù túshūguǎn");
+    expect(markup).toContain("Đọc ngay Đi thư viện");
+    expect(markup).toContain("Cụm đã chú giải");
+    expect(markup).toContain("Mở trang này không thay đổi tiến độ");
+    expect(markup).toContain("Chưa bắt đầu");
+    expect(markup).toContain("Về Khám phá");
   });
 
   it("renders local history and completion status on the review route", () => {

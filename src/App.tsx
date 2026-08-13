@@ -55,6 +55,17 @@ import {
   type LibraryStatusFilter
 } from "./features/library/libraryDiscovery";
 import {
+  articleTopics,
+  countArticlesByLength,
+  countArticlesByTopic,
+  filterDiscoverArticles,
+  getArticleLengthLabel,
+  getArticleMetadata,
+  type DiscoverLengthFilter,
+  type DiscoverLevelFilter,
+  type DiscoverTopicFilter
+} from "./features/library/articleCatalog";
+import {
   DEFAULT_READER_PREFERENCES,
   MAX_READER_FONT_SIZE,
   MIN_READER_FONT_SIZE,
@@ -108,7 +119,9 @@ import {
 
 type Route =
   | { name: "library" }
+  | { name: "discover" }
   | { name: "review" }
+  | { name: "detail"; articleId: string }
   | { name: "reader"; articleId: string };
 
 type LocalDataStatus = {
@@ -119,10 +132,16 @@ type LocalDataStatus = {
 
 function parseRoute(): Route {
   if (window.location.hash === "#/review") return { name: "review" };
+  if (window.location.hash === "#/discover") return { name: "discover" };
 
-  const match = window.location.hash.match(/^#\/read\/(.+)$/);
-  return match?.[1]
-    ? { name: "reader", articleId: decodeURIComponent(match[1]) }
+  const readerMatch = window.location.hash.match(/^#\/read\/(.+)$/);
+  if (readerMatch?.[1]) {
+    return { name: "reader", articleId: decodeURIComponent(readerMatch[1]) };
+  }
+
+  const detailMatch = window.location.hash.match(/^#\/article\/(.+)$/);
+  return detailMatch?.[1]
+    ? { name: "detail", articleId: decodeURIComponent(detailMatch[1]) }
     : { name: "library" };
 }
 
@@ -268,13 +287,19 @@ function App() {
     quarantinedThisRun: 0
   });
   const routeKey =
-    route.name === "reader" ? `${route.name}:${route.articleId}` : route.name;
+    route.name === "reader" || route.name === "detail"
+      ? `${route.name}:${route.articleId}`
+      : route.name;
   const routeTitle =
     route.name === "library"
       ? "Thư viện · ScottBook"
-      : route.name === "review"
-        ? "Ôn lại · ScottBook"
-        : "Bài đọc · ScottBook";
+      : route.name === "discover"
+        ? "Khám phá · ScottBook"
+        : route.name === "review"
+          ? "Ôn lại · ScottBook"
+          : route.name === "detail"
+            ? "Thông tin bài đọc · ScottBook"
+            : "Bài đọc · ScottBook";
   const previousRouteRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -310,7 +335,15 @@ function App() {
     setLibraryState((current) =>
       markArticleOpened(current, articleId, Date.now())
     );
-    window.location.hash = `/read/${encodeURIComponent(articleId)}`;
+    window.location.assign(`#/read/${encodeURIComponent(articleId)}`);
+  };
+
+  const openArticleDetails = (articleId: string) => {
+    window.location.assign(`#/article/${encodeURIComponent(articleId)}`);
+  };
+
+  const openDiscover = () => {
+    window.location.assign("#/discover");
   };
 
   const toggleFavorite = useCallback((articleId: string) => {
@@ -544,7 +577,7 @@ function App() {
   ).length;
 
   const goHome = () => {
-    window.location.hash = "/";
+    window.location.assign("#/");
   };
 
   const toggleTheme = () => {
@@ -611,6 +644,41 @@ function App() {
       />
     ) : (
       <NotFound goHome={goHome} isOnline={pwaStatus.isOnline} />
+    );
+  } else if (route.name === "detail") {
+    const article = builtInLibrary.find((item) => item.id === route.articleId);
+    const readingProgress = article
+      ? libraryState.progressByArticle[article.id]
+      : undefined;
+    content = article ? (
+      <ArticleDetailScreen
+        article={article}
+        theme={theme}
+        toggleTheme={toggleTheme}
+        goDiscover={openDiscover}
+        openArticle={() => openArticle(article.id)}
+        isFavorite={libraryState.favoriteArticleIds.includes(article.id)}
+        toggleFavorite={() => toggleFavorite(article.id)}
+        progressPercent={readingProgress?.progressPercent ?? 0}
+        isCompleted={Boolean(
+          libraryState.historyByArticle[article.id]?.completedAt
+        )}
+        historyEntry={libraryState.historyByArticle[article.id]}
+        reviewCount={activeReviewCount}
+      />
+    ) : (
+      <NotFound goHome={goHome} isOnline={pwaStatus.isOnline} />
+    );
+  } else if (route.name === "discover") {
+    content = (
+      <DiscoverScreen
+        theme={theme}
+        toggleTheme={toggleTheme}
+        openArticleDetails={openArticleDetails}
+        libraryState={libraryState}
+        reviewCount={activeReviewCount}
+        toggleFavorite={toggleFavorite}
+      />
     );
   } else if (route.name === "review") {
     content = (
@@ -855,7 +923,7 @@ function Sidebar({
   active,
   reviewCount
 }: {
-  active: "library" | "review";
+  active: "library" | "discover" | "review";
   reviewCount: number;
 }) {
   return (
@@ -869,6 +937,14 @@ function Sidebar({
         >
           <span aria-hidden="true">▤</span>
           Thư viện
+        </a>
+        <a
+          className={`nav-item${active === "discover" ? " active" : ""}`}
+          href="#/discover"
+          aria-current={active === "discover" ? "page" : undefined}
+        >
+          <span aria-hidden="true">◇</span>
+          Khám phá
         </a>
         <a
           className={`nav-item${active === "review" ? " active" : ""}`}
@@ -893,7 +969,7 @@ function MobileNavigation({
   active,
   reviewCount
 }: {
-  active: "library" | "review";
+  active: "library" | "discover" | "review";
   reviewCount: number;
 }) {
   return (
@@ -905,6 +981,14 @@ function MobileNavigation({
       >
         <span aria-hidden="true">▤</span>
         Thư viện
+      </a>
+      <a
+        className={active === "discover" ? "active" : ""}
+        href="#/discover"
+        aria-current={active === "discover" ? "page" : undefined}
+      >
+        <span aria-hidden="true">◇</span>
+        Khám phá
       </a>
       <a
         className={active === "review" ? "active" : ""}
@@ -1176,6 +1260,428 @@ function LibraryScreen({
         </section>
       </main>
       <MobileNavigation active="library" reviewCount={reviewCount} />
+    </div>
+  );
+}
+
+function DiscoverScreen({
+  theme,
+  toggleTheme,
+  openArticleDetails,
+  libraryState,
+  reviewCount,
+  toggleFavorite
+}: {
+  theme: ReaderTheme;
+  toggleTheme: () => void;
+  openArticleDetails: (articleId: string) => void;
+  libraryState: LibraryState;
+  reviewCount: number;
+  toggleFavorite: (articleId: string) => void;
+}) {
+  const [levelFilter, setLevelFilter] =
+    useState<DiscoverLevelFilter>("all");
+  const [topicFilter, setTopicFilter] =
+    useState<DiscoverTopicFilter>("all");
+  const [lengthFilter, setLengthFilter] =
+    useState<DiscoverLengthFilter>("all");
+  const levelCounts = useMemo(
+    () => countArticlesByLevel(builtInLibrary),
+    []
+  );
+  const topicCounts = useMemo(
+    () => countArticlesByTopic(builtInLibrary),
+    []
+  );
+  const lengthCounts = useMemo(
+    () => countArticlesByLength(builtInLibrary),
+    []
+  );
+  const catalogSummary = useMemo(
+    () => ({
+      levelCount: Object.values(levelCounts).filter((count) => count > 0).length,
+      sentenceCount: builtInLibrary.reduce(
+        (total, article) => total + getArticleMetadata(article).sentenceCount,
+        0
+      )
+    }),
+    [levelCounts]
+  );
+  const visibleArticles = useMemo(
+    () =>
+      filterDiscoverArticles(builtInLibrary, {
+        level: levelFilter,
+        topic: topicFilter,
+        length: lengthFilter
+      }),
+    [lengthFilter, levelFilter, topicFilter]
+  );
+  const filtersActive =
+    levelFilter !== "all" || topicFilter !== "all" || lengthFilter !== "all";
+  const resetFilters = () => {
+    setLevelFilter("all");
+    setTopicFilter("all");
+    setLengthFilter("all");
+  };
+
+  return (
+    <div className="app-shell">
+      <Sidebar active="discover" reviewCount={reviewCount} />
+
+      <main id="main-content" className="library-page discover-page" tabIndex={-1}>
+        <header className="topbar">
+          <div className="mobile-brand">
+            <Brand />
+          </div>
+          <p className="eyebrow">Khám phá thư viện</p>
+          <button
+            className="icon-button theme-button"
+            type="button"
+            onClick={toggleTheme}
+            aria-label={
+              theme === "paper" ? "Bật giao diện tối" : "Bật giao diện sáng"
+            }
+          >
+            {theme === "paper" ? "☾" : "☀"}
+          </button>
+        </header>
+
+        <section className="discover-hero">
+          <div>
+            <span className="hero-stamp">选择阅读 · Chọn bài phù hợp</span>
+            <h1>Chọn nhịp đọc,<br />rồi bắt đầu.</h1>
+            <p>
+              Lọc {builtInLibrary.length} bài đã được biên soạn theo cấp độ,
+              chủ đề và thời lượng. Mọi thông tin này có sẵn ngay cả khi thiết
+              bị không có mạng.
+            </p>
+            <a className="discover-library-link" href="#/">
+              Cần tìm một từ hoặc cụm? Mở Thư viện <span aria-hidden="true">→</span>
+            </a>
+          </div>
+          <div className="discover-hero-metrics" aria-label="Tóm tắt thư viện offline">
+            <div>
+              <strong>{builtInLibrary.length}</strong>
+              <span>Bài dựng sẵn</span>
+            </div>
+            <div>
+              <strong>{catalogSummary.levelCount}</strong>
+              <span>Cấp độ HSK</span>
+            </div>
+            <div>
+              <strong>{catalogSummary.sentenceCount}</strong>
+              <span>Câu đã chú giải</span>
+            </div>
+          </div>
+        </section>
+
+        <section className="discover-section" aria-labelledby="discover-heading">
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">Bộ lọc offline</p>
+              <h2 id="discover-heading">Bài đọc cho buổi học này</h2>
+            </div>
+            <span className="offline-pill">Không cần mạng</span>
+          </div>
+
+          <div className="discover-filter-panel">
+            <div className="discovery-filter-row">
+              <span>Cấp độ</span>
+              <div
+                className="discovery-filter-buttons"
+                role="group"
+                aria-label="Lọc Khám phá theo cấp độ HSK"
+              >
+                {([
+                  { value: "all", label: "Tất cả", count: builtInLibrary.length },
+                  { value: "HSK 1", label: "HSK 1", count: levelCounts["HSK 1"] },
+                  { value: "HSK 2", label: "HSK 2", count: levelCounts["HSK 2"] },
+                  { value: "HSK 3", label: "HSK 3", count: levelCounts["HSK 3"] }
+                ] as const).map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    className={levelFilter === option.value ? "active" : ""}
+                    aria-pressed={levelFilter === option.value}
+                    onClick={() => setLevelFilter(option.value)}
+                  >
+                    {option.label} <small>{option.count}</small>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="discovery-filter-row">
+              <span>Chủ đề</span>
+              <div
+                className="discovery-filter-buttons"
+                role="group"
+                aria-label="Lọc Khám phá theo chủ đề"
+              >
+                <button
+                  type="button"
+                  className={topicFilter === "all" ? "active" : ""}
+                  aria-pressed={topicFilter === "all"}
+                  onClick={() => setTopicFilter("all")}
+                >
+                  Tất cả <small>{builtInLibrary.length}</small>
+                </button>
+                {articleTopics.map((topic) => (
+                  <button
+                    key={topic}
+                    type="button"
+                    className={topicFilter === topic ? "active" : ""}
+                    aria-pressed={topicFilter === topic}
+                    onClick={() => setTopicFilter(topic)}
+                  >
+                    {topic} <small>{topicCounts[topic]}</small>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="discovery-filter-row">
+              <span>Độ dài</span>
+              <div
+                className="discovery-filter-buttons"
+                role="group"
+                aria-label="Lọc Khám phá theo độ dài bài đọc"
+              >
+                {([
+                  { value: "all", label: "Tất cả", count: builtInLibrary.length },
+                  { value: "short", label: "Ngắn · ≤2 phút", count: lengthCounts.short },
+                  { value: "medium", label: "Vừa · 3 phút", count: lengthCounts.medium },
+                  { value: "long", label: "Dài · ≥4 phút", count: lengthCounts.long }
+                ] as const).map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    className={lengthFilter === option.value ? "active" : ""}
+                    aria-pressed={lengthFilter === option.value}
+                    onClick={() => setLengthFilter(option.value)}
+                  >
+                    {option.label} <small>{option.count}</small>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="discovery-results">
+              <p role="status" aria-live="polite">
+                <strong>{visibleArticles.length}</strong> bài phù hợp
+              </p>
+              {filtersActive ? (
+                <button type="button" onClick={resetFilters}>
+                  Xóa bộ lọc
+                </button>
+              ) : (
+                <span>Chạm vào bài để xem thông tin trước khi đọc</span>
+              )}
+            </div>
+          </div>
+
+          {visibleArticles.length > 0 ? (
+            <div className="book-grid">
+              {visibleArticles.map((article, index) => (
+                <ArticleCard
+                  key={article.id}
+                  article={article}
+                  index={index}
+                  onOpen={() => openArticleDetails(article.id)}
+                  openLabel={`Xem thông tin ${article.titleTranslation}`}
+                  isFavorite={libraryState.favoriteArticleIds.includes(article.id)}
+                  onToggleFavorite={() => toggleFavorite(article.id)}
+                  progressPercent={
+                    libraryState.progressByArticle[article.id]?.progressPercent ?? 0
+                  }
+                  isCompleted={Boolean(
+                    libraryState.historyByArticle[article.id]?.completedAt
+                  )}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="empty-library-state">
+              <span aria-hidden="true">◇</span>
+              <strong>Chưa có bài khớp cả ba điều kiện.</strong>
+              <p>Thử đổi cấp độ, chủ đề hoặc độ dài để xem lại thư viện.</p>
+              <button type="button" onClick={resetFilters}>
+                Xóa bộ lọc
+              </button>
+            </div>
+          )}
+        </section>
+      </main>
+
+      <MobileNavigation active="discover" reviewCount={reviewCount} />
+    </div>
+  );
+}
+
+function ArticleDetailScreen({
+  article,
+  theme,
+  toggleTheme,
+  goDiscover,
+  openArticle,
+  isFavorite,
+  toggleFavorite,
+  progressPercent,
+  isCompleted,
+  historyEntry,
+  reviewCount
+}: {
+  article: BuiltInArticle;
+  theme: ReaderTheme;
+  toggleTheme: () => void;
+  goDiscover: () => void;
+  openArticle: () => void;
+  isFavorite: boolean;
+  toggleFavorite: () => void;
+  progressPercent: number;
+  isCompleted: boolean;
+  historyEntry: ReadingHistoryEntry | undefined;
+  reviewCount: number;
+}) {
+  const metadata = getArticleMetadata(article);
+  const readingState = isCompleted
+    ? "Đã hoàn thành"
+    : progressPercent > 0
+      ? `Đang đọc · ${progressPercent}%`
+      : "Chưa bắt đầu";
+
+  return (
+    <div className="app-shell">
+      <Sidebar active="discover" reviewCount={reviewCount} />
+
+      <main id="main-content" className="library-page article-detail-page" tabIndex={-1}>
+        <header className="topbar">
+          <div className="mobile-brand">
+            <Brand />
+          </div>
+          <p className="eyebrow">Thông tin bài đọc</p>
+          <button
+            className="icon-button theme-button"
+            type="button"
+            onClick={toggleTheme}
+            aria-label={
+              theme === "paper" ? "Bật giao diện tối" : "Bật giao diện sáng"
+            }
+          >
+            {theme === "paper" ? "☾" : "☀"}
+          </button>
+        </header>
+
+        <button className="detail-back-button" type="button" onClick={goDiscover}>
+          <span aria-hidden="true">←</span> Về Khám phá
+        </button>
+
+        <section
+          className={`article-detail-hero accent-${article.accent}`}
+          aria-labelledby="article-detail-title"
+        >
+          <div className="article-detail-copy">
+            <span className="hero-stamp">
+              {article.level} · {article.topic} · Offline
+            </span>
+            <h1 id="article-detail-title" lang="zh-Hans">
+              {article.title}
+            </h1>
+            <p className="article-detail-pinyin">{article.titlePinyin}</p>
+            <p className="article-detail-translation">{article.titleTranslation}</p>
+            <p className="article-detail-summary">{article.summary}</p>
+            <div className="article-detail-actions">
+              <button
+                className="detail-read-button"
+                type="button"
+                onClick={openArticle}
+                aria-label={`Đọc ngay ${article.titleTranslation}`}
+              >
+                {progressPercent > 0 && !isCompleted ? "Tiếp tục đọc" : "Đọc ngay"}
+                <span aria-hidden="true">→</span>
+              </button>
+              <button
+                className={`detail-favorite-button${isFavorite ? " active" : ""}`}
+                type="button"
+                onClick={toggleFavorite}
+                aria-label={`${isFavorite ? "Bỏ" : "Thêm"} ${article.titleTranslation} ${
+                  isFavorite ? "khỏi" : "vào"
+                } mục yêu thích`}
+                aria-pressed={isFavorite}
+              >
+                <span aria-hidden="true">{isFavorite ? "♥" : "♡"}</span>
+                {isFavorite ? "Đã yêu thích" : "Yêu thích"}
+              </button>
+            </div>
+          </div>
+          <button className="detail-hero-back" type="button" onClick={goDiscover}>
+            <span aria-hidden="true">←</span> Về Khám phá
+          </button>
+          <div className="article-detail-glyph" aria-hidden="true">
+            {article.title.slice(0, 1)}
+          </div>
+        </section>
+
+        <section className="article-detail-overview" aria-labelledby="article-overview-heading">
+          <div>
+            <p className="eyebrow">Trước khi đọc</p>
+            <h2 id="article-overview-heading">Vừa đủ để bạn chọn đúng bài</h2>
+            <p>
+              Đây là thống kê từ dữ liệu đã biên soạn. Mở trang này không thay
+              đổi tiến độ; ScottBook chỉ ghi lịch sử khi bạn bắt đầu đọc.
+            </p>
+          </div>
+          <dl className="article-detail-stats" aria-label="Thống kê bài đọc">
+            <div>
+              <dt>Thời lượng</dt>
+              <dd>{article.estimatedMinutes} phút</dd>
+              <small>{getArticleLengthLabel(metadata.length)}</small>
+            </div>
+            <div>
+              <dt>Câu</dt>
+              <dd>{metadata.sentenceCount}</dd>
+              <small>{metadata.paragraphCount} đoạn ngắn</small>
+            </div>
+            <div>
+              <dt>Cụm đã chú giải</dt>
+              <dd>{metadata.wordCount}</dd>
+              <small>có pinyin và nghĩa</small>
+            </div>
+            <div>
+              <dt>Hanzi trong bài</dt>
+              <dd>{metadata.characterCount}</dd>
+              <small>theo từng cụm</small>
+            </div>
+          </dl>
+        </section>
+
+        <section className="article-reading-state" aria-labelledby="article-reading-state-heading">
+          <div>
+            <p className="eyebrow">Tiến độ trên thiết bị này</p>
+            <h2 id="article-reading-state-heading">{readingState}</h2>
+            <p>
+              {historyEntry
+                ? `Bạn đã mở bài này ${historyEntry.openCount} lần. Vị trí đọc gần nhất được giữ trên thiết bị.`
+                : "Bạn chưa mở bài này. Khi cần, hãy bắt đầu mà không phải tải thêm dữ liệu."}
+            </p>
+          </div>
+          <div className="article-detail-progress">
+            <div
+              className="progress-track"
+              role="progressbar"
+              aria-label={`Tiến độ ${article.titleTranslation}`}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={progressPercent}
+            >
+              <span style={{ width: `${progressPercent}%` }} />
+            </div>
+            <span>{progressPercent}% đã đọc</span>
+          </div>
+        </section>
+      </main>
+
+      <MobileNavigation active="discover" reviewCount={reviewCount} />
     </div>
   );
 }
@@ -2327,6 +2833,7 @@ function ArticleCard({
   article,
   index,
   onOpen,
+  openLabel,
   isFavorite,
   onToggleFavorite,
   progressPercent,
@@ -2335,21 +2842,13 @@ function ArticleCard({
   article: BuiltInArticle;
   index: number;
   onOpen: () => void;
+  openLabel?: string;
   isFavorite: boolean;
   onToggleFavorite: () => void;
   progressPercent: number;
   isCompleted: boolean;
 }) {
-  const wordCount = article.paragraphs.reduce(
-    (total, paragraph) =>
-      total +
-      paragraph.sentences.reduce(
-        (sentenceTotal, sentence) =>
-          sentenceTotal + sentence.tokens.filter((token) => token.kind === "word").length,
-        0
-      ),
-    0
-  );
+  const metadata = getArticleMetadata(article);
 
   return (
     <article
@@ -2360,7 +2859,7 @@ function ArticleCard({
         className="article-card-open"
         type="button"
         onClick={onOpen}
-        aria-label={`Mở bài ${article.titleTranslation}`}
+        aria-label={openLabel ?? `Mở bài ${article.titleTranslation}`}
       >
         <span className="card-topline">
           <span className="level-badge">{article.level}</span>
@@ -2390,7 +2889,7 @@ function ArticleCard({
         ) : null}
         <span className="card-footer">
           <span>
-            {article.topic} · {wordCount} cụm
+            {article.topic} · {metadata.wordCount} cụm
           </span>
           <span className="card-arrow">
             <ChevronIcon />
