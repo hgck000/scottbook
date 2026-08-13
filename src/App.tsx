@@ -55,6 +55,13 @@ import {
   type LibraryStatusFilter
 } from "./features/library/libraryDiscovery";
 import {
+  countAssistanceReviewItems,
+  filterAssistanceReviewItems,
+  type AssistanceReviewFilter,
+  type AssistanceReviewScopeFilter,
+  type AssistanceReviewSort
+} from "./features/review/reviewDiscovery";
+import {
   articleTopics,
   countArticlesByLength,
   countArticlesByTopic,
@@ -1875,8 +1882,6 @@ function ReviewScreen({
   );
 }
 
-type AssistanceReviewFilter = "reading" | "meaning" | "known";
-
 function AssistanceReviewSection({
   history,
   setRecordingEnabled,
@@ -1893,30 +1898,17 @@ function AssistanceReviewSection({
   openArticle: (articleId: string) => void;
 }) {
   const [filter, setFilter] = useState<AssistanceReviewFilter>("reading");
+  const [scope, setScope] = useState<AssistanceReviewScopeFilter>("all");
+  const [query, setQuery] = useState("");
+  const [sort, setSort] = useState<AssistanceReviewSort>("priority");
   const allItems = Object.values(history.items);
-  const counts = {
-    reading: allItems.filter(
-      (item) => item.knownAt === null && item.meaningCount === 0
-    ).length,
-    meaning: allItems.filter(
-      (item) => item.knownAt === null && item.meaningCount > 0
-    ).length,
-    known: allItems.filter((item) => item.knownAt !== null).length
-  };
-  const visibleItems = allItems
-    .filter((item) => {
-      if (filter === "known") return item.knownAt !== null;
-      if (item.knownAt !== null) return false;
-      return filter === "meaning"
-        ? item.meaningCount > 0
-        : item.meaningCount === 0;
-    })
-    .sort(
-      (left, right) =>
-        Number(right.pinned) - Number(left.pinned) ||
-        right.lastSeenAt - left.lastSeenAt ||
-        left.hanzi.localeCompare(right.hanzi, "zh-Hans")
-    );
+  const counts = countAssistanceReviewItems(allItems);
+  const visibleItems = filterAssistanceReviewItems(allItems, {
+    filter,
+    scope,
+    query,
+    sort
+  });
   const emptyCopy = {
     reading: "Chưa có mục nào bạn chỉ mở pinyin.",
     meaning: "Chưa có mục nào bạn phải mở đến nghĩa.",
@@ -1983,6 +1975,61 @@ function AssistanceReviewSection({
         </button>
       </div>
 
+      <div className="review-discovery-controls">
+        <label className="review-search-field">
+          <span>Tìm trong mục ôn lại</span>
+          <input
+            type="search"
+            value={query}
+            onChange={(event) => setQuery(event.currentTarget.value)}
+            placeholder="Hán tự, pinyin hoặc nghĩa"
+            aria-label="Tìm trong danh sách ôn lại"
+          />
+        </label>
+        <label className="review-sort-field">
+          <span>Sắp xếp</span>
+          <select
+            value={sort}
+            onChange={(event) =>
+              setSort(event.currentTarget.value as AssistanceReviewSort)
+            }
+            aria-label="Sắp xếp danh sách ôn lại"
+          >
+            <option value="priority">Ưu tiên cần ôn</option>
+            <option value="recent">Gặp gần đây</option>
+            <option value="alphabetical">Theo Hán tự</option>
+          </select>
+        </label>
+      </div>
+
+      <div
+        className="review-scope-filters"
+        role="group"
+        aria-label="Lọc theo phạm vi trợ giúp"
+      >
+        {(
+          [
+            ["all", "Tất cả"],
+            ["character", "Chữ"],
+            ["word", "Từ/cụm"],
+            ["sentence", "Câu"]
+          ] as const
+        ).map(([candidateScope, label]) => (
+          <button
+            key={candidateScope}
+            type="button"
+            className={scope === candidateScope ? "active" : ""}
+            aria-pressed={scope === candidateScope}
+            onClick={() => setScope(candidateScope)}
+          >
+            {label}
+          </button>
+        ))}
+        <p role="status">
+          {visibleItems.length} mục phù hợp
+        </p>
+      </div>
+
       {visibleItems.length > 0 ? (
         <div className="review-word-list">
           {visibleItems.map((item) => (
@@ -2008,7 +2055,11 @@ function AssistanceReviewSection({
         <div className="empty-review-state" role="status">
           <span aria-hidden="true">字</span>
           <div>
-            <strong>{emptyCopy}</strong>
+            <strong>
+              {query || scope !== "all"
+                ? "Không có mục nào khớp bộ lọc hiện tại."
+                : emptyCopy}
+            </strong>
             <p>
               Chạm vào một từ trong bài đọc; ScottBook chỉ ghi mức trợ giúp bạn
               thực sự đã mở.

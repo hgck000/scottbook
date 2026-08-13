@@ -192,8 +192,24 @@ test("switches authored assistance between character, word, and sentence", async
   await page.getByRole("button", { name: "Về thư viện" }).click();
   await page.locator('a[href="#/review"]:visible').click();
   await page.getByRole("button", { name: /Chưa hiểu nghĩa 2/ }).click();
-  await expect(page.getByText("Chữ", { exact: true })).toBeVisible();
-  await expect(page.getByText("Câu", { exact: true })).toBeVisible();
+  await expect(
+    page.locator(".review-scope-badge", { hasText: "Chữ" })
+  ).toBeVisible();
+  await expect(
+    page.locator(".review-scope-badge", { hasText: "Câu" })
+  ).toBeVisible();
+  await page
+    .getByRole("textbox", { name: "Tìm trong danh sách ôn lại" })
+    .fill("zao");
+  await expect(page.getByText("zǎo", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Chữ", exact: true }).click();
+  await expect(page.getByText("zǎo", { exact: true })).toBeVisible();
+  await page
+    .getByRole("combobox", { name: "Sắp xếp danh sách ôn lại" })
+    .selectOption("alphabetical");
+  await expect(
+    page.getByRole("combobox", { name: "Sắp xếp danh sách ôn lại" })
+  ).toHaveValue("alphabetical");
   expect(pageErrors).toEqual([]);
 });
 

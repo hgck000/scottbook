@@ -1167,6 +1167,66 @@ svg {
   background: #f6f1e7;
 }
 
+.review-discovery-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(170px, 0.35fr);
+  gap: 12px;
+  align-items: end;
+}
+
+.review-search-field,
+.review-sort-field {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.review-search-field input,
+.review-sort-field select {
+  min-height: 43px;
+  width: 100%;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  color: var(--ink);
+  background: var(--paper);
+  font: inherit;
+}
+
+.review-scope-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  margin: 14px 0 18px;
+}
+
+.review-scope-filters button {
+  min-height: 34px;
+  padding: 0 11px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  background: transparent;
+  font-size: 0.67rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.review-scope-filters button.active {
+  border-color: var(--jade);
+  color: var(--jade);
+  background: var(--jade-soft);
+}
+
+.review-scope-filters p {
+  margin: 0 0 0 auto;
+  color: var(--muted);
+  font-size: 0.68rem;
+}
+
 .review-word-list {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(360px, 100%), 1fr));
@@ -3890,6 +3950,15 @@ svg {
 
   .review-filters button {
     width: 100%;
+  }
+
+  .review-discovery-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .review-scope-filters p {
+    width: 100%;
+    margin-left: 0;
   }
 
   .review-word-card > header,
