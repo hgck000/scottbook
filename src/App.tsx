@@ -999,6 +999,7 @@ function PwaStatusNotice({
       </div>
 
       <div
+        data-testid="connection-status"
         className={`connection-chip${
           !status.isOnline
             ? " offline"

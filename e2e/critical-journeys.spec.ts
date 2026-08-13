@@ -761,7 +761,9 @@ test("reopens a precached article while the browser is offline", async ({
     await context.setOffline(true);
     await page.reload({ waitUntil: "domcontentloaded" });
     await expect(page.getByRole("heading", { name: "我的早上" })).toBeVisible();
-    await expect(page.getByRole("status")).toContainText("Đang ngoại tuyến");
+    await expect(page.getByTestId("connection-status")).toContainText(
+      "Đang ngoại tuyến"
+    );
   } finally {
     await context.setOffline(false);
   }
@@ -780,19 +782,21 @@ test("keeps offline readiness visible after a controlled reload", async ({
   await expect
     .poll(() => page.evaluate(() => Boolean(navigator.serviceWorker.controller)))
     .toBe(true);
-  await expect(page.getByRole("status")).toContainText(
+  await expect(page.getByTestId("connection-status")).toContainText(
     "Có mạng · sẵn sàng offline"
   );
 
   try {
     await context.setOffline(true);
     await page.evaluate(() => window.dispatchEvent(new Event("offline")));
-    await expect(page.getByRole("status")).toContainText("Đang ngoại tuyến");
+    await expect(page.getByTestId("connection-status")).toContainText(
+      "Đang ngoại tuyến"
+    );
   } finally {
     await context.setOffline(false);
   }
   await page.evaluate(() => window.dispatchEvent(new Event("online")));
-  await expect(page.getByRole("status")).toContainText(
+  await expect(page.getByTestId("connection-status")).toContainText(
     "Có mạng · sẵn sàng offline"
   );
   expect(pageErrors).toEqual([]);

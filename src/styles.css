@@ -15,6 +15,10 @@
   --amber: #c9933d;
   --coral: #c9654d;
   --shadow: 0 24px 70px rgb(34 46 42 / 10%);
+  --app-safe-top: var(--safe-area-inset-top, env(safe-area-inset-top, 0px));
+  --app-safe-right: var(--safe-area-inset-right, env(safe-area-inset-right, 0px));
+  --app-safe-bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
+  --app-safe-left: var(--safe-area-inset-left, env(safe-area-inset-left, 0px));
 }
 
 [data-theme="night"] {
@@ -55,6 +59,9 @@ html {
 
 body {
   margin: 0;
+  padding-top: var(--app-safe-top);
+  padding-right: var(--app-safe-right);
+  padding-left: var(--app-safe-left);
   min-width: 320px;
   min-height: 100vh;
   background: var(--paper);
@@ -236,9 +243,9 @@ svg {
 .pwa-status-stack {
   position: fixed;
   z-index: 60;
-  top: 92px;
-  right: 24px;
-  width: min(390px, calc(100vw - 48px));
+  top: calc(92px + var(--app-safe-top));
+  right: calc(24px + var(--app-safe-right));
+  width: min(390px, calc(100vw - 48px - var(--app-safe-left) - var(--app-safe-right)));
   display: grid;
   justify-items: end;
   gap: 9px;
@@ -3130,7 +3137,7 @@ svg {
 .reader-toolbar {
   position: sticky;
   z-index: 20;
-  top: 0;
+  top: var(--app-safe-top);
   min-height: 70px;
   display: grid;
   grid-template-columns: 1fr auto 1fr;
@@ -3375,7 +3382,7 @@ svg {
 .reader-scope-bar {
   position: sticky;
   z-index: 12;
-  top: 82px;
+  top: calc(82px + var(--app-safe-top));
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -3586,9 +3593,9 @@ svg {
 .reader-settings-panel {
   position: fixed;
   z-index: 65;
-  top: 86px;
-  right: 18px;
-  bottom: 18px;
+  top: calc(86px + var(--app-safe-top));
+  right: calc(18px + var(--app-safe-right));
+  bottom: calc(18px + var(--app-safe-bottom));
   width: min(430px, calc(100vw - 36px));
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
@@ -3831,9 +3838,9 @@ svg {
 .reader-vocabulary-panel {
   position: fixed;
   z-index: 65;
-  top: 86px;
-  right: 18px;
-  bottom: 18px;
+  top: calc(86px + var(--app-safe-top));
+  right: calc(18px + var(--app-safe-right));
+  bottom: calc(18px + var(--app-safe-bottom));
   width: min(470px, calc(100vw - 36px));
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr);
@@ -4247,8 +4254,8 @@ svg {
 .assist-panel {
   position: fixed;
   z-index: 40;
-  right: 24px;
-  bottom: 24px;
+  right: calc(24px + var(--app-safe-right));
+  bottom: calc(24px + var(--app-safe-bottom));
   width: min(430px, calc(100vw - 48px));
   padding: 24px;
   border: 1px solid var(--line);
@@ -4445,9 +4452,9 @@ svg {
 
 @media (max-width: 760px) {
   .pwa-status-stack {
-    top: 78px;
-    right: 12px;
-    width: calc(100vw - 24px);
+    top: calc(78px + var(--app-safe-top));
+    right: calc(12px + var(--app-safe-right));
+    width: calc(100vw - 24px - var(--app-safe-left) - var(--app-safe-right));
   }
 
   .app-shell {
@@ -4459,15 +4466,15 @@ svg {
   }
 
   .library-page {
-    padding: 0 16px calc(112px + env(safe-area-inset-bottom));
+    padding: 0 16px calc(112px + var(--app-safe-bottom));
   }
 
   .mobile-tabbar {
     position: fixed;
     z-index: 30;
-    right: 14px;
-    bottom: calc(12px + env(safe-area-inset-bottom));
-    left: 14px;
+    right: calc(14px + var(--app-safe-right));
+    bottom: calc(12px + var(--app-safe-bottom));
+    left: calc(14px + var(--app-safe-left));
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 5px;
@@ -4941,15 +4948,15 @@ svg {
   }
 
   .reader-scope-bar {
-    top: 74px;
+    top: calc(74px + var(--app-safe-top));
   }
 
   .reader-settings-panel {
     top: auto;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    width: 100%;
+    right: var(--app-safe-right);
+    bottom: var(--app-safe-bottom);
+    left: var(--app-safe-left);
+    width: auto;
     max-height: calc(100dvh - 68px);
     border-right: 0;
     border-bottom: 0;
@@ -4960,10 +4967,10 @@ svg {
 
   .reader-vocabulary-panel {
     top: auto;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    width: 100%;
+    right: var(--app-safe-right);
+    bottom: var(--app-safe-bottom);
+    left: var(--app-safe-left);
+    width: auto;
     max-height: calc(100dvh - 68px);
     border-right: 0;
     border-bottom: 0;
@@ -4976,7 +4983,7 @@ svg {
     right: 0;
     bottom: 0;
     width: 100%;
-    padding: 14px 20px calc(22px + env(safe-area-inset-bottom));
+    padding: 14px 20px calc(22px + var(--app-safe-bottom));
     border-right: 0;
     border-bottom: 0;
     border-left: 0;

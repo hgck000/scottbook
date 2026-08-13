@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from "react";
+import { Capacitor } from "@capacitor/core";
 
 export type StoragePersistence =
   | "checking"
@@ -54,6 +55,7 @@ export type PwaStatusSnapshot = {
 
 export type PwaStatusEnvironment = {
   getOnline: () => boolean;
+  nativeRuntime?: boolean;
   supportsServiceWorker?: boolean;
   getServiceWorkerControlled?: () => boolean;
   addConnectionListener: (listener: () => void) => () => void;
@@ -164,6 +166,7 @@ function createBrowserEnvironment(): PwaStatusEnvironment {
 
   const storageManager =
     "storage" in navigator ? navigator.storage : undefined;
+  const nativeRuntime = Capacitor.isNativePlatform();
   const storage = storageManager
     ? {
         persisted: () => storageManager.persisted(),
@@ -173,6 +176,7 @@ function createBrowserEnvironment(): PwaStatusEnvironment {
 
   return {
     getOnline: () => navigator.onLine,
+    nativeRuntime,
     supportsServiceWorker: "serviceWorker" in navigator,
     getServiceWorkerControlled: () =>
       "serviceWorker" in navigator &&
@@ -187,7 +191,7 @@ function createBrowserEnvironment(): PwaStatusEnvironment {
     },
     reload: () => window.location.reload(),
     storage,
-    install: createBrowserInstallEnvironment()
+    install: nativeRuntime ? undefined : createBrowserInstallEnvironment()
   };
 }
 
@@ -201,7 +205,9 @@ export function createPwaStatusStore(environment: PwaStatusEnvironment) {
     ...serverSnapshot,
     isOnline: environment.getOnline(),
     offlineCapability:
-      environment.supportsServiceWorker === false
+      environment.nativeRuntime
+        ? "ready"
+        : environment.supportsServiceWorker === false
         ? "unavailable"
         : environment.getServiceWorkerControlled?.()
           ? "ready"
@@ -396,7 +402,9 @@ export function createPwaStatusStore(environment: PwaStatusEnvironment) {
     }) =>
       publish({
         offlineCapability:
-          environment.supportsServiceWorker === false
+          environment.nativeRuntime
+            ? "ready"
+            : environment.supportsServiceWorker === false
             ? "unavailable"
             : registration?.active
               ? "ready"

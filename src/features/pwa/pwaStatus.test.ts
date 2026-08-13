@@ -168,6 +168,23 @@ describe("controlled PWA lifecycle", () => {
     expect(store.getSnapshot().offlineReady).toBe(false);
   });
 
+  it("treats a native bundle as offline-ready without browser install UI", () => {
+    const store = createPwaStatusStore({
+      getOnline: () => false,
+      nativeRuntime: true,
+      supportsServiceWorker: false,
+      addConnectionListener: () => () => undefined,
+      reload: () => undefined
+    });
+
+    expect(store.getSnapshot()).toMatchObject({
+      isOnline: false,
+      offlineCapability: "ready",
+      installState: "hidden",
+      installMethod: null
+    });
+  });
+
   it("keeps a completed precache ready even when a later update check fails", () => {
     const store = createPwaStatusStore({
       getOnline: () => true,

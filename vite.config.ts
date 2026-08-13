@@ -15,12 +15,14 @@ function normalizeBasePath(value: string | undefined): string {
 export default defineConfig(({ mode }) => {
   const environment = loadEnv(mode, ".", "SCOTTBOOK_");
   const base = normalizeBasePath(environment.SCOTTBOOK_BASE_PATH);
+  const nativeBuild = mode === "native";
 
   return {
     base,
     plugins: [
       react(),
       VitePWA({
+        disable: nativeBuild,
         registerType: "prompt",
         includeAssets: [
           "scottbook-icon.svg",

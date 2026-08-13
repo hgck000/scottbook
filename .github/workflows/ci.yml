@@ -117,3 +117,37 @@ jobs:
 
       - name: Build PWA
         run: npm run build
+
+  android-debug:
+    name: Build Android debug APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Use Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build bundled Android debug APK
+        run: npm run android:build:debug
+
+      - name: Upload installable debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: ScottBook-Android-debug-${{ github.sha }}
+          path: artifacts/ScottBook-*-android-debug.apk
+          if-no-files-found: error
+          retention-days: 14

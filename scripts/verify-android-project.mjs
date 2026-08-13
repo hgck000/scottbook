@@ -1,0 +1,49 @@
+import { existsSync, readFileSync } from "node:fs";
+
+function fail(message) {
+  throw new Error(`Android project verification failed: ${message}`);
+}
+
+function readJson(path) {
+  return JSON.parse(readFileSync(path, "utf8"));
+}
+
+const packageJson = readJson("package.json");
+const copiedConfig = readJson(
+  "android/app/src/main/assets/capacitor.config.json"
+);
+const gradle = readFileSync("android/app/build.gradle", "utf8");
+const manifest = readFileSync(
+  "android/app/src/main/AndroidManifest.xml",
+  "utf8"
+);
+
+if (!existsSync("android/app/src/main/assets/public/index.html")) {
+  fail("Capacitor did not copy the native web entrypoint");
+}
+if (
+  copiedConfig.appId !== "io.github.hgck000.scottbook" ||
+  copiedConfig.appName !== "ScottBook" ||
+  copiedConfig.webDir !== "dist"
+) {
+  fail("copied Capacitor identity or web directory is incorrect");
+}
+if (copiedConfig.server?.url || copiedConfig.server?.cleartext) {
+  fail("copied native config points at a remote or cleartext server");
+}
+if (manifest.includes("android.permission.INTERNET")) {
+  fail("offline Android baseline must not request Internet permission");
+}
+if (!manifest.includes('android:allowBackup="false"')) {
+  fail("Android cloud backup must remain disabled for device-only data");
+}
+if (!gradle.includes("versionCode 25")) {
+  fail("Android versionCode must be 25");
+}
+if (!gradle.includes(`versionName \"${packageJson.version}\"`)) {
+  fail(`Android versionName must be ${packageJson.version}`);
+}
+
+console.log(
+  `Android project verified for ${copiedConfig.appId} ${packageJson.version}: bundled assets, no server URL.`
+);
