@@ -140,7 +140,9 @@ test("turns assistance into an editable local review list", async ({ page }) => 
     .click();
   await expect(page.getByText("zǎoshang", { exact: true })).toHaveCount(0);
   await expect(
-    page.getByText("Wǒ de zǎoshang · Buổi sáng của tôi", { exact: true })
+    page
+      .getByLabel("Lịch sử đọc gần đây")
+      .getByText("Wǒ de zǎoshang · Buổi sáng của tôi", { exact: true })
   ).toBeVisible();
   expect(pageErrors).toEqual([]);
 });
@@ -269,6 +271,47 @@ test("practices local review evidence from Hanzi to meaning", async ({ page }) =
     .getByRole("button", { name: "Về Ôn lại", exact: true })
     .click();
   await expect(page.getByRole("button", { name: /Đã biết 1/ })).toBeVisible();
+  expect(pageErrors).toEqual([]);
+});
+
+test("compares local assistance evidence by article and reopens the reader", async ({
+  page
+}) => {
+  const pageErrors = collectPageErrors(page);
+  await page.goto("/");
+  await dismissInstallNotice(page);
+  await page
+    .getByRole("button", { name: "Mở bài Buổi sáng của tôi" })
+    .click();
+
+  const tokens = page.locator("[data-reader-token]");
+  await tokens.nth(0).click();
+  await tokens.nth(0).click();
+  await tokens.nth(1).click();
+  await page.getByRole("button", { name: "Về thư viện" }).click();
+  await page.locator('a[href="#/review"]:visible').click();
+
+  await expect(
+    page.getByRole("heading", { name: "Bài nào từng cần trợ giúp nhiều?" })
+  ).toBeVisible();
+  const insight = page.getByRole("article", {
+    name: "Dấu vết trợ giúp bài Buổi sáng của tôi"
+  });
+  await expect(insight).toContainText("3 lượt mở");
+  await expect(insight).toContainText("2 mục đang ôn");
+  await expect(
+    insight.getByRole("progressbar", {
+      name: "Tỉ lệ từ/cụm từng cần trợ giúp trong Buổi sáng của tôi"
+    })
+  ).toHaveAttribute("aria-valuenow", /[1-9][0-9]?|100/);
+
+  await insight
+    .getByRole("button", { name: "Đọc lại Buổi sáng của tôi" })
+    .click();
+  await expect(page).toHaveURL(/#\/read\/hsk1-my-morning$/);
+  await expect(
+    page.getByRole("heading", { name: "我的早上", level: 1 })
+  ).toBeVisible();
   expect(pageErrors).toEqual([]);
 });
 

@@ -72,6 +72,10 @@ import {
   type ReviewPracticeStage
 } from "./features/review/reviewPractice";
 import {
+  getArticleAssistanceInsights,
+  type ArticleAssistanceInsight
+} from "./features/review/learningInsights";
+import {
   articleTopics,
   countArticlesByLength,
   countArticlesByTopic,
@@ -2082,6 +2086,11 @@ function ReviewScreen({
           openArticle={openArticle}
         />
 
+        <LearningInsightsSection
+          assistanceHistory={assistanceHistory}
+          openArticle={openArticle}
+        />
+
         <AssistanceReviewSection
           history={assistanceHistory}
           setRecordingEnabled={setRecordingEnabled}
@@ -2237,6 +2246,135 @@ function LearningProgressSection({
         </div>
       </div>
     </section>
+  );
+}
+
+function LearningInsightsSection({
+  assistanceHistory,
+  openArticle
+}: {
+  assistanceHistory: AssistanceHistoryState;
+  openArticle: (articleId: string) => void;
+}) {
+  const insights = getArticleAssistanceInsights(
+    builtInLibrary,
+    assistanceHistory
+  ).filter((insight) => insight.assistanceOpens > 0);
+  const totalAssistanceOpens = insights.reduce(
+    (total, insight) => total + insight.assistanceOpens,
+    0
+  );
+
+  return (
+    <section
+      className="learning-insights-section"
+      aria-labelledby="learning-insights-heading"
+    >
+      <div className="section-heading learning-insights-heading">
+        <div>
+          <p className="eyebrow">Dấu vết theo bài</p>
+          <h2 id="learning-insights-heading">
+            Bài nào từng cần trợ giúp nhiều?
+          </h2>
+        </div>
+        <span className="offline-pill">
+          {insights.length}/{builtInLibrary.length} bài · {totalAssistanceOpens} lượt mở
+        </span>
+      </div>
+
+      {insights.length === 0 ? (
+        <div className="learning-insights-empty" role="status">
+          <span aria-hidden="true">读</span>
+          <div>
+            <strong>Chưa có dấu vết để so sánh.</strong>
+            <p>
+              Khi bạn mở pinyin hoặc nghĩa trong Reader, thống kê theo bài sẽ
+              xuất hiện ở đây mà không gửi dữ liệu khỏi thiết bị.
+            </p>
+          </div>
+          <a href="#/discover">Chọn một bài để đọc</a>
+        </div>
+      ) : (
+        <div className="learning-insights-list">
+          {insights.map((insight) => (
+            <LearningInsightCard
+              key={insight.article.id}
+              insight={insight}
+              openArticle={openArticle}
+            />
+          ))}
+        </div>
+      )}
+
+      <p className="learning-insights-note">
+        Tỉ lệ chỉ tính các từ/cụm riêng biệt từng được mở trợ giúp so với từ/cụm
+        dựng sẵn trong bài. Đây là dấu vết đọc cục bộ, không phải điểm số hay
+        đánh giá trình độ.
+      </p>
+    </section>
+  );
+}
+
+function LearningInsightCard({
+  insight,
+  openArticle
+}: {
+  insight: ArticleAssistanceInsight;
+  openArticle: (articleId: string) => void;
+}) {
+  const { article } = insight;
+
+  return (
+    <article
+      className="learning-insight-card"
+      aria-label={`Dấu vết trợ giúp bài ${article.titleTranslation}`}
+    >
+      <div className="learning-insight-title">
+        <span className={`level-badge ${article.accent}`}>{article.level}</span>
+        <div>
+          <h3 lang="zh-Hans">{article.title}</h3>
+          <p>
+            {article.titlePinyin} · {article.titleTranslation}
+          </p>
+        </div>
+      </div>
+
+      <div className="learning-insight-coverage">
+        <strong>{insight.assistedWordPercent}%</strong>
+        <span>từ/cụm từng mở trợ giúp</span>
+      </div>
+
+      <div
+        className="progress-track learning-insight-track"
+        role="progressbar"
+        aria-label={`Tỉ lệ từ/cụm từng cần trợ giúp trong ${article.titleTranslation}`}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={insight.assistedWordPercent}
+      >
+        <span style={{ width: `${insight.assistedWordPercent}%` }} />
+      </div>
+
+      <div className="learning-insight-footer">
+        <p>
+          <strong>
+            {insight.assistedWordTypes}/{insight.totalWordTypes}
+          </strong>{" "}
+          từ/cụm · <strong>{insight.assistanceOpens}</strong> lượt mở ·{" "}
+          <strong>{insight.activeReviewItems}</strong> mục đang ôn
+          {insight.knownReviewItems > 0
+            ? ` · ${insight.knownReviewItems} đã biết`
+            : ""}
+        </p>
+        <button
+          type="button"
+          onClick={() => openArticle(article.id)}
+          aria-label={`Đọc lại ${article.titleTranslation}`}
+        >
+          Đọc lại <span aria-hidden="true">→</span>
+        </button>
+      </div>
+    </article>
   );
 }
 

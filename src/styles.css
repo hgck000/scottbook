@@ -1201,6 +1201,173 @@ svg {
   text-align: right;
 }
 
+.learning-insights-section {
+  margin-top: 24px;
+  padding: clamp(20px, 3vw, 30px);
+  border: 1px solid var(--line);
+  border-radius: 26px;
+  background: color-mix(in srgb, var(--paper-raised) 74%, transparent);
+}
+
+.learning-insights-heading {
+  align-items: center;
+}
+
+.learning-insights-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 14px;
+  margin-top: 20px;
+}
+
+.learning-insight-card {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--paper);
+}
+
+.learning-insight-title {
+  min-width: 0;
+  display: flex;
+  align-items: start;
+  gap: 11px;
+}
+
+.learning-insight-title > div {
+  min-width: 0;
+}
+
+.learning-insight-title h3 {
+  overflow: hidden;
+  margin: 0;
+  color: var(--ink);
+  font-family: "Songti SC", "Noto Serif CJK SC", serif;
+  font-size: 1.05rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.learning-insight-title p {
+  overflow: hidden;
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 0.66rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.learning-insight-coverage {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.learning-insight-coverage strong {
+  color: var(--jade);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.8rem;
+  font-weight: 500;
+}
+
+.learning-insight-coverage span {
+  color: var(--muted);
+  font-size: 0.64rem;
+  font-weight: 760;
+  text-align: right;
+}
+
+.learning-insight-track {
+  margin-top: 9px;
+}
+
+.learning-insight-footer {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 15px;
+}
+
+.learning-insight-footer p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.65rem;
+  line-height: 1.55;
+}
+
+.learning-insight-footer p strong {
+  color: var(--ink);
+}
+
+.learning-insight-footer button,
+.learning-insights-empty a {
+  flex: 0 0 auto;
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 13px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  color: var(--ink);
+  background: var(--paper-raised);
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.learning-insights-empty {
+  min-height: 128px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  margin-top: 20px;
+  padding: 20px;
+  border: 1px dashed var(--line);
+  border-radius: 20px;
+  background: var(--paper);
+}
+
+.learning-insights-empty > span {
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  border-radius: 15px;
+  color: var(--jade);
+  background: var(--jade-soft);
+  font-family: "Songti SC", "Noto Serif CJK SC", serif;
+  font-size: 1.35rem;
+}
+
+.learning-insights-empty strong {
+  color: var(--ink);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 0.95rem;
+}
+
+.learning-insights-empty p {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: 0.68rem;
+  line-height: 1.5;
+}
+
+.learning-insights-note {
+  margin: 15px 0 0;
+  color: var(--muted);
+  font-size: 0.64rem;
+  line-height: 1.55;
+}
+
 .assistance-review-section {
   margin-top: 24px;
   padding: clamp(20px, 3vw, 30px);
@@ -4057,6 +4224,15 @@ svg {
     grid-template-columns: 1fr;
   }
 
+  .learning-insights-section {
+    padding: 18px;
+    border-radius: 22px;
+  }
+
+  .learning-insights-list {
+    grid-template-columns: 1fr;
+  }
+
   .assistance-review-section {
     padding: 18px;
     border-radius: 22px;
@@ -4340,6 +4516,33 @@ svg {
 
   .learning-progress-summary {
     grid-template-columns: 1fr;
+  }
+
+  .learning-insights-heading {
+    display: grid;
+    gap: 12px;
+  }
+
+  .learning-insights-heading .offline-pill {
+    justify-self: start;
+  }
+
+  .learning-insight-footer,
+  .learning-insights-empty {
+    display: grid;
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  .learning-insights-empty > span {
+    width: 44px;
+    height: 44px;
+  }
+
+  .learning-insight-footer button,
+  .learning-insights-empty a {
+    justify-self: stretch;
+    justify-content: center;
   }
 
   .learning-progress-percent {

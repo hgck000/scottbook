@@ -128,6 +128,7 @@ describe("ScottBook routes", () => {
     expect(markup).toContain("Tải chẩn đoán local");
     expect(markup).toContain("không có nội dung bài đọc");
     expect(markup).toContain("import vẫn đang khóa");
+    expect(markup).toContain("Chưa có dấu vết để so sánh");
   });
 
   it("renders a clear recovery screen for an unavailable article", () => {
@@ -177,6 +178,13 @@ describe("ScottBook routes", () => {
     expect(markup).toContain("Xóa 早上 khỏi lịch sử trợ giúp");
     expect(markup).toContain('href="#/review/practice"');
     expect(markup).toContain("Luyện nhanh · 2 mục");
+    expect(markup).toContain("Bài nào từng cần trợ giúp nhiều?");
+    expect(markup).toContain(
+      'aria-label="Dấu vết trợ giúp bài Buổi sáng của tôi"'
+    );
+    expect(markup).toContain(">2</strong> lượt mở");
+    expect(markup).toContain(">2</strong> mục đang ôn");
+    expect(markup).toContain('aria-label="Đọc lại Buổi sáng của tôi"');
   });
 
   it("starts quick review with Hanzi before revealing authored help", () => {
