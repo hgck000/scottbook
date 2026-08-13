@@ -1,7 +1,7 @@
 {
   "name": "scottbook",
   "private": true,
-  "version": "0.28.0",
+  "version": "0.29.0",
   "type": "module",
   "scripts": {
     "audit:security": "node scripts/audit-security.mjs && node scripts/audit-runtime-licenses.mjs && npm audit --omit=dev --audit-level=high",
@@ -9,6 +9,7 @@
     "android:build:release": "npm run android:sync && node scripts/build-android-release.mjs",
     "android:device:smoke": "node scripts/run-android-device-smoke.mjs",
     "android:sync": "npm run build:android:web && cap sync android && node scripts/verify-android-project.mjs",
+    "android:upgrade:smoke": "node scripts/run-android-upgrade-smoke.mjs",
     "dev": "vite",
     "build": "npm run validate:content && tsc -b && vite build && npm run verify:release",
     "build:android:web": "npm run validate:content && tsc -b && vite build --mode native && node scripts/verify-android-web.mjs",

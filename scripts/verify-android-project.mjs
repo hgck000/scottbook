@@ -45,8 +45,8 @@ if (manifest.includes("android.permission.INTERNET")) {
 if (!manifest.includes('android:allowBackup="false"')) {
   fail("Android cloud backup must remain disabled for device-only data");
 }
-if (!gradle.includes("versionCode 28")) {
-  fail("Android versionCode must be 28");
+if (!gradle.includes("versionCode 29")) {
+  fail("Android versionCode must be 29");
 }
 if (!gradle.includes(`versionName \"${packageJson.version}\"`)) {
   fail(`Android versionName must be ${packageJson.version}`);

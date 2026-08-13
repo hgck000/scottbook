@@ -112,6 +112,31 @@ export function findApksigner(environment = process.env) {
   return process.platform === "win32" ? "apksigner.bat" : "apksigner";
 }
 
+export function findAapt(environment = process.env) {
+  if (environment.SCOTTBOOK_AAPT_PATH) {
+    const configured = resolve(environment.SCOTTBOOK_AAPT_PATH);
+    if (!existsSync(configured)) {
+      throw new Error(`Không tìm thấy aapt: ${configured}`);
+    }
+    return configured;
+  }
+
+  const sdkRoot = environment.ANDROID_SDK_ROOT || environment.ANDROID_HOME;
+  if (sdkRoot) {
+    const buildToolsDirectory = join(sdkRoot, "build-tools");
+    if (existsSync(buildToolsDirectory)) {
+      const executable = process.platform === "win32" ? "aapt.exe" : "aapt";
+      for (const version of readdirSync(buildToolsDirectory).sort(
+        compareBuildToolVersions
+      )) {
+        const candidate = join(buildToolsDirectory, version, executable);
+        if (existsSync(candidate)) return candidate;
+      }
+    }
+  }
+  return process.platform === "win32" ? "aapt.exe" : "aapt";
+}
+
 export function parseApksignerFingerprint(output) {
   const match = output.match(
     /Signer #1 certificate SHA-256 digest:\s*([0-9a-f:]+)/iu
@@ -122,7 +147,7 @@ export function parseApksignerFingerprint(output) {
   return normalizeCertificateFingerprint(match[1]);
 }
 
-function run(command, argumentsList, options = {}) {
+export function runAndroidTool(command, argumentsList, options = {}) {
   const result = spawnSync(command, argumentsList, {
     cwd: options.cwd,
     encoding: "utf8",
@@ -138,6 +163,18 @@ function run(command, argumentsList, options = {}) {
     throw new Error(`${basename(command)} thất bại: ${detail}`);
   }
   return result;
+}
+
+export function inspectApkCertificate(apkPath, environment = process.env) {
+  const apksigner = findApksigner(environment);
+  const verification = runAndroidTool(
+    apksigner,
+    ["verify", "--verbose", "--print-certs", apkPath],
+    { capture: true, environment }
+  );
+  return parseApksignerFingerprint(
+    `${verification.stdout}\n${verification.stderr}`
+  );
 }
 
 function sha256File(filePath) {
@@ -160,7 +197,7 @@ export function buildSignedAndroidRelease({
   );
   const windows = process.platform === "win32";
   const gradleCommand = windows ? "gradlew.bat" : "./gradlew";
-  run(
+  runAndroidTool(
     gradleCommand,
     ["testReleaseUnitTest", "lintRelease", "assembleRelease"],
     {
@@ -183,15 +220,7 @@ export function buildSignedAndroidRelease({
     throw new Error("Gradle hoàn tất nhưng không tạo app-release.apk.");
   }
 
-  const apksigner = findApksigner(environment);
-  const verification = run(
-    apksigner,
-    ["verify", "--verbose", "--print-certs", source],
-    { capture: true, environment }
-  );
-  const actualFingerprint = parseApksignerFingerprint(
-    `${verification.stdout}\n${verification.stderr}`
-  );
+  const actualFingerprint = inspectApkCertificate(source, environment);
   if (actualFingerprint !== signing.expectedFingerprint) {
     throw new Error(
       `Fingerprint APK không khớp khóa chủ sở hữu. Mong đợi ${signing.expectedFingerprint}, nhận ${actualFingerprint}.`

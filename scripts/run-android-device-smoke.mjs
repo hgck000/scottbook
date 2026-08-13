@@ -10,8 +10,8 @@ import { spawnSync } from "node:child_process";
 import { basename, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
-const APP_ID = "io.github.hgck000.scottbook";
-const MAIN_ACTIVITY = `${APP_ID}/.MainActivity`;
+export const APP_ID = "io.github.hgck000.scottbook";
+export const MAIN_ACTIVITY = `${APP_ID}/.MainActivity`;
 
 export function parseConnectedDevices(output) {
   return output
@@ -122,7 +122,7 @@ export function parseArguments(argumentsList) {
   return options;
 }
 
-function commandResult(command, argumentsList, options = {}) {
+export function commandResult(command, argumentsList, options = {}) {
   const result = spawnSync(command, argumentsList, {
     encoding: options.binary ? null : "utf8",
     maxBuffer: 16 * 1024 * 1024,
@@ -143,7 +143,7 @@ function commandResult(command, argumentsList, options = {}) {
   return result;
 }
 
-function resolveAdbPath(environment) {
+export function resolveAdbPath(environment) {
   if (environment.SCOTTBOOK_ADB_PATH) {
     return resolve(environment.SCOTTBOOK_ADB_PATH);
   }
@@ -163,19 +163,19 @@ function adbArguments(serial, argumentsList) {
   return serial ? ["-s", serial, ...argumentsList] : argumentsList;
 }
 
-function runAdb(adb, serial, argumentsList, options) {
+export function runAdb(adb, serial, argumentsList, options) {
   return commandResult(adb, adbArguments(serial, argumentsList), options);
 }
 
-function readProperty(adb, serial, property) {
+export function readProperty(adb, serial, property) {
   return runAdb(adb, serial, ["shell", "getprop", property]).stdout.trim();
 }
 
-function timestampForPath(date) {
+export function timestampForPath(date) {
   return date.toISOString().replace(/[:.]/gu, "-");
 }
 
-function wait(milliseconds) {
+export function wait(milliseconds) {
   Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, milliseconds);
 }
 
