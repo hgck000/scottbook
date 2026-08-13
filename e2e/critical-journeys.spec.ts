@@ -222,6 +222,56 @@ test("switches authored assistance between character, word, and sentence", async
   expect(pageErrors).toEqual([]);
 });
 
+test("practices local review evidence from Hanzi to meaning", async ({ page }) => {
+  const pageErrors = collectPageErrors(page);
+  await page.goto("/");
+  await dismissInstallNotice(page);
+  await page
+    .getByRole("button", { name: "Mở bài Buổi sáng của tôi" })
+    .click();
+
+  const tokens = page.locator("[data-reader-token]");
+  await tokens.nth(0).click();
+  await tokens.nth(0).click();
+  await tokens.nth(1).click();
+  await page.getByRole("button", { name: "Về thư viện" }).click();
+  await page.locator('a[href="#/review"]:visible').click();
+  await page
+    .getByRole("link", { name: "Luyện nhanh · 2 mục", exact: true })
+    .click();
+
+  await expect(
+    page.getByRole("heading", { name: "Luyện nhanh những chỗ từng vấp." })
+  ).toBeVisible();
+  await expect(page.locator(".practice-card > strong")).toHaveText("早上");
+  await expect(page.getByText("zǎoshang", { exact: true })).toHaveCount(0);
+  await page.getByRole("button", { name: "Hiện pinyin" }).click();
+  await expect(page.getByText("zǎoshang", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Hiện nghĩa" }).click();
+  await expect(page.getByText("buổi sáng", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Đã nhớ" }).click();
+
+  await expect(page.locator(".practice-card > strong")).toHaveText("六点");
+  await page.getByRole("button", { name: "Hiện pinyin" }).click();
+  await page.getByRole("button", { name: "Hiện nghĩa" }).click();
+  await page.getByRole("button", { name: "Cần ôn lại" }).click();
+
+  await expect(
+    page.getByRole("heading", { name: "Đã đi qua 2 mục." })
+  ).toBeVisible();
+  await expect(page.locator(".practice-result-stats div").nth(0)).toContainText(
+    "1Đã nhớ"
+  );
+  await expect(page.locator(".practice-result-stats div").nth(1)).toContainText(
+    "1Cần ôn lại"
+  );
+  await page
+    .getByRole("button", { name: "Về Ôn lại", exact: true })
+    .click();
+  await expect(page.getByRole("button", { name: /Đã biết 1/ })).toBeVisible();
+  expect(pageErrors).toEqual([]);
+});
+
 test("personalizes the reader layout and restores safe defaults", async ({
   page
 }) => {

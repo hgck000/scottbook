@@ -1213,6 +1213,25 @@ svg {
   align-items: center;
 }
 
+.assistance-review-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.assistance-review-actions > a {
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 15px;
+  border-radius: 14px;
+  color: #f6f1e7;
+  background: var(--jade);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
 .recording-toggle {
   min-height: 48px;
   display: flex;
@@ -1245,6 +1264,250 @@ svg {
 .recording-toggle small {
   color: var(--muted);
   font-size: 0.62rem;
+}
+
+.practice-page {
+  min-height: 100vh;
+}
+
+.practice-back-button {
+  min-height: 38px;
+  padding: 0 13px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  color: var(--ink);
+  background: var(--paper-raised);
+  font-size: 0.7rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.practice-heading {
+  max-width: 760px;
+  margin: 42px auto 0;
+  text-align: center;
+}
+
+.practice-heading h1 {
+  margin: 13px 0 12px;
+  color: var(--ink);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(2.5rem, 5vw, 4.8rem);
+  font-weight: 500;
+  line-height: 0.98;
+  letter-spacing: -0.05em;
+}
+
+.practice-heading > p:last-child {
+  max-width: 620px;
+  margin: 0 auto;
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.6;
+}
+
+.practice-session,
+.practice-finished,
+.practice-empty {
+  width: min(100%, 720px);
+  margin: 32px auto 0;
+}
+
+.practice-session {
+  padding: clamp(18px, 3vw, 28px);
+  border: 1px solid var(--line);
+  border-radius: 28px;
+  background: color-mix(in srgb, var(--paper-raised) 76%, transparent);
+  box-shadow: var(--shadow);
+}
+
+.practice-progress-copy {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.practice-progress-track {
+  height: 6px;
+  margin-top: 9px;
+}
+
+.practice-card {
+  min-height: 360px;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 14px;
+  margin-top: 22px;
+  padding: clamp(24px, 5vw, 54px);
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 50% 22%, var(--jade-soft), transparent 15rem),
+    var(--paper);
+  text-align: center;
+}
+
+.practice-card > strong {
+  max-width: 100%;
+  font-family: "Songti SC", "Noto Serif CJK SC", serif;
+  font-size: clamp(2.15rem, 6vw, 5rem);
+  line-height: 1.08;
+  overflow-wrap: anywhere;
+}
+
+.practice-pinyin {
+  margin: 0;
+  color: var(--coral);
+  font-size: clamp(1.05rem, 2.5vw, 1.35rem);
+  font-weight: 750;
+}
+
+.practice-meaning {
+  display: grid;
+  gap: 15px;
+  justify-items: center;
+}
+
+.practice-meaning > p {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 750;
+}
+
+.practice-meaning blockquote {
+  max-width: 520px;
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  padding: 13px 16px;
+  border-radius: 14px;
+  color: var(--muted);
+  background: color-mix(in srgb, var(--jade) 7%, transparent);
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+
+.practice-meaning blockquote span:first-child {
+  color: var(--ink);
+  font-family: "Songti SC", "Noto Serif CJK SC", serif;
+  font-size: 0.9rem;
+}
+
+.practice-actions {
+  display: flex;
+  justify-content: center;
+  gap: 9px;
+  margin-top: 18px;
+}
+
+.practice-actions button,
+.practice-finished-actions button,
+.practice-empty button {
+  min-height: 44px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 12px;
+  color: #f6f1e7;
+  background: var(--jade);
+  font-size: 0.74rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.practice-actions .practice-revisit-button,
+.practice-finished-actions button + button {
+  border: 1px solid var(--line);
+  color: var(--ink);
+  background: var(--paper);
+}
+
+.practice-privacy-note {
+  margin: 14px 0 0;
+  color: var(--muted);
+  font-size: 0.64rem;
+  text-align: center;
+}
+
+.practice-finished,
+.practice-empty {
+  display: grid;
+  justify-items: center;
+  padding: clamp(28px, 5vw, 54px);
+  border: 1px dashed color-mix(in srgb, var(--jade) 38%, var(--line));
+  border-radius: 28px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.practice-finished > span,
+.practice-empty > span {
+  width: 70px;
+  height: 70px;
+  display: grid;
+  place-items: center;
+  border-radius: 20px;
+  color: var(--jade);
+  background: var(--jade-soft);
+  font-family: Georgia, serif;
+  font-size: 2rem;
+}
+
+.practice-finished h2,
+.practice-empty h2 {
+  margin: 10px 0;
+  color: var(--ink);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 2rem;
+}
+
+.practice-finished > p:not(.eyebrow),
+.practice-empty p {
+  max-width: 500px;
+  margin: 0 0 18px;
+  font-size: 0.75rem;
+  line-height: 1.55;
+}
+
+.practice-result-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(120px, 1fr));
+  overflow: hidden;
+  margin: 8px 0 18px;
+  border: 1px solid var(--line);
+  border-radius: 17px;
+  background: var(--paper);
+}
+
+.practice-result-stats div {
+  min-height: 86px;
+  display: grid;
+  place-content: center;
+  padding: 12px 20px;
+}
+
+.practice-result-stats div + div {
+  border-left: 1px solid var(--line);
+}
+
+.practice-result-stats strong {
+  color: var(--ink);
+  font-family: Georgia, serif;
+  font-size: 1.8rem;
+}
+
+.practice-result-stats span {
+  font-size: 0.65rem;
+  font-weight: 800;
+}
+
+.practice-finished-actions {
+  display: flex;
+  gap: 9px;
 }
 
 .review-filters {
@@ -3804,6 +4067,22 @@ svg {
     gap: 14px;
   }
 
+  .assistance-review-actions {
+    justify-self: stretch;
+  }
+
+  .practice-heading {
+    margin-top: 24px;
+  }
+
+  .practice-heading h1 {
+    font-size: clamp(2.5rem, 12vw, 4rem);
+  }
+
+  .practice-card {
+    min-height: 330px;
+  }
+
   .recording-toggle {
     justify-self: stretch;
   }
@@ -4027,6 +4306,38 @@ svg {
 }
 
 @media (max-width: 430px) {
+  .assistance-review-actions,
+  .practice-actions,
+  .practice-finished-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .assistance-review-actions > a,
+  .assistance-review-actions .recording-toggle,
+  .practice-actions button,
+  .practice-finished-actions button {
+    width: 100%;
+  }
+
+  .practice-heading {
+    text-align: left;
+  }
+
+  .practice-heading > p:last-child {
+    margin-left: 0;
+  }
+
+  .practice-session {
+    padding: 14px;
+    border-radius: 22px;
+  }
+
+  .practice-card {
+    min-height: 300px;
+    padding: 22px 16px;
+  }
+
   .learning-progress-summary {
     grid-template-columns: 1fr;
   }

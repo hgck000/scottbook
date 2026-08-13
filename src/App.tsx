@@ -66,6 +66,12 @@ import {
   type AssistanceReviewSort
 } from "./features/review/reviewDiscovery";
 import {
+  advanceReviewPracticeStage,
+  createReviewPracticeQueue,
+  MAX_QUICK_REVIEW_ITEMS,
+  type ReviewPracticeStage
+} from "./features/review/reviewPractice";
+import {
   articleTopics,
   countArticlesByLength,
   countArticlesByTopic,
@@ -132,6 +138,7 @@ type Route =
   | { name: "library" }
   | { name: "discover" }
   | { name: "review" }
+  | { name: "practice" }
   | { name: "detail"; articleId: string }
   | { name: "reader"; articleId: string };
 
@@ -142,6 +149,9 @@ type LocalDataStatus = {
 };
 
 function parseRoute(): Route {
+  if (window.location.hash === "#/review/practice") {
+    return { name: "practice" };
+  }
   if (window.location.hash === "#/review") return { name: "review" };
   if (window.location.hash === "#/discover") return { name: "discover" };
 
@@ -308,6 +318,8 @@ function App() {
         ? "Khám phá · ScottBook"
         : route.name === "review"
           ? "Ôn lại · ScottBook"
+          : route.name === "practice"
+            ? "Luyện nhanh · ScottBook"
           : route.name === "detail"
             ? "Thông tin bài đọc · ScottBook"
             : "Bài đọc · ScottBook";
@@ -689,6 +701,20 @@ function App() {
         libraryState={libraryState}
         reviewCount={activeReviewCount}
         toggleFavorite={toggleFavorite}
+      />
+    );
+  } else if (route.name === "practice") {
+    content = (
+      <ReviewPracticeScreen
+        preferences={readerPreferences}
+        toggleTheme={toggleTheme}
+        assistanceHistory={assistanceHistory}
+        reviewCount={activeReviewCount}
+        markKnown={(itemId) =>
+          setAssistanceHistory((current) =>
+            markAssistanceKnown(current, itemId, Date.now())
+          )
+        }
       />
     );
   } else if (route.name === "review") {
@@ -1705,6 +1731,230 @@ const historyDateFormatter = new Intl.DateTimeFormat("vi-VN", {
   minute: "2-digit"
 });
 
+function ReviewPracticeScreen({
+  preferences,
+  toggleTheme,
+  assistanceHistory,
+  reviewCount,
+  markKnown
+}: {
+  preferences: ReaderPreferences;
+  toggleTheme: () => void;
+  assistanceHistory: AssistanceHistoryState;
+  reviewCount: number;
+  markKnown: (itemId: string) => void;
+}) {
+  const availableQueue = useMemo(
+    () => createReviewPracticeQueue(Object.values(assistanceHistory.items)),
+    [assistanceHistory.items]
+  );
+  const [sessionQueue, setSessionQueue] = useState<
+    AssistanceReviewItem[] | null
+  >(null);
+  const queue = sessionQueue ?? availableQueue;
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [stage, setStage] = useState<ReviewPracticeStage>("hanzi");
+  const [knownCount, setKnownCount] = useState(0);
+  const [revisitCount, setRevisitCount] = useState(0);
+  const currentItem = queue[currentIndex];
+  const finished = queue.length > 0 && currentIndex >= queue.length;
+  const progressPercent =
+    queue.length === 0
+      ? 0
+      : Math.round((Math.min(currentIndex + 1, queue.length) / queue.length) * 100);
+
+  const returnToReview = () => window.location.assign("#/review");
+  const moveNext = (remembered: boolean) => {
+    if (!currentItem) return;
+    setSessionQueue(queue);
+    if (remembered) {
+      markKnown(currentItem.id);
+      setKnownCount((count) => count + 1);
+    } else {
+      setRevisitCount((count) => count + 1);
+    }
+    setCurrentIndex((index) => index + 1);
+    setStage("hanzi");
+  };
+  const restart = () => {
+    setSessionQueue(
+      createReviewPracticeQueue(Object.values(assistanceHistory.items))
+    );
+    setCurrentIndex(0);
+    setStage("hanzi");
+    setKnownCount(0);
+    setRevisitCount(0);
+  };
+
+  return (
+    <div className="app-shell">
+      <Sidebar active="review" reviewCount={reviewCount} />
+
+      <main
+        id="main-content"
+        className="library-page practice-page"
+        tabIndex={-1}
+      >
+        <header className="topbar">
+          <div className="mobile-brand">
+            <Brand />
+          </div>
+          <button
+            className="practice-back-button"
+            type="button"
+            onClick={returnToReview}
+          >
+            ← Về Ôn lại
+          </button>
+          <button
+            className="icon-button theme-button"
+            type="button"
+            onClick={toggleTheme}
+            aria-label={
+              preferences.theme === "paper"
+                ? "Bật giao diện tối"
+                : "Bật giao diện sáng"
+            }
+          >
+            {preferences.theme === "paper" ? "☾" : "☀"}
+          </button>
+        </header>
+
+        <section className="practice-heading" aria-labelledby="practice-heading">
+          <p className="eyebrow">复习 · Ôn từ dấu vết đọc</p>
+          <h1 id="practice-heading">Luyện nhanh những chỗ từng vấp.</h1>
+          <p>
+            Tối đa {MAX_QUICK_REVIEW_ITEMS} mục chưa biết, ưu tiên mục đã ghim
+            và những nghĩa bạn từng phải mở nhiều hơn.
+          </p>
+        </section>
+
+        {queue.length === 0 ? (
+          <section className="practice-empty" role="status">
+            <span aria-hidden="true">复</span>
+            <h2>Chưa có mục nào cần luyện.</h2>
+            <p>
+              Mở pinyin hoặc nghĩa trong Reader trước; ScottBook sẽ tạo danh
+              sách ngay trên thiết bị.
+            </p>
+            <button type="button" onClick={returnToReview}>
+              Về Ôn lại
+            </button>
+          </section>
+        ) : finished ? (
+          <section className="practice-finished" aria-live="polite">
+            <span aria-hidden="true">✓</span>
+            <p className="eyebrow">Hoàn tất phiên</p>
+            <h2>Đã đi qua {queue.length} mục.</h2>
+            <div className="practice-result-stats">
+              <div>
+                <strong>{knownCount}</strong>
+                <span>Đã nhớ</span>
+              </div>
+              <div>
+                <strong>{revisitCount}</strong>
+                <span>Cần ôn lại</span>
+              </div>
+            </div>
+            <p>
+              “Đã nhớ” được lưu vào danh sách Ôn lại. “Cần ôn lại” vẫn giữ
+              nguyên để xuất hiện trong phiên sau.
+            </p>
+            <div className="practice-finished-actions">
+              <button type="button" onClick={returnToReview}>
+                Về Ôn lại
+              </button>
+              {revisitCount > 0 ? (
+                <button type="button" onClick={restart}>
+                  Luyện lại mục còn yếu
+                </button>
+              ) : null}
+            </div>
+          </section>
+        ) : currentItem ? (
+          <section className="practice-session" aria-live="polite">
+            <div className="practice-progress-copy">
+              <span>
+                Mục {currentIndex + 1} / {queue.length}
+              </span>
+              <span>{progressPercent}% phiên ôn</span>
+            </div>
+            <div
+              className="progress-track practice-progress-track"
+              role="progressbar"
+              aria-label="Tiến độ phiên luyện nhanh"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={progressPercent}
+            >
+              <span style={{ width: `${progressPercent}%` }} />
+            </div>
+
+            <article className="practice-card">
+              <span className="review-scope-badge">
+                {getAssistanceScopeLabel(currentItem.scope)}
+              </span>
+              <strong lang="zh-Hans">{currentItem.hanzi}</strong>
+              {stage !== "hanzi" ? (
+                <p className="practice-pinyin">{currentItem.pinyin}</p>
+              ) : null}
+              {stage === "meaning" ? (
+                <div className="practice-meaning">
+                  <p>{currentItem.meaning}</p>
+                  {currentItem.contexts[0] ? (
+                    <blockquote>
+                      <span lang="zh-Hans">
+                        {currentItem.contexts[0].sentenceText}
+                      </span>
+                      <span>{currentItem.contexts[0].sentenceTranslation}</span>
+                    </blockquote>
+                  ) : null}
+                </div>
+              ) : null}
+            </article>
+
+            <div className="practice-actions">
+              {stage === "hanzi" ? (
+                <button
+                  type="button"
+                  onClick={() => setStage(advanceReviewPracticeStage(stage))}
+                >
+                  Hiện pinyin
+                </button>
+              ) : stage === "pinyin" ? (
+                <button
+                  type="button"
+                  onClick={() => setStage(advanceReviewPracticeStage(stage))}
+                >
+                  Hiện nghĩa
+                </button>
+              ) : (
+                <>
+                  <button
+                    className="practice-revisit-button"
+                    type="button"
+                    onClick={() => moveNext(false)}
+                  >
+                    Cần ôn lại
+                  </button>
+                  <button type="button" onClick={() => moveNext(true)}>
+                    Đã nhớ
+                  </button>
+                </>
+              )}
+            </div>
+            <p className="practice-privacy-note">
+              Không chấm điểm, không gửi dữ liệu và không tự suy đoán lịch SRS.
+            </p>
+          </section>
+        ) : null}
+      </main>
+
+      <MobileNavigation active="review" reviewCount={reviewCount} />
+    </div>
+  );
+}
+
 function ReviewScreen({
   preferences,
   toggleTheme,
@@ -2035,21 +2285,28 @@ function AssistanceReviewSection({
             Chữ, từ và câu từng cần trợ giúp
           </h2>
         </div>
-        <label className="recording-toggle">
-          <input
-            type="checkbox"
-            checked={history.recordingEnabled}
-            onChange={(event) => setRecordingEnabled(event.currentTarget.checked)}
-          />
-          <span>
-            <strong>Ghi lịch sử trợ giúp</strong>
-            <small>
-              {history.recordingEnabled
-                ? "Đang lưu cục bộ"
-                : "Đã tạm dừng"}
-            </small>
-          </span>
-        </label>
+        <div className="assistance-review-actions">
+          <a href="#/review/practice">
+            Luyện nhanh · {counts.reading + counts.meaning} mục
+          </a>
+          <label className="recording-toggle">
+            <input
+              type="checkbox"
+              checked={history.recordingEnabled}
+              onChange={(event) =>
+                setRecordingEnabled(event.currentTarget.checked)
+              }
+            />
+            <span>
+              <strong>Ghi lịch sử trợ giúp</strong>
+              <small>
+                {history.recordingEnabled
+                  ? "Đang lưu cục bộ"
+                  : "Đã tạm dừng"}
+              </small>
+            </span>
+          </label>
+        </div>
       </div>
 
       <div

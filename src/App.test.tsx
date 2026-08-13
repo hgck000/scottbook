@@ -175,6 +175,32 @@ describe("ScottBook routes", () => {
     expect(markup).toContain("zǎoshang");
     expect(markup).toContain("Ghi lịch sử trợ giúp");
     expect(markup).toContain("Xóa 早上 khỏi lịch sử trợ giúp");
+    expect(markup).toContain('href="#/review/practice"');
+    expect(markup).toContain("Luyện nhanh · 2 mục");
+  });
+
+  it("starts quick review with Hanzi before revealing authored help", () => {
+    const history = recordAssistance(createEmptyAssistanceHistory(), {
+      articleId: "hsk1-my-morning",
+      sentenceId: "s1",
+      sentenceText: "早上六点，我起床。",
+      sentenceTranslation: "Sáu giờ sáng, tôi thức dậy.",
+      hanzi: "早上",
+      pinyin: "zǎoshang",
+      meaning: "buổi sáng",
+      scope: "word",
+      level: "meaning",
+      occurredAt: 100
+    });
+    installWindow("#/review/practice", undefined, history);
+
+    const markup = renderToStaticMarkup(<App />);
+
+    expect(markup).toContain("Luyện nhanh những chỗ từng vấp");
+    expect(markup).toContain("早上");
+    expect(markup).toContain("Hiện pinyin");
+    expect(markup).not.toContain("zǎoshang");
+    expect(markup).not.toContain("buổi sáng");
   });
 
   it("keeps a screen-reader name on the compact mobile back button", () => {
