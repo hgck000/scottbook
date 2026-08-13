@@ -37,6 +37,8 @@ Capacitor will use the same frontend in a later sprint.
   scope as well as “needed pinyin” from “needed meaning”.
 - Local review filters, search across Hanzi/tone-free pinyin/Vietnamese context,
   scope filtering, sorting, pin, known/relearn, recent contexts, and safe deletion.
+- A device-only quick-review route that reveals Hanzi → pinyin → meaning and
+  lets the reader keep an item active or mark it known.
 - An opt-out switch that stops recording history without disabling assistance.
 - Automatic/manual completion status and a reset-progress action.
 - Explicit online/offline and first-install offline-ready notices.
@@ -53,7 +55,7 @@ Capacitor will use the same frontend in a later sprint.
 - A redacted local diagnostic download with counts and capability flags only.
 - A restrictive content-security policy plus automated API, license, and dependency audits.
 - A 20,000-Hanzi reader fixture that guards the long-document render budget.
-- Twenty production-browser journeys across desktop and mobile Chrome profiles.
+- Twenty-two production-browser journeys across desktop and mobile Chrome profiles.
 - Root and configurable subpath PWA builds with an artifact contract check.
 - GitHub Actions builds on Ubuntu, Windows, and macOS and retains QA evidence.
 - Generated service worker precaches the complete prototype.
@@ -333,6 +335,16 @@ existing browser journey also uses a label-based search locator that is stable
 across Chrome accessibility-role changes. Its release contract and manual
 checks are recorded in
 [`docs/release/SCOTTBOOK-v0.17.0.md`](docs/release/SCOTTBOOK-v0.17.0.md).
+
+Version 0.18 adds a focused quick-review session from existing assistance
+history. It selects up to twenty active records, prioritizes pinned and
+meaning-heavy evidence, keeps authored help hidden until requested, and saves
+only an explicit **Đã nhớ** decision. **Cần ôn lại** leaves the record active.
+The session is fully local and intentionally does not pretend to be an SRS
+algorithm or scored quiz. Its eleventh critical journey brings the
+desktop/mobile browser matrix to twenty-two cases. The release contract and
+manual checks are recorded in
+[`docs/release/SCOTTBOOK-v0.18.0.md`](docs/release/SCOTTBOOK-v0.18.0.md).
 
 ## Install ScottBook
 
