@@ -1,0 +1,75 @@
+name: ScottBook signed Android release
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: scottbook-signed-android-release
+  cancel-in-progress: false
+
+jobs:
+  signed-apk:
+    name: Build owner-signed release APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Use Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Materialize owner-held keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.SCOTTBOOK_ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.SCOTTBOOK_ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.SCOTTBOOK_ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.SCOTTBOOK_ANDROID_KEY_PASSWORD }}
+          CERT_SHA256: ${{ vars.SCOTTBOOK_ANDROID_CERT_SHA256 }}
+        run: |
+          for value in KEYSTORE_BASE64 KEYSTORE_PASSWORD KEY_ALIAS KEY_PASSWORD CERT_SHA256; do
+            if [ -z "${!value:-}" ]; then
+              echo "Missing required Android release signing configuration: $value" >&2
+              exit 1
+            fi
+          done
+          umask 077
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/scottbook-release.jks"
+
+      - name: Build and verify signed release APK
+        env:
+          SCOTTBOOK_ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/scottbook-release.jks
+          SCOTTBOOK_ANDROID_KEYSTORE_PASSWORD: ${{ secrets.SCOTTBOOK_ANDROID_KEYSTORE_PASSWORD }}
+          SCOTTBOOK_ANDROID_KEY_ALIAS: ${{ secrets.SCOTTBOOK_ANDROID_KEY_ALIAS }}
+          SCOTTBOOK_ANDROID_KEY_PASSWORD: ${{ secrets.SCOTTBOOK_ANDROID_KEY_PASSWORD }}
+          SCOTTBOOK_ANDROID_CERT_SHA256: ${{ vars.SCOTTBOOK_ANDROID_CERT_SHA256 }}
+        run: npm run android:build:release
+
+      - name: Upload owner-signed APK and fingerprint evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: ScottBook-Android-release-${{ github.sha }}
+          path: |
+            artifacts/ScottBook-*-android-release.apk
+            artifacts/ScottBook-*-android-release-signing.json
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Remove temporary keystore
+        if: ${{ always() }}
+        run: rm -f "$RUNNER_TEMP/scottbook-release.jks"

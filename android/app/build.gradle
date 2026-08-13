@@ -1,5 +1,39 @@
 apply plugin: 'com.android.application'
 
+def releaseSigningValues = [
+    storeFile: System.getenv('SCOTTBOOK_ANDROID_KEYSTORE_PATH'),
+    storePassword: System.getenv('SCOTTBOOK_ANDROID_KEYSTORE_PASSWORD'),
+    keyAlias: System.getenv('SCOTTBOOK_ANDROID_KEY_ALIAS'),
+    keyPassword: System.getenv('SCOTTBOOK_ANDROID_KEY_PASSWORD')
+]
+def releaseSigningConfigured = releaseSigningValues.values().every {
+    it != null && !it.trim().isEmpty()
+}
+def releaseBuildRequested = gradle.startParameter.taskNames.any {
+    it.toLowerCase().contains('release')
+}
+
+if (releaseBuildRequested && !releaseSigningConfigured) {
+    throw new GradleException(
+        'Refusing to build an unsigned ScottBook release. Configure all SCOTTBOOK_ANDROID_KEYSTORE_* values.'
+    )
+}
+
+def releaseKeystoreFile = releaseSigningConfigured
+    ? file(releaseSigningValues.storeFile).canonicalFile
+    : null
+if (releaseKeystoreFile != null) {
+    def repositoryDirectory = rootProject.projectDir.parentFile.canonicalFile
+    if (!releaseKeystoreFile.isFile()) {
+        throw new GradleException('ScottBook release keystore file does not exist.')
+    }
+    if (releaseKeystoreFile.toPath().startsWith(repositoryDirectory.toPath())) {
+        throw new GradleException(
+            'ScottBook release keystore must remain outside the repository.'
+        )
+    }
+}
+
 android {
     namespace = "io.github.hgck000.scottbook"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -7,8 +41,8 @@ android {
         applicationId "io.github.hgck000.scottbook"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 27
-        versionName "0.27.0"
+        versionCode 28
+        versionName "0.28.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -16,8 +50,21 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        if (releaseSigningConfigured) {
+            release {
+                storeFile releaseKeystoreFile
+                storePassword releaseSigningValues.storePassword
+                keyAlias releaseSigningValues.keyAlias
+                keyPassword releaseSigningValues.keyPassword
+            }
+        }
+    }
     buildTypes {
         release {
+            if (releaseSigningConfigured) {
+                signingConfig signingConfigs.release
+            }
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }

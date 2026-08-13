@@ -39,11 +39,11 @@ describe("Android device smoke runner", () => {
   it("reads installed version and the effective Internet permission", () => {
     expect(
       parsePackageMetadata(
-        "versionCode=27 minSdk=24 targetSdk=36\nversionName=0.27.0\nrequested permissions:\n  android.permission.VIBRATE"
+        "versionCode=28 minSdk=24 targetSdk=36\nversionName=0.28.0\nrequested permissions:\n  android.permission.VIBRATE"
       )
-    ).toEqual({ versionName: "0.27.0", versionCode: 27, requestsInternet: false });
+    ).toEqual({ versionName: "0.28.0", versionCode: 28, requestsInternet: false });
     expect(
-      parsePackageMetadata("versionCode=27\nversionName=0.27.0\nandroid.permission.INTERNET")
+      parsePackageMetadata("versionCode=28\nversionName=0.28.0\nandroid.permission.INTERNET")
         .requestsInternet
     ).toBe(true);
   });

@@ -166,7 +166,10 @@ test("switches authored assistance between character, word, and sentence", async
   await dismissInstallNotice(page);
   await page
     .getByRole("button", { name: "Mở bài Buổi sáng của tôi" })
-    .click();
+    .evaluate((button) => {
+      window.scrollTo(0, document.body.scrollHeight);
+      (button as HTMLButtonElement).click();
+    });
 
   await page.getByRole("button", { name: "Chữ (字)" }).click();
   const scopeBar = page.locator(".reader-scope-bar");

@@ -3800,7 +3800,12 @@ function ReaderScreen({
     if (restoredArticleRef.current === article.id) return;
     restoredArticleRef.current = article.id;
 
-    if (!resumeSentenceId) return;
+    if (!resumeSentenceId) {
+      const frame = window.requestAnimationFrame(() => {
+        window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+      });
+      return () => window.cancelAnimationFrame(frame);
+    }
     const sentence = Array.from(
       articleBodyRef.current?.querySelectorAll<HTMLElement>(".sentence") ?? []
     ).find((candidate) => candidate.dataset.sentenceId === resumeSentenceId);

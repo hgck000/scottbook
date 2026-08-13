@@ -45,11 +45,27 @@ if (manifest.includes("android.permission.INTERNET")) {
 if (!manifest.includes('android:allowBackup="false"')) {
   fail("Android cloud backup must remain disabled for device-only data");
 }
-if (!gradle.includes("versionCode 27")) {
-  fail("Android versionCode must be 27");
+if (!gradle.includes("versionCode 28")) {
+  fail("Android versionCode must be 28");
 }
 if (!gradle.includes(`versionName \"${packageJson.version}\"`)) {
   fail(`Android versionName must be ${packageJson.version}`);
+}
+for (const signingKey of [
+  "SCOTTBOOK_ANDROID_KEYSTORE_PATH",
+  "SCOTTBOOK_ANDROID_KEYSTORE_PASSWORD",
+  "SCOTTBOOK_ANDROID_KEY_ALIAS",
+  "SCOTTBOOK_ANDROID_KEY_PASSWORD"
+]) {
+  if (!gradle.includes(signingKey)) {
+    fail(`release signing guard is missing ${signingKey}`);
+  }
+}
+if (
+  !gradle.includes("Refusing to build an unsigned ScottBook release") ||
+  !gradle.includes("release keystore must remain outside the repository")
+) {
+  fail("release signing must fail closed and keep its key outside Git");
 }
 if (
   !capacitorBuild.includes("implementation project(':capacitor-app')") ||
