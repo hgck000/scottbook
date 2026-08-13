@@ -22,6 +22,9 @@ This list is intentionally release-blocking evidence, not a hidden backlog.
 - Search and Discover cover the authored offline library only. Discover does
   not yet offer personalized recommendations, a saved reading queue, or a
   user-authored topic taxonomy.
+- The learning overview derives lifetime progress from the current nine-article
+  pack. It does not yet keep daily sessions, streaks, time spent, weekly goals,
+  or cross-device progress.
 
 ## Platform gaps
 

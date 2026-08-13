@@ -30,6 +30,8 @@ Capacitor will use the same frontend in a later sprint.
   result counts.
 - Reading position saved as a stable sentence anchor on the current device.
 - A continue-reading card, per-article progress, and a local favorites filter.
+- An offline learning overview with whole-library and per-HSK progress plus a
+  shortcut back to the most recently opened unfinished article.
 - A local reading-history screen with open counts and latest-reading order.
 - Assistance history that distinguishes character, word/phrase, and sentence
   scope as well as “needed pinyin” from “needed meaning”.
@@ -321,6 +323,16 @@ The existing assistance-scope journey now covers the controls on both browser
 profiles, so the desktop/mobile matrix remains at twenty cases. The release contract
 is recorded in
 [`docs/release/SCOTTBOOK-v0.16.0.md`](docs/release/SCOTTBOOK-v0.16.0.md).
+
+Version 0.17 adds an offline learning-progress overview to Review. It derives
+completed, in-progress, unread, whole-library percentage, and per-HSK
+percentage directly from the existing reading state. A continue action chooses
+the most recently opened unfinished article even when a completed article was
+opened later. No new event, storage, or backup schema is introduced. The
+existing browser journey also uses a label-based search locator that is stable
+across Chrome accessibility-role changes. Its release contract and manual
+checks are recorded in
+[`docs/release/SCOTTBOOK-v0.17.0.md`](docs/release/SCOTTBOOK-v0.17.0.md).
 
 ## Install ScottBook
 
