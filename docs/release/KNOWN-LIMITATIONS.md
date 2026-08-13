@@ -24,8 +24,11 @@ This list is intentionally release-blocking evidence, not a hidden backlog.
   not yet offer personalized recommendations, a saved reading queue, or a
   user-authored topic taxonomy.
 - The learning overview derives lifetime progress from the current nine-article
-  pack. It does not yet keep daily sessions, streaks, time spent, weekly goals,
-  or cross-device progress.
+  pack. Its per-article assistance insight uses the recent contexts retained by
+  each local review record and distinct authored word/phrase coverage; it is not
+  a complete lifetime analytics log or a difficulty score. Assistance records
+  retain at most eight recent contexts. ScottBook does not yet keep daily
+  sessions, streaks, time spent, weekly goals, or cross-device progress.
 
 ## Platform gaps
 

@@ -32,6 +32,8 @@ Capacitor will use the same frontend in a later sprint.
 - A continue-reading card, per-article progress, and a local favorites filter.
 - An offline learning overview with whole-library and per-HSK progress plus a
   shortcut back to the most recently opened unfinished article.
+- Per-article assistance insights that compare distinct authored word/phrase
+  coverage, local help opens, active review items, and known items.
 - A local reading-history screen with open counts and latest-reading order.
 - Assistance history that distinguishes character, word/phrase, and sentence
   scope as well as “needed pinyin” from “needed meaning”.
@@ -55,7 +57,7 @@ Capacitor will use the same frontend in a later sprint.
 - A redacted local diagnostic download with counts and capability flags only.
 - A restrictive content-security policy plus automated API, license, and dependency audits.
 - A 20,000-Hanzi reader fixture that guards the long-document render budget.
-- Twenty-two production-browser journeys across desktop and mobile Chrome profiles.
+- Twenty-four production-browser journeys across desktop and mobile Chrome profiles.
 - Root and configurable subpath PWA builds with an artifact contract check.
 - GitHub Actions builds on Ubuntu, Windows, and macOS and retains QA evidence.
 - Generated service worker precaches the complete prototype.
@@ -345,6 +347,17 @@ algorithm or scored quiz. Its eleventh critical journey brings the
 desktop/mobile browser matrix to twenty-two cases. The release contract and
 manual checks are recorded in
 [`docs/release/SCOTTBOOK-v0.18.0.md`](docs/release/SCOTTBOOK-v0.18.0.md).
+
+Version 0.19 completes the lightweight learning-insight slice of Review. It
+groups existing assistance contexts by authored article, compares distinct
+word/phrase records with the article's distinct authored vocabulary, shows
+local help opens and active/known review counts, and provides a direct read-again
+action. The result is deliberately a reading trace rather than a score,
+recommendation engine, streak, or SRS signal. No storage schema or network
+provider is added. Its twelfth critical journey brings the desktop/mobile
+browser matrix to twenty-four cases. The release contract and manual checks are
+recorded in
+[`docs/release/SCOTTBOOK-v0.19.0.md`](docs/release/SCOTTBOOK-v0.19.0.md).
 
 ## Install ScottBook
 
