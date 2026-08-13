@@ -10,6 +10,10 @@ This list is intentionally release-blocking evidence, not a hidden backlog.
 - Character, word/phrase, and sentence assistance is available for the nine
   authored pilot articles. It is not yet backed by a content-authoring editor
   or an approved import pipeline.
+- Reader now derives a searchable **Từ trong bài** index from each authored
+  article. Identical Hanzi are distinct entries when their contextual pinyin or
+  meaning differs; repeated occurrences can jump to the first containing
+  sentence, not cycle through every occurrence.
 - The authored translation language is Vietnamese. Choosing another target
   language is not implemented yet.
 - Reader customization now provides Paper/Night/OLED themes, text size,

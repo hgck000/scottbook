@@ -41,6 +41,9 @@ Capacitor will use the same frontend in a later sprint.
   coverage, local help opens, active review items, and known items.
 - Review items reopen the exact saved sentence in Reader, with a focused
   highlight and a direct return to Review.
+- Each Reader exposes a searchable offline **Từ trong bài** index with unique
+  authored words/phrases, pinyin, Vietnamese meaning, occurrence counts, and a
+  jump to the first containing sentence.
 - A local reading-history screen with open counts and latest-reading order.
 - Assistance history that distinguishes character, word/phrase, and sentence
   scope as well as “needed pinyin” from “needed meaning”.
@@ -64,7 +67,7 @@ Capacitor will use the same frontend in a later sprint.
 - A redacted local diagnostic download with counts and capability flags only.
 - A restrictive content-security policy plus automated API, license, and dependency audits.
 - A 20,000-Hanzi reader fixture that guards the long-document render budget.
-- Twenty-six production-browser journeys across desktop and mobile Chrome profiles.
+- Twenty-eight production-browser journeys across desktop and mobile Chrome profiles.
 - Root and configurable subpath PWA builds with an artifact contract check.
 - GitHub Actions builds on Ubuntu, Windows, and macOS and retains QA evidence.
 - Generated service worker precaches the complete prototype.
@@ -375,6 +378,17 @@ streak, goal, or gamification layer is introduced. Its thirteenth critical
 journey brings the desktop/mobile browser matrix to twenty-six cases. The
 release contract and manual checks are recorded in
 [`docs/release/SCOTTBOOK-v0.20.0.md`](docs/release/SCOTTBOOK-v0.20.0.md).
+
+Version 0.21 adds **Từ trong bài** directly to Reader. It derives a unique
+word/phrase index from the article's authored offline annotations, shows pinyin,
+Vietnamese meaning, and occurrence count, and searches Hanzi, tone-free or
+compact pinyin, and accent-insensitive Vietnamese. Choosing a row closes the
+panel and highlights its first sentence without changing the route. Browsing
+the index does not create assistance history, and no storage schema or network
+provider is introduced. Its fourteenth critical journey brings the
+desktop/mobile browser matrix to twenty-eight cases. The release contract and
+manual checks are recorded in
+[`docs/release/SCOTTBOOK-v0.21.0.md`](docs/release/SCOTTBOOK-v0.21.0.md).
 
 ## Install ScottBook
 
