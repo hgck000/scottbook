@@ -73,6 +73,8 @@ for direct sideloading.
 - A cross-platform ADB device-smoke runner that installs with data-preserving
   `-r`, verifies the effective APK/version/permission/foreground WebView,
   captures local screenshot and app-scoped log evidence, and never auto-uninstalls.
+- A fail-before-install signed-upgrade runner that requires a fresh verified
+  backup, higher version code, offline package, and matching real certificates.
 - Pre-update data checkpoint that blocks unsafe service-worker reloads.
 - Automatic recovery from the previous valid local record.
 - Versioned JSON backup export protected by a SHA-256 checksum.
@@ -140,7 +142,7 @@ npm run android:sync
 npm run android:build:debug
 ```
 
-The final command writes `artifacts/ScottBook-v0.28.0-android-debug.apk` and
+The final command writes `artifacts/ScottBook-v0.29.0-android-debug.apk` and
 selects `gradlew.bat` automatically on Windows. `android:sync` proves that the
 native bundle contains local assets, has no browser service worker, and has no
 remote `server.url`; `android:build:debug` additionally runs Gradle. GitHub
@@ -151,7 +153,7 @@ After downloading or building the APK, connect one USB-debugging Android phone
 and run the reusable device check:
 
 ```bash
-npm run android:device:smoke -- /path/to/ScottBook-v0.28.0-android-debug.apk
+npm run android:device:smoke -- /path/to/ScottBook-v0.29.0-android-debug.apk
 ```
 
 On Windows, the APK path may be quoted normally. If more than one device is
@@ -168,10 +170,24 @@ npm run android:build:release
 
 It requires the owner-held keystore environment, verifies the resulting
 certificate with `apksigner`, and writes
-`artifacts/ScottBook-v0.28.0-android-release.apk` plus a checksum/fingerprint
+`artifacts/ScottBook-v0.29.0-android-release.apk` plus a checksum/fingerprint
 report. Create and configure the key only through
 [`docs/qa/ANDROID-RELEASE-SIGNING.md`](docs/qa/ANDROID-RELEASE-SIGNING.md); the
 keystore and passwords must never enter the repository or a patch.
+
+After two consecutive versions have eventually been signed with that one key,
+verify the in-place update with a fresh JSON backup:
+
+```bash
+npm run android:upgrade:smoke -- /path/to/candidate-release.apk \
+  --backup /path/to/ScottBook-backup-YYYY-MM-DD.json
+```
+
+The command checks backup checksum/freshness, app ID, higher `versionCode`,
+offline permission, and both actual APK certificates before it runs
+`adb install -r`. It never uninstalls or clears data. Key setup may remain
+deferred; see
+[`docs/qa/ANDROID-UPGRADE-SMOKE.md`](docs/qa/ANDROID-UPGRADE-SMOKE.md).
 
 ## Offline content contract
 
@@ -540,9 +556,20 @@ a manual owner-signing workflow and local release builder. Both fail when the
 keystore is missing or stored inside the repository, verify the assembled APK
 certificate against a pinned public SHA-256 fingerprint, and retain a public
 APK checksum/fingerprint report. No private key or password is generated or
-committed. Owner setup and the future v0.28 → v0.29 upgrade proof remain manual.
+committed. Owner setup and a future two-version signed upgrade proof remain manual.
 The release contract is recorded in
 [`docs/release/SCOTTBOOK-v0.28.0.md`](docs/release/SCOTTBOOK-v0.28.0.md).
+
+Version 0.29 makes that future proof data-safe without forcing key creation now.
+Its ADB runner accepts only a fresh, checksum-valid backup from the currently
+installed version, extracts the real installed/candidate certificate
+fingerprints, requires a higher candidate version, and stops before install on
+any mismatch. A passing preflight uses only `adb install -r`, then records the
+new version, launch/accessibility state, and a manual local-data retention
+checklist. It contains no uninstall, data-clear, downgrade, or automatic
+rollback path. The first version signed later can be the baseline; the next
+signed version becomes the candidate. The release contract is recorded in
+[`docs/release/SCOTTBOOK-v0.29.0.md`](docs/release/SCOTTBOOK-v0.29.0.md).
 
 ## Install ScottBook
 
@@ -561,8 +588,8 @@ TXT/EPUB content and cache-on-demand imported books remain intentionally
 disabled until the import research phase is approved.
 
 For a direct Android test install, open the successful **ScottBook CI** run for
-the v0.28 commits, download the `ScottBook-Android-debug-…` artifact, extract it,
-and install `ScottBook-v0.28.0-android-debug.apk`. Android may ask permission to
+the v0.29 commits, download the `ScottBook-Android-debug-…` artifact, extract it,
+and install `ScottBook-v0.29.0-android-debug.apk`. Android may ask permission to
 install apps from the browser or file manager used to open it. The debug APK is
 not Play Store signed and its runner-generated debug key is not a durable
 upgrade identity: if a later debug artifact reports a signature conflict,
@@ -571,10 +598,11 @@ release keystore must remain owner-held and outside Git, patches, and CI logs.
 
 After the owner signing configuration is complete, the manual **ScottBook
 signed Android release** workflow produces
-`ScottBook-v0.28.0-android-release.apk`. A debug installation cannot be updated
+`ScottBook-v<version>-android-release.apk`. A debug installation cannot be updated
 directly by this differently signed release APK: export JSON first, then follow
-the signing guide's backup/uninstall/restore boundary. Keep the v0.28 signed
-installation for the v0.29 in-place upgrade proof.
+the signing guide's backup/uninstall/restore boundary. Key creation is deferred
+without blocking normal builds; keep the first signed installation so the next
+higher signed version can pass the upgrade smoke test.
 
 ## GitHub linking
 

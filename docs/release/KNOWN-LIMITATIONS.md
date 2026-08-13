@@ -58,8 +58,9 @@ This list is intentionally release-blocking evidence, not a hidden backlog.
 - The fail-closed owner-signing workflow is implemented, but it cannot produce
   evidence until the owner creates, backs up, and configures exactly one release
   key outside Git. The key and passwords must never enter the repo or a `git am`
-  patch. Durable upgrade evidence remains pending until a higher-version signed
-  APK updates the installed v0.28 build without losing local data.
+  patch. The safe-upgrade runner is ready, but durable evidence remains pending
+  until the first owner-signed baseline is updated by the next higher version
+  without losing local data. Key creation is intentionally deferred for now.
 - Safari/iPhone Home Screen and installed Android PWA behavior still require
   real-device verification; Chrome viewport emulation is not equivalent
   evidence.

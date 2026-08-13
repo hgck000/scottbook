@@ -73,11 +73,12 @@ after failure. It never echoes the base64 payload or passwords.
 
 ## 4. Run the signed build
 
-Open **Actions → ScottBook signed Android release → Run workflow**. A successful
-run uploads one artifact containing:
+Open **Actions → ScottBook signed Android release → Run workflow** when you are
+ready to establish the first signed baseline. A successful run uploads one
+artifact containing:
 
-- `ScottBook-v0.28.0-android-release.apk`; and
-- `ScottBook-v0.28.0-android-release-signing.json`.
+- `ScottBook-v<version>-android-release.apk`; and
+- `ScottBook-v<version>-android-release-signing.json`.
 
 The JSON report contains the APK SHA-256 and public certificate SHA-256. Compare
 its certificate value with the repository variable before installing.
@@ -86,7 +87,7 @@ its certificate value with the repository variable before installing.
 the keystore is inside the repository, `apksigner` rejects the APK, or the
 certificate fingerprint differs. It does not fall back to an unsigned release.
 
-## 5. Establish the upgrade baseline safely
+## 5. Establish the upgrade baseline safely when ready
 
 The existing CI debug APK has a different signature. Android cannot install the
 new release-signed build over it.
@@ -94,10 +95,11 @@ new release-signed build over it.
 1. Export ScottBook's JSON backup from the current debug app.
 2. Verify that the backup file exists outside the app.
 3. Uninstall the debug build only after that backup is safe.
-4. Install the v0.28 release APK and restore the JSON backup.
+4. Install the first owner-signed release APK and restore the JSON backup.
 5. Run the Android device smoke test and complete its manual checklist.
-6. Keep this v0.28 installation for the v0.29 signed in-place upgrade proof.
+6. Keep this installation for the next higher owner-signed version.
 
-Reinstalling v0.28 with `adb install -r` proves the key can update the same
-version, but the durable upgrade gate remains pending until v0.29, with a higher
-`versionCode`, updates this installed v0.28 build while retaining local data.
+Reinstalling one APK with `adb install -r` does not prove a version upgrade.
+Use `npm run android:upgrade:smoke` when the next higher version is signed with
+the same key. The key may be created in a later milestone; normal CI does not
+depend on it.
