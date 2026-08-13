@@ -400,6 +400,19 @@ Its fifteenth critical journey brings the desktop/mobile browser matrix to
 thirty cases. The release contract and manual checks are recorded in
 [`docs/release/SCOTTBOOK-v0.22.0.md`](docs/release/SCOTTBOOK-v0.22.0.md).
 
+Version 0.23 extends that comparison across the complete offline library. Exact
+authored Hanzi, pinyin, and meaning identities can switch between contexts in
+the current article and every matching context grouped by article. Selecting a
+sentence in another article opens and highlights that exact Reader location;
+the vocabulary-specific route preserves a safe **Về bài trước** action without
+being confused with Review. Single-current words that repeat elsewhere open the
+library view directly, while globally unique words keep **Tới câu**. The feature
+derives everything from the nine bundled articles and adds no persistent schema
+or network provider. Its sixteenth critical journey brings the desktop/mobile
+browser matrix to thirty-two cases. The release contract and manual checks are
+recorded in
+[`docs/release/SCOTTBOOK-v0.23.0.md`](docs/release/SCOTTBOOK-v0.23.0.md).
+
 ## Install ScottBook
 
 Chromium browsers on Android, Windows, macOS, and Linux can expose ScottBook's
