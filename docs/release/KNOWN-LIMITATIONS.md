@@ -10,6 +10,11 @@ This list is intentionally release-blocking evidence, not a hidden backlog.
 - Character, word/phrase, and sentence assistance is available for the nine
   authored pilot articles. It is not yet backed by a content-authoring editor
   or an approved import pipeline.
+- Character and word/phrase assistance now derives Hán-Việt readings entirely
+  offline from pinned Unicode Unihan and MIT-licensed pinyin-specific data.
+  Some characters legitimately expose several readings; ScottBook shows the
+  alternatives instead of claiming context-sensitive certainty. This reusable
+  lookup does not enable import or analyze external files yet.
 - Reader now derives a searchable **Từ trong bài** index from each authored
   article. Identical Hanzi are distinct entries when their contextual pinyin or
   meaning differs. Repeated entries can compare and jump to every exact authored
@@ -40,10 +45,11 @@ This list is intentionally release-blocking evidence, not a hidden backlog.
 
 ## Platform gaps
 
-- ScottBook now has a Capacitor Android project and CI-built debug APK. A clean
-  physical-device install, airplane-mode launch, WebView persistence, hardware
-  back behavior, backup download/restore, and system-inset behavior still need
-  owner verification on at least one real Android device.
+- ScottBook now has a Capacitor Android project and CI-built debug APK. Android
+  Back handling is implemented for reader sheets, internal history, direct deep
+  links, and root exit, but a clean physical-device install, airplane-mode
+  launch, WebView persistence, Back behavior, backup download/restore, and
+  system-inset behavior still need owner verification on a real Android device.
 - GitHub-hosted runners may generate different debug signing keys. Debug APKs
   are suitable for fresh installs but are not a guaranteed in-place upgrade
   channel; uninstalling without first exporting a JSON backup can remove the

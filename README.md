@@ -5,7 +5,8 @@ ScottBook is an offline-first Chinese reading app. It reveals help gradually:
 1. Read the original Hanzi.
 2. Choose whether help should follow each character (`字`), word/phrase (`词`),
    or sentence (`句`).
-3. Tap the selected unit once to reveal its authored pinyin.
+3. Tap a character or word/phrase once to reveal its authored pinyin and
+   offline Hán-Việt reading; sentence scope reveals pinyin only.
 4. Tap it again to reveal its contextual Vietnamese meaning.
 5. Tap a third time to close the help panel.
 
@@ -24,6 +25,9 @@ Android shell whose debug APK bundles the same library for direct sideloading.
 - Nine pilot articles, balanced at three each for HSK 1, HSK 2, and HSK 3.
 - Every built-in character and word already contains contextual pinyin and a
   Vietnamese meaning; every sentence contains a Vietnamese translation.
+- An offline Hán-Việt lookup combines Unicode Unihan 17.0.0 with a pinned
+  MIT-licensed pinyin-specific wordlist, including simplified-character
+  variants and explicit alternatives instead of context-free guessing.
 - A persisted `字 / 词 / 句` assistance selector works entirely from that
   authored offline data.
 - No translation, pinyin, analytics, or content API call at reading time.
@@ -54,12 +58,14 @@ Android shell whose debug APK bundles the same library for direct sideloading.
   lets the reader keep an item active or mark it known.
 - An opt-out switch that stops recording history without disabling assistance.
 - Automatic/manual completion status and a reset-progress action.
-- Explicit online/offline plus persistent app-shell readiness status.
+- Offline reading remains the quiet default; only actionable install, update,
+  storage, or failure notices appear instead of a persistent connection chip.
 - Controlled PWA updates that reload only after the reader accepts.
 - Throttled service-worker checks after foregrounding, reconnecting, or one hour.
 - Native install prompt plus iPhone/iPad, MacBook, and browser guidance.
 - A Capacitor Android project with a fixed app identity, branded launcher/splash
-  assets, system-safe insets, and no remote server or Internet permission.
+  assets, system-safe insets, hardware Back routing, and no remote server or
+  Internet permission.
 - A GitHub Actions debug APK artifact for direct Android sideload testing.
 - Pre-update data checkpoint that blocks unsafe service-worker reloads.
 - Automatic recovery from the previous valid local record.
@@ -128,7 +134,7 @@ npm run android:sync
 npm run android:build:debug
 ```
 
-The final command writes `artifacts/ScottBook-v0.25.0-android-debug.apk` and
+The final command writes `artifacts/ScottBook-v0.26.0-android-debug.apk` and
 selects `gradlew.bat` automatically on Windows. `android:sync` proves that the
 native bundle contains local assets, has no browser service worker, and has no
 remote `server.url`; `android:build:debug` additionally runs Gradle. GitHub
@@ -145,6 +151,17 @@ tone-marked pinyin, a Vietnamese meaning, and one ordered authored annotation
 for every character. A sentence is invalid without a Vietnamese translation.
 Sentence pinyin is composed only from the authored word readings; ScottBook
 does not guess readings at runtime.
+
+The generated Hán-Việt lookup lives in
+`src/content/hanVietReadings.generated.ts`. It is compiled into both PWA and
+APK builds and performs no reading-time request. Its pinned sources, checksums,
+licenses, and ambiguity limits are recorded in
+[`docs/THIRD-PARTY-NOTICES.md`](docs/THIRD-PARTY-NOTICES.md). The generator can
+be rerun with:
+
+```bash
+npm run data:han-viet -- <Unihan_Readings.txt> <Unihan_Variants.txt> <hanviet.csv>
+```
 
 `npm run build` first executes the content validation test. Incomplete reference
 content therefore fails both the local production build and GitHub Actions.
@@ -461,6 +478,18 @@ not a stable upgrade channel; release signing still waits for an owner-held key.
 The release contract and manual checks are recorded in
 [`docs/release/SCOTTBOOK-v0.25.0.md`](docs/release/SCOTTBOOK-v0.25.0.md).
 
+Version 0.26 removes persistent connectivity chrome from the reading flow and
+makes fixed mobile surfaces fully opaque. Reader controls now cover the safe
+top inset, the mobile navigation docks to the bottom edge, and the assistance
+scope contracts to a three-glyph control after scrolling. Sentence selection
+uses a wrappable inline control, preserving the authored paragraph layout.
+Character and word/phrase help now exposes offline Hán-Việt readings from
+20,254 pinyin-specific and 9,573 general character entries. Android's system
+Back closes an open reader sheet first, navigates ScottBook history second, and
+exits only from the library root. Import remains disabled. The release contract
+and manual checks are recorded in
+[`docs/release/SCOTTBOOK-v0.26.0.md`](docs/release/SCOTTBOOK-v0.26.0.md).
+
 ## Install ScottBook
 
 Chromium browsers on Android, Windows, macOS, and Linux can expose ScottBook's
@@ -478,8 +507,8 @@ TXT/EPUB content and cache-on-demand imported books remain intentionally
 disabled until the import research phase is approved.
 
 For a direct Android install, open the successful **ScottBook CI** run for the
-v0.25 commit, download the `ScottBook-Android-debug-…` artifact, extract it, and
-install `ScottBook-v0.25.0-android-debug.apk`. Android may ask permission to
+v0.26 commit, download the `ScottBook-Android-debug-…` artifact, extract it, and
+install `ScottBook-v0.26.0-android-debug.apk`. Android may ask permission to
 install apps from the browser or file manager used to open it. The debug APK is
 not Play Store signed and its runner-generated debug key is not a durable
 upgrade identity: if a later debug artifact reports a signature conflict,
