@@ -18,9 +18,9 @@ This list is intentionally release-blocking evidence, not a hidden backlog.
 - “Ôn lại” now keeps character/word/sentence scope, assistance contexts,
   pin/known state, and local filters. It does not yet implement spaced
   repetition, quizzes, or CSV/Anki export.
-- Search now covers the authored offline library by Hanzi, pinyin, and
-  Vietnamese content. A separate Discover feed and article-detail screen are
-  not implemented.
+- Search and Discover cover the authored offline library only. Discover does
+  not yet offer personalized recommendations, a saved reading queue, or a
+  user-authored topic taxonomy.
 
 ## Platform gaps
 

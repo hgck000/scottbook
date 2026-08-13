@@ -302,6 +302,15 @@ matrix now runs eighteen browser cases. Its content contract and evidence are
 recorded in
 [`docs/release/SCOTTBOOK-v0.14.0.md`](docs/release/SCOTTBOOK-v0.14.0.md).
 
+Version 0.15 adds a separate offline Discover route and a detail route for each
+authored article. Discover combines HSK, topic, and reading-length filters;
+the detail page exposes only derived authored metadata and does not mark an
+article as opened until the reader chooses **Đọc ngay**. Its tenth critical
+journey covers this route from filtering through reading start, so the
+desktop/mobile matrix now contains twenty browser cases. The release contract
+is recorded in
+[`docs/release/SCOTTBOOK-v0.15.0.md`](docs/release/SCOTTBOOK-v0.15.0.md).
+
 ## Install ScottBook
 
 Chromium browsers on Android, Windows, macOS, and Linux can expose ScottBook's
