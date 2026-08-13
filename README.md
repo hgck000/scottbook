@@ -14,8 +14,9 @@ reading comprehension and vocabulary. Accounts, cloud sync, scores, streaks,
 daily goals, gamification, telemetry, and commercial-service features are
 outside its product scope.
 
-The first vertical slice is a React + TypeScript PWA. Android packaging with
-Capacitor will use the same frontend in a later sprint.
+ScottBook uses one React + TypeScript frontend in two delivery forms: the PWA
+for browsers, Windows, macOS, and iPhone/iPad Home Screen; and a Capacitor
+Android shell whose debug APK bundles the same library for direct sideloading.
 
 ## Current status
 
@@ -57,6 +58,9 @@ Capacitor will use the same frontend in a later sprint.
 - Controlled PWA updates that reload only after the reader accepts.
 - Throttled service-worker checks after foregrounding, reconnecting, or one hour.
 - Native install prompt plus iPhone/iPad, MacBook, and browser guidance.
+- A Capacitor Android project with a fixed app identity, branded launcher/splash
+  assets, system-safe insets, and no remote server or Internet permission.
+- A GitHub Actions debug APK artifact for direct Android sideload testing.
 - Pre-update data checkpoint that blocks unsafe service-worker reloads.
 - Automatic recovery from the previous valid local record.
 - Versioned JSON backup export protected by a SHA-256 checksum.
@@ -68,9 +72,10 @@ Capacitor will use the same frontend in a later sprint.
 - A redacted local diagnostic download with counts and capability flags only.
 - A restrictive content-security policy plus automated API, license, and dependency audits.
 - A 20,000-Hanzi reader fixture that guards the long-document render budget.
-- Thirty production-browser journeys across desktop and mobile Chrome profiles.
+- Thirty-four production-browser journeys across desktop and mobile Chrome profiles.
 - Root and configurable subpath PWA builds with an artifact contract check.
-- GitHub Actions builds on Ubuntu, Windows, and macOS and retains QA evidence.
+- GitHub Actions builds on Ubuntu, Windows, and macOS, builds the Android debug
+  APK, and retains QA evidence.
 - Generated service worker precaches the complete prototype.
 - Import is intentionally deferred while its language-processing design is evaluated.
 
@@ -113,6 +118,22 @@ Preview the production PWA:
 ```bash
 npm run preview
 ```
+
+Build the bundled Android shell locally after installing JDK 21 and Android SDK
+36 (Android Studio can provide both):
+
+```bash
+npm run build:android:web
+npm run android:sync
+npm run android:build:debug
+```
+
+The final command writes `artifacts/ScottBook-v0.25.0-android-debug.apk` and
+selects `gradlew.bat` automatically on Windows. `android:sync` proves that the
+native bundle contains local assets, has no browser service worker, and has no
+remote `server.url`; `android:build:debug` additionally runs Gradle. GitHub
+Actions is the authoritative APK builder when the local machine has no Android
+SDK.
 
 ## Offline content contract
 
@@ -426,6 +447,20 @@ critical journey brings the desktop/mobile browser matrix to thirty-four cases.
 The release contract and manual checks are recorded in
 [`docs/release/SCOTTBOOK-v0.24.0.md`](docs/release/SCOTTBOOK-v0.24.0.md).
 
+Version 0.25 adds the first real Android package. Capacitor 8.5 wraps a separate
+native build of the same frontend under `io.github.hgck000.scottbook`; the nine
+articles, pinyin, and Vietnamese meanings are copied into the APK instead of
+being fetched from a web host. Native startup skips browser installation and
+service-worker update UI because the bundle is already offline. The committed
+Android project uses ScottBook launcher/splash assets, safe-area variables,
+Android version code 25, no Internet permission, and no OS cloud backup. CI
+assembles an installable debug APK artifact. The v0.24 browser failure is also
+corrected by selecting the connection chip directly rather than the page's
+multiple live status regions. This debug artifact is for fresh-install testing,
+not a stable upgrade channel; release signing still waits for an owner-held key.
+The release contract and manual checks are recorded in
+[`docs/release/SCOTTBOOK-v0.25.0.md`](docs/release/SCOTTBOOK-v0.25.0.md).
+
 ## Install ScottBook
 
 Chromium browsers on Android, Windows, macOS, and Linux can expose ScottBook's
@@ -441,6 +476,15 @@ All nine built-in reference articles are compiled into the precached app shell,
 so they remain available in airplane mode without a separate download. External
 TXT/EPUB content and cache-on-demand imported books remain intentionally
 disabled until the import research phase is approved.
+
+For a direct Android install, open the successful **ScottBook CI** run for the
+v0.25 commit, download the `ScottBook-Android-debug-…` artifact, extract it, and
+install `ScottBook-v0.25.0-android-debug.apk`. Android may ask permission to
+install apps from the browser or file manager used to open it. The debug APK is
+not Play Store signed and its runner-generated debug key is not a durable
+upgrade identity: if a later debug artifact reports a signature conflict,
+export a ScottBook JSON backup before uninstalling the old build. A future
+release keystore must remain owner-held and outside Git, patches, and CI logs.
 
 ## GitHub linking
 

@@ -40,14 +40,22 @@ This list is intentionally release-blocking evidence, not a hidden backlog.
 
 ## Platform gaps
 
-- ScottBook is a PWA only. There is no Capacitor Android project or APK in the
-  repository.
+- ScottBook now has a Capacitor Android project and CI-built debug APK. A clean
+  physical-device install, airplane-mode launch, WebView persistence, hardware
+  back behavior, backup download/restore, and system-inset behavior still need
+  owner verification on at least one real Android device.
+- GitHub-hosted runners may generate different debug signing keys. Debug APKs
+  are suitable for fresh installs but are not a guaranteed in-place upgrade
+  channel; uninstalling without first exporting a JSON backup can remove the
+  Android WebView's local ScottBook data.
 - A signed APK upgrade path cannot be promised until the owner creates and
   safely retains one release key. That private key must never enter the repo or
   a `git am` patch.
-- Safari/iPhone Home Screen and installed Android PWA behavior require real
-  device verification; the persistent readiness indicator and foreground
-  update checks do not turn Chrome viewport emulation into equivalent evidence.
+- Safari/iPhone Home Screen and installed Android PWA behavior still require
+  real-device verification; Chrome viewport emulation is not equivalent
+  evidence.
+- There is no separate Windows, macOS, or native iOS wrapper. Those platforms
+  continue to use the installable PWA/Home Screen path.
 - The generated artifact supports root hosting and configured subpath hosting,
   but production HTTPS hosting and cache headers are deployment responsibilities.
 
