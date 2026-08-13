@@ -48,6 +48,10 @@ import {
   parseReaderHash
 } from "./features/reader/readerNavigation";
 import {
+  getNextReadingChoice,
+  type NextReadingChoice
+} from "./features/reader/readingSequence";
+import {
   getArticleSentenceIds,
   getSentenceProgressPercent,
   markArticleCompleted,
@@ -679,6 +683,9 @@ function App() {
   let content;
   if (route.name === "reader") {
     const article = builtInLibrary.find((item) => item.id === route.articleId);
+    const nextReading = article
+      ? getNextReadingChoice(builtInLibrary, article.id, libraryState)
+      : null;
     const readingProgress = article
       ? libraryState.progressByArticle[article.id]
       : undefined;
@@ -736,6 +743,10 @@ function App() {
           const sentenceIds = getArticleSentenceIds(article);
           const lastSentenceId = sentenceIds.at(-1);
           if (lastSentenceId) completeArticle(article.id, lastSentenceId);
+        }}
+        nextReading={nextReading}
+        openNextArticle={() => {
+          if (nextReading) openArticle(nextReading.article.id);
         }}
         saveAssistance={(sentence, unit, level) =>
           saveAssistance(article, sentence, unit, level)
@@ -3605,6 +3616,8 @@ function ReaderScreen({
   saveReadingPosition,
   isCompleted,
   completeArticle,
+  nextReading,
+  openNextArticle,
   saveAssistance,
   openVocabularyContext
 }: {
@@ -3627,6 +3640,8 @@ function ReaderScreen({
   ) => void;
   isCompleted: boolean;
   completeArticle: () => void;
+  nextReading: NextReadingChoice | null;
+  openNextArticle: () => void;
   saveAssistance: (
     sentence: AnnotatedSentence,
     unit: ReaderAssistanceUnit,
@@ -4098,6 +4113,13 @@ function ReaderScreen({
               </button>
             )}
           </footer>
+
+          {nextReading ? (
+            <NextReadingCard
+              choice={nextReading}
+              openArticle={openNextArticle}
+            />
+          ) : null}
         </article>
       </main>
 
@@ -4144,6 +4166,57 @@ function ReaderScreen({
         />
       ) : null}
     </div>
+  );
+}
+
+function NextReadingCard({
+  choice,
+  openArticle
+}: {
+  choice: NextReadingChoice;
+  openArticle: () => void;
+}) {
+  const reasonCopy = {
+    new: "Bài chưa đọc tiếp theo",
+    "in-progress": "Tiếp tục một bài còn dang dở",
+    revisit: "Cả thư viện đã hoàn thành · đọc lại"
+  }[choice.reason];
+
+  return (
+    <section
+      className="reader-next-card"
+      aria-labelledby="reader-next-heading"
+    >
+      <div className="reader-next-glyph" aria-hidden="true">
+        {choice.article.title.slice(0, 1)}
+      </div>
+      <div className="reader-next-copy">
+        <p className="eyebrow">{reasonCopy}</p>
+        <h2 id="reader-next-heading" lang="zh-Hans">
+          {choice.article.title}
+        </h2>
+        <p className="reader-next-pinyin">{choice.article.titlePinyin}</p>
+        <p className="reader-next-translation">
+          {choice.article.titleTranslation}
+        </p>
+        <span>
+          {choice.article.level} · {choice.article.topic} · khoảng{" "}
+          {choice.article.estimatedMinutes} phút
+        </span>
+      </div>
+      <button
+        type="button"
+        onClick={openArticle}
+        aria-label={`Đọc bài tiếp theo: ${choice.article.titleTranslation}`}
+      >
+        {choice.reason === "in-progress"
+          ? "Tiếp tục đọc"
+          : choice.reason === "revisit"
+            ? "Đọc lại"
+            : "Đọc tiếp"}
+        <span aria-hidden="true">→</span>
+      </button>
+    </section>
   );
 }
 

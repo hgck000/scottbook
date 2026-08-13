@@ -258,6 +258,35 @@ describe("ScottBook routes", () => {
     expect(markup).toContain('data-reader-line-height="comfortable"');
     expect(markup).toContain('data-reader-content-width="balanced"');
   });
+
+  it("offers the next unfinished offline article at the end of Reader", () => {
+    installWindow("#/read/hsk1-my-morning", {
+      version: 2,
+      favoriteArticleIds: [],
+      lastOpenedArticleId: "hsk1-my-family",
+      progressByArticle: {},
+      historyByArticle: {
+        "hsk1-my-family": {
+          articleId: "hsk1-my-family",
+          firstOpenedAt: 100,
+          lastOpenedAt: 200,
+          openCount: 2,
+          completedAt: null
+        }
+      }
+    });
+
+    const markup = renderToStaticMarkup(<App />);
+
+    expect(markup).toContain("Tiếp tục một bài còn dang dở");
+    expect(markup).toContain('id="reader-next-heading"');
+    expect(markup).toContain("我的家");
+    expect(markup).toContain("Wǒ de jiā");
+    expect(markup).toContain("Gia đình tôi");
+    expect(markup).toContain(
+      'aria-label="Đọc bài tiếp theo: Gia đình tôi"'
+    );
+  });
 });
 
 describe("PWA install guidance", () => {

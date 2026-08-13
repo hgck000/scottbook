@@ -39,8 +39,8 @@ const installed = {
 };
 const candidate = {
   appId: "io.github.hgck000.scottbook",
-  versionName: "0.29.0",
-  versionCode: 29,
+  versionName: "0.30.0",
+  versionCode: 30,
   requestsInternet: false
 };
 const fingerprint = "AB".repeat(32);
@@ -49,14 +49,14 @@ describe("Android signed upgrade smoke", () => {
   it("requires one candidate APK and an explicit backup", () => {
     expect(
       parseUpgradeArguments([
-        "C:\\Builds\\ScottBook v0.29.apk",
+        "C:\\Builds\\ScottBook v0.30.apk",
         "--backup",
         "C:\\Backups\\ScottBook.json",
         "--serial",
         "DEVICE-01"
       ])
     ).toEqual({
-      apk: "C:\\Builds\\ScottBook v0.29.apk",
+      apk: "C:\\Builds\\ScottBook v0.30.apk",
       backup: "C:\\Backups\\ScottBook.json",
       serial: "DEVICE-01",
       evidenceDirectory: null
@@ -95,7 +95,7 @@ describe("Android signed upgrade smoke", () => {
 
   it("reads candidate identity, version, and Internet permission from aapt", () => {
     const output = [
-      "package: name='io.github.hgck000.scottbook' versionCode='29' versionName='0.29.0'",
+      "package: name='io.github.hgck000.scottbook' versionCode='30' versionName='0.30.0'",
       "sdkVersion:'24'",
       "uses-permission: name='android.permission.VIBRATE'"
     ].join("\n");
