@@ -225,6 +225,21 @@ describe("ScottBook routes", () => {
     expect(markup).toContain('class="sentence context-target"');
   });
 
+  it("renders a cross-article vocabulary context with a safe return route", () => {
+    installWindow(
+      "#/read/hsk2-weekend-plan/context/s1/from-vocabulary/hsk1-my-morning"
+    );
+
+    const markup = renderToStaticMarkup(<App />);
+
+    expect(markup).toContain("Đã mở ngữ cảnh từ Từ trong bài");
+    expect(markup).toContain('aria-label="Về bài trước"');
+    expect(markup).toContain('data-sentence-id="s1"');
+    expect(markup).toContain('data-vocabulary-target="true"');
+    expect(markup).toContain('class="sentence context-target"');
+    expect(markup).not.toContain("Đã mở đúng câu từ Ôn lại");
+  });
+
   it("keeps a screen-reader name on the compact mobile back button", () => {
     installWindow("#/read/hsk1-my-morning");
 

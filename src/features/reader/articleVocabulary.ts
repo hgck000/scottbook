@@ -16,6 +16,14 @@ export type ArticleVocabularyEntry = {
   occurrences: readonly ArticleVocabularyOccurrence[];
 };
 
+export type LibraryVocabularyContextGroup = {
+  articleId: string;
+  articleTitle: string;
+  articleTitleTranslation: string;
+  articleLevel: BuiltInArticle["level"];
+  occurrences: readonly ArticleVocabularyOccurrence[];
+};
+
 function getVocabularyId(
   hanzi: string,
   pinyin: string,
@@ -92,4 +100,26 @@ export function filterArticleVocabulary(
   query: string
 ): ArticleVocabularyEntry[] {
   return entries.filter((entry) => matchesVocabularyQuery(entry, query));
+}
+
+export function getLibraryVocabularyContexts(
+  articles: readonly BuiltInArticle[],
+  entry: ArticleVocabularyEntry
+): LibraryVocabularyContextGroup[] {
+  return articles.flatMap((article) => {
+    const matchingEntry = getArticleVocabulary(article).find(
+      (candidate) => candidate.id === entry.id
+    );
+    if (!matchingEntry) return [];
+
+    return [
+      {
+        articleId: article.id,
+        articleTitle: article.title,
+        articleTitleTranslation: article.titleTranslation,
+        articleLevel: article.level,
+        occurrences: matchingEntry.occurrences
+      }
+    ];
+  });
 }

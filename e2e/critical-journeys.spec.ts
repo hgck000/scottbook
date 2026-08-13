@@ -443,6 +443,65 @@ test("compares every authored context of a repeated article word", async ({
   expect(pageErrors).toEqual([]);
 });
 
+test("compares a word across the offline library and opens another article", async ({
+  page
+}) => {
+  const pageErrors = collectPageErrors(page);
+  await page.goto("/");
+  await dismissInstallNotice(page);
+  await page
+    .getByRole("button", { name: "Mở bài Buổi sáng của tôi" })
+    .click();
+
+  await page.getByRole("button", { name: "Mở từ trong bài" }).click();
+  await page.getByLabel("Tìm trong bài này").fill("wo");
+  await page
+    .getByRole("button", { name: "Xem 4 ngữ cảnh của 我" })
+    .click();
+  await page
+    .getByRole("button", { name: "Cả thư viện · 25" })
+    .click();
+
+  await expect(page.getByText("25 ngữ cảnh · 9 bài")).toBeVisible();
+  const weekendContexts = page.getByRole("region", {
+    name: "Ngữ cảnh trong bài Kế hoạch cuối tuần"
+  });
+  await expect(
+    weekendContexts.getByRole("heading", { name: "周末的计划" })
+  ).toBeVisible();
+  await expect(
+    weekendContexts.getByText(
+      "Cuối tuần này thời tiết rất đẹp, tôi muốn cùng bạn đi công viên.",
+      { exact: true }
+    )
+  ).toBeVisible();
+  await weekendContexts
+    .getByRole("button", {
+      name: "Tới ngữ cảnh 1 của 我 trong bài Kế hoạch cuối tuần"
+    })
+    .click();
+
+  await expect(page).toHaveURL(
+    /#\/read\/hsk2-weekend-plan\/context\/s1\/from-vocabulary\/hsk1-my-morning$/
+  );
+  await expect(
+    page.getByText("Đã mở ngữ cảnh từ Từ trong bài", { exact: true })
+  ).toBeVisible();
+  const targetSentence = page.locator(
+    '.sentence[data-sentence-id="s1"][data-vocabulary-target="true"]'
+  );
+  await expect(targetSentence).toBeVisible();
+  await expect(targetSentence).toBeInViewport();
+  await targetSentence
+    .locator('[data-assistance-key="s1:word:s1-t5"]')
+    .click();
+  await expect(page.getByText("wǒ", { exact: true })).toBeVisible();
+
+  await page.getByRole("button", { name: "Về bài trước" }).first().click();
+  await expect(page).toHaveURL(/#\/read\/hsk1-my-morning$/);
+  expect(pageErrors).toEqual([]);
+});
+
 test("personalizes the reader layout and restores safe defaults", async ({
   page
 }) => {

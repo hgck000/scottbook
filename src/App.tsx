@@ -29,6 +29,7 @@ import {
 import {
   filterArticleVocabulary,
   getArticleVocabulary,
+  getLibraryVocabularyContexts,
   type ArticleVocabularyEntry
 } from "./features/reader/articleVocabulary";
 import { SentenceLine } from "./features/reader/SentenceLine";
@@ -43,6 +44,7 @@ import {
 } from "./features/reader/readerScope";
 import {
   createReaderHash,
+  createVocabularyReaderHash,
   parseReaderHash
 } from "./features/reader/readerNavigation";
 import {
@@ -157,6 +159,8 @@ type Route =
       name: "reader";
       articleId: string;
       contextSentenceId?: string;
+      contextSource?: "review" | "vocabulary";
+      returnArticleId?: string;
     };
 
 type LocalDataStatus = {
@@ -663,23 +667,45 @@ function App() {
       getArticleSentenceIds(article).includes(route.contextSentenceId)
         ? route.contextSentenceId
         : undefined;
+    const contextSource = contextSentenceId
+      ? route.contextSource ?? "review"
+      : undefined;
+    const returnArticleId =
+      contextSource === "vocabulary" &&
+      route.returnArticleId &&
+      builtInLibrary.some((item) => item.id === route.returnArticleId)
+        ? route.returnArticleId
+        : undefined;
+    const readerBackLabel: "Về thư viện" | "Về Ôn lại" | "Về bài trước" =
+      contextSource === "vocabulary"
+        ? returnArticleId
+          ? "Về bài trước"
+          : "Về thư viện"
+        : contextSentenceId
+          ? "Về Ôn lại"
+          : "Về thư viện";
+    const goBackFromReader =
+      contextSource === "vocabulary"
+        ? returnArticleId
+          ? () => window.location.assign(createReaderHash(returnArticleId))
+          : goHome
+        : contextSentenceId
+          ? () => window.location.assign("#/review")
+          : goHome;
     content = article ? (
       <ReaderScreen
-        key={`${article.id}:${contextSentenceId ?? "reading"}`}
+        key={`${article.id}:${contextSentenceId ?? "reading"}:${contextSource ?? "normal"}:${returnArticleId ?? "none"}`}
         article={article}
         preferences={readerPreferences}
         updatePreferences={updateReaderPreferences}
         toggleTheme={toggleTheme}
-        goBack={
-          contextSentenceId
-            ? () => window.location.assign("#/review")
-            : goHome
-        }
-        backLabel={contextSentenceId ? "Về Ôn lại" : "Về thư viện"}
+        goBack={goBackFromReader}
+        backLabel={readerBackLabel}
         isFavorite={libraryState.favoriteArticleIds.includes(article.id)}
         toggleFavorite={() => toggleFavorite(article.id)}
         resumeSentenceId={contextSentenceId ?? readingProgress?.sentenceId}
         contextSentenceId={contextSentenceId}
+        contextSource={contextSource}
         progressPercent={readingProgress?.progressPercent ?? 0}
         saveReadingPosition={saveReadingPosition}
         isCompleted={Boolean(
@@ -693,6 +719,14 @@ function App() {
         saveAssistance={(sentence, unit, level) =>
           saveAssistance(article, sentence, unit, level)
         }
+        openVocabularyContext={(targetArticleId, sentenceId) => {
+          setLibraryState((current) =>
+            markArticleOpened(current, targetArticleId, Date.now())
+          );
+          window.location.assign(
+            createVocabularyReaderHash(targetArticleId, sentenceId, article.id)
+          );
+        }}
       />
     ) : (
       <NotFound goHome={goHome} isOnline={pwaStatus.isOnline} />
@@ -3552,22 +3586,25 @@ function ReaderScreen({
   toggleFavorite,
   resumeSentenceId,
   contextSentenceId,
+  contextSource,
   progressPercent,
   saveReadingPosition,
   isCompleted,
   completeArticle,
-  saveAssistance
+  saveAssistance,
+  openVocabularyContext
 }: {
   article: BuiltInArticle;
   preferences: ReaderPreferences;
   updatePreferences: (updates: Partial<ReaderPreferences>) => void;
   toggleTheme: () => void;
   goBack: () => void;
-  backLabel: "Về thư viện" | "Về Ôn lại";
+  backLabel: "Về thư viện" | "Về Ôn lại" | "Về bài trước";
   isFavorite: boolean;
   toggleFavorite: () => void;
   resumeSentenceId?: string;
   contextSentenceId?: string;
+  contextSource?: "review" | "vocabulary";
   progressPercent: number;
   saveReadingPosition: (
     articleId: string,
@@ -3581,6 +3618,7 @@ function ReaderScreen({
     unit: ReaderAssistanceUnit,
     level: AssistanceLevel
   ) => void;
+  openVocabularyContext: (articleId: string, sentenceId: string) => void;
 }) {
   const {
     theme,
@@ -3800,7 +3838,13 @@ function ReaderScreen({
           aria-label={backLabel}
         >
           <span aria-hidden="true">←</span>
-          <span>{contextSentenceId ? "Ôn lại" : "Thư viện"}</span>
+          <span>
+            {backLabel === "Về Ôn lại"
+              ? "Ôn lại"
+              : backLabel === "Về bài trước"
+                ? "Bài trước"
+                : "Thư viện"}
+          </span>
         </button>
         <div className="reader-title-small">
           <strong>{article.title}</strong>
@@ -3890,9 +3934,13 @@ function ReaderScreen({
         </div>
         {contextSentenceId ? (
           <div className="reader-context-notice" role="status">
-            <span>Đã mở đúng câu từ Ôn lại</span>
+            <span>
+              {contextSource === "vocabulary"
+                ? "Đã mở ngữ cảnh từ Từ trong bài"
+                : "Đã mở đúng câu từ Ôn lại"}
+            </span>
             <button type="button" onClick={goBack}>
-              Về Ôn lại
+              {backLabel}
             </button>
           </div>
         ) : null}
@@ -3947,7 +3995,7 @@ function ReaderScreen({
                     chooseUnit={chooseUnit}
                     targetSource={
                       sentence.id === contextSentenceId
-                        ? "review"
+                        ? contextSource ?? "review"
                         : sentence.id === vocabularyTargetSentenceId
                           ? "vocabulary"
                           : undefined
@@ -4013,6 +4061,7 @@ function ReaderScreen({
             entries={articleVocabulary}
             close={() => closeArticleVocabulary(true)}
             jumpToSentence={jumpToVocabularySentence}
+            jumpToLibrarySentence={openVocabularyContext}
           />
         </>
       ) : null}
@@ -4033,21 +4082,51 @@ function ArticleVocabularyPanel({
   article,
   entries,
   close,
-  jumpToSentence
+  jumpToSentence,
+  jumpToLibrarySentence
 }: {
   article: BuiltInArticle;
   entries: readonly ArticleVocabularyEntry[];
   close: () => void;
   jumpToSentence: (sentenceId: string) => void;
+  jumpToLibrarySentence: (articleId: string, sentenceId: string) => void;
 }) {
   const [query, setQuery] = useState("");
   const [selectedEntryId, setSelectedEntryId] = useState<string>();
+  const [contextScope, setContextScope] = useState<"article" | "library">(
+    "article"
+  );
   const contextBackButtonRef = useRef<HTMLButtonElement>(null);
   const filteredEntries = useMemo(
     () => filterArticleVocabulary(entries, query),
     [entries, query]
   );
+  const libraryContextsByEntry = useMemo(
+    () =>
+      new Map(
+        entries.map((entry) => [
+          entry.id,
+          getLibraryVocabularyContexts(builtInLibrary, entry)
+        ])
+      ),
+    [entries]
+  );
   const selectedEntry = entries.find((entry) => entry.id === selectedEntryId);
+  const selectedLibraryGroups = selectedEntry
+    ? libraryContextsByEntry.get(selectedEntry.id) ?? []
+    : [];
+  const orderedSelectedLibraryGroups = [
+    ...selectedLibraryGroups.filter((group) => group.articleId === article.id),
+    ...selectedLibraryGroups.filter((group) => group.articleId !== article.id)
+  ];
+  const selectedLibraryOccurrenceCount = selectedLibraryGroups.reduce(
+    (total, group) => total + group.occurrences.length,
+    0
+  );
+  const selectedHasAdditionalLibraryContexts = Boolean(
+    selectedEntry &&
+      selectedLibraryOccurrenceCount > selectedEntry.occurrences.length
+  );
 
   useEffect(() => {
     if (!selectedEntry) return;
@@ -4059,6 +4138,7 @@ function ArticleVocabularyPanel({
 
   const returnToVocabularyList = () => {
     setSelectedEntryId(undefined);
+    setContextScope("article");
     window.requestAnimationFrame(() => {
       document.getElementById("reader-vocabulary-search")?.focus();
     });
@@ -4077,7 +4157,9 @@ function ArticleVocabularyPanel({
           <h2 id="reader-vocabulary-heading">Từ trong bài</h2>
           <span>
             {selectedEntry
-              ? `${selectedEntry.occurrences.length} ngữ cảnh trong bài`
+              ? contextScope === "library"
+                ? `${selectedLibraryOccurrenceCount} ngữ cảnh · ${selectedLibraryGroups.length} bài`
+                : `${selectedEntry.occurrences.length} ngữ cảnh trong bài`
               : `${entries.length} từ/cụm duy nhất`}
           </span>
         </div>
@@ -4098,50 +4180,99 @@ function ArticleVocabularyPanel({
               <span aria-hidden="true">←</span>
               Danh sách từ
             </button>
-            <div>
+            <div className="reader-vocabulary-context-entry">
               <strong lang="zh-Hans">{selectedEntry.hanzi}</strong>
               <span>{selectedEntry.pinyin}</span>
               <p>{selectedEntry.meaning}</p>
             </div>
+            {selectedHasAdditionalLibraryContexts ? (
+              <div
+                className="reader-vocabulary-context-scope"
+                role="group"
+                aria-label={`Phạm vi ngữ cảnh của ${selectedEntry.hanzi}`}
+              >
+                <button
+                  type="button"
+                  className={contextScope === "article" ? "active" : ""}
+                  aria-pressed={contextScope === "article"}
+                  onClick={() => setContextScope("article")}
+                >
+                  Bài này · {selectedEntry.occurrences.length}
+                </button>
+                <button
+                  type="button"
+                  className={contextScope === "library" ? "active" : ""}
+                  aria-pressed={contextScope === "library"}
+                  onClick={() => setContextScope("library")}
+                >
+                  Cả thư viện · {selectedLibraryOccurrenceCount}
+                </button>
+              </div>
+            ) : null}
           </div>
-          <ol
-            className="reader-vocabulary-context-list"
-            aria-label={`Các ngữ cảnh của ${selectedEntry.hanzi}`}
-          >
-            {selectedEntry.occurrences.map((occurrence, index) => (
-              <li key={`${occurrence.sentenceId}:${index}`}>
-                <article>
+          {contextScope === "article" ? (
+            <ol
+              className="reader-vocabulary-context-list"
+              aria-label={`Các ngữ cảnh của ${selectedEntry.hanzi}`}
+            >
+              {selectedEntry.occurrences.map((occurrence, index) => (
+                <li key={`${occurrence.sentenceId}:${index}`}>
+                  <VocabularyContextCard
+                    entry={selectedEntry}
+                    occurrence={occurrence}
+                    index={index}
+                    total={selectedEntry.occurrences.length}
+                    jump={() => jumpToSentence(occurrence.sentenceId)}
+                  />
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <div
+              className="reader-vocabulary-library-contexts"
+              aria-label={`Các ngữ cảnh toàn thư viện của ${selectedEntry.hanzi}`}
+            >
+              {orderedSelectedLibraryGroups.map((group) => (
+                <section
+                  key={group.articleId}
+                  className="reader-vocabulary-context-group"
+                  aria-label={`Ngữ cảnh trong bài ${group.articleTitleTranslation}`}
+                >
                   <header>
-                    <span>
-                      Ngữ cảnh {index + 1}/{selectedEntry.occurrences.length}
-                    </span>
-                    <button
-                      type="button"
-                      aria-label={`Tới ngữ cảnh ${index + 1} của ${selectedEntry.hanzi}`}
-                      onClick={() => jumpToSentence(occurrence.sentenceId)}
-                    >
-                      Tới câu <span aria-hidden="true">→</span>
-                    </button>
+                    <div>
+                      <span>{group.articleLevel}</span>
+                      <h3 lang="zh-Hans">{group.articleTitle}</h3>
+                      <p>{group.articleTitleTranslation}</p>
+                    </div>
+                    <strong>{group.occurrences.length} câu</strong>
                   </header>
-                  <p className="reader-vocabulary-context-hanzi" lang="zh-Hans">
-                    {occurrence.sentenceText.split(selectedEntry.hanzi).map(
-                      (part, partIndex, parts) => (
-                        <span key={`${partIndex}:${part}`}>
-                          {part}
-                          {partIndex < parts.length - 1 ? (
-                            <mark>{selectedEntry.hanzi}</mark>
-                          ) : null}
-                        </span>
-                      )
-                    )}
-                  </p>
-                  <p className="reader-vocabulary-context-translation">
-                    {occurrence.sentenceTranslation}
-                  </p>
-                </article>
-              </li>
-            ))}
-          </ol>
+                  <ol>
+                    {group.occurrences.map((occurrence, index) => (
+                      <li
+                        key={`${group.articleId}:${occurrence.sentenceId}:${index}`}
+                      >
+                        <VocabularyContextCard
+                          entry={selectedEntry}
+                          occurrence={occurrence}
+                          index={index}
+                          total={group.occurrences.length}
+                          articleTitleTranslation={group.articleTitleTranslation}
+                          jump={() =>
+                            group.articleId === article.id
+                              ? jumpToSentence(occurrence.sentenceId)
+                              : jumpToLibrarySentence(
+                                  group.articleId,
+                                  occurrence.sentenceId
+                                )
+                          }
+                        />
+                      </li>
+                    ))}
+                  </ol>
+                </section>
+              ))}
+            </div>
+          )}
         </>
       ) : (
         <>
@@ -4167,6 +4298,14 @@ function ArticleVocabularyPanel({
           {filteredEntries.map((entry) => {
             const firstOccurrence = entry.occurrences[0];
             if (!firstOccurrence) return null;
+            const libraryGroups = libraryContextsByEntry.get(entry.id) ?? [];
+            const libraryOccurrenceCount = libraryGroups.reduce(
+              (total, group) => total + group.occurrences.length,
+              0
+            );
+            const opensArticleContexts = entry.occurrences.length > 1;
+            const opensLibraryContexts =
+              !opensArticleContexts && libraryOccurrenceCount > 1;
             return (
               <li key={entry.id}>
                 <article>
@@ -4178,18 +4317,27 @@ function ArticleVocabularyPanel({
                   <button
                     type="button"
                     aria-label={
-                      entry.occurrences.length > 1
+                      opensArticleContexts
                         ? `Xem ${entry.occurrences.length} ngữ cảnh của ${entry.hanzi}`
+                        : opensLibraryContexts
+                          ? `Xem ${libraryOccurrenceCount} ngữ cảnh trong thư viện của ${entry.hanzi}`
                         : `Tới câu đầu có ${entry.hanzi}`
                     }
-                    onClick={() =>
-                      entry.occurrences.length > 1
-                        ? setSelectedEntryId(entry.id)
-                        : jumpToSentence(firstOccurrence.sentenceId)
-                    }
+                    onClick={() => {
+                      if (opensArticleContexts || opensLibraryContexts) {
+                        setContextScope(
+                          opensLibraryContexts ? "library" : "article"
+                        );
+                        setSelectedEntryId(entry.id);
+                        return;
+                      }
+                      jumpToSentence(firstOccurrence.sentenceId);
+                    }}
                   >
-                    {entry.occurrences.length > 1
-                      ? `${entry.occurrences.length} ngữ cảnh`
+                    {opensArticleContexts
+                      ? `${entry.occurrences.length} trong bài`
+                      : opensLibraryContexts
+                        ? `${libraryOccurrenceCount} trong thư viện`
                       : "Tới câu"}
                     <span aria-hidden="true">→</span>
                   </button>
@@ -4208,6 +4356,58 @@ function ArticleVocabularyPanel({
         </>
       )}
     </aside>
+  );
+}
+
+function VocabularyContextCard({
+  entry,
+  occurrence,
+  index,
+  total,
+  articleTitleTranslation,
+  jump
+}: {
+  entry: ArticleVocabularyEntry;
+  occurrence: ArticleVocabularyEntry["occurrences"][number];
+  index: number;
+  total: number;
+  articleTitleTranslation?: string;
+  jump: () => void;
+}) {
+  return (
+    <article className="reader-vocabulary-context-card">
+      <header>
+        <span>
+          Ngữ cảnh {index + 1}/{total}
+        </span>
+        <button
+          type="button"
+          aria-label={
+            articleTitleTranslation
+              ? `Tới ngữ cảnh ${index + 1} của ${entry.hanzi} trong bài ${articleTitleTranslation}`
+              : `Tới ngữ cảnh ${index + 1} của ${entry.hanzi}`
+          }
+          onClick={jump}
+        >
+          Tới câu <span aria-hidden="true">→</span>
+        </button>
+      </header>
+      <p className="reader-vocabulary-context-hanzi" lang="zh-Hans">
+        {occurrence.sentenceText.split(entry.hanzi).map(
+          (part, partIndex, parts) => (
+            <span key={`${partIndex}:${part}`}>
+              {part}
+              {partIndex < parts.length - 1 ? (
+                <mark>{entry.hanzi}</mark>
+              ) : null}
+            </span>
+          )
+        )}
+      </p>
+      <p className="reader-vocabulary-context-translation">
+        {occurrence.sentenceTranslation}
+      </p>
+    </article>
   );
 }
 

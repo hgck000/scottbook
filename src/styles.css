@@ -4002,7 +4002,7 @@ svg {
   cursor: pointer;
 }
 
-.reader-vocabulary-context-heading > div {
+.reader-vocabulary-context-entry {
   min-width: 0;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
@@ -4016,7 +4016,7 @@ svg {
   font-weight: 650;
 }
 
-.reader-vocabulary-context-heading div > span {
+.reader-vocabulary-context-entry > span {
   overflow-wrap: anywhere;
   color: var(--coral);
   font-size: 0.73rem;
@@ -4028,6 +4028,34 @@ svg {
   margin: 0;
   color: var(--muted);
   font-size: 0.68rem;
+}
+
+.reader-vocabulary-context-scope {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--paper) 55%, transparent);
+}
+
+.reader-vocabulary-context-scope button {
+  min-height: 36px;
+  border: 0;
+  border-radius: 9px;
+  color: var(--muted);
+  background: transparent;
+  font-size: 0.66rem;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.reader-vocabulary-context-scope button.active {
+  color: var(--jade);
+  background: var(--jade-soft);
+  box-shadow: 0 2px 9px rgb(18 35 30 / 7%);
 }
 
 .reader-vocabulary-context-list {
@@ -4042,14 +4070,14 @@ svg {
   list-style: none;
 }
 
-.reader-vocabulary-context-list article {
+.reader-vocabulary-context-card {
   padding: 15px;
   border: 1px solid var(--line);
   border-radius: 16px;
   background: color-mix(in srgb, var(--paper) 48%, transparent);
 }
 
-.reader-vocabulary-context-list article > header {
+.reader-vocabulary-context-card > header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -4057,7 +4085,7 @@ svg {
   margin-bottom: 12px;
 }
 
-.reader-vocabulary-context-list article > header > span {
+.reader-vocabulary-context-card > header > span {
   color: var(--muted);
   font-size: 0.61rem;
   font-weight: 850;
@@ -4065,7 +4093,7 @@ svg {
   text-transform: uppercase;
 }
 
-.reader-vocabulary-context-list article > header button {
+.reader-vocabulary-context-card > header button {
   min-height: 34px;
   display: inline-flex;
   align-items: center;
@@ -4078,6 +4106,74 @@ svg {
   font-size: 0.64rem;
   font-weight: 850;
   cursor: pointer;
+}
+
+.reader-vocabulary-library-contexts {
+  min-height: 0;
+  display: grid;
+  align-content: start;
+  gap: 15px;
+  padding: 14px 20px 24px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.reader-vocabulary-context-group {
+  display: grid;
+  gap: 9px;
+}
+
+.reader-vocabulary-context-group > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 3px;
+}
+
+.reader-vocabulary-context-group > header > div {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: baseline;
+  gap: 2px 7px;
+}
+
+.reader-vocabulary-context-group > header span {
+  color: var(--coral);
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.reader-vocabulary-context-group > header h3 {
+  overflow-wrap: anywhere;
+  margin: 0;
+  font-family: "Songti SC", "Noto Serif CJK SC", serif;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.reader-vocabulary-context-group > header p {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.66rem;
+}
+
+.reader-vocabulary-context-group > header > strong {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: 0.62rem;
+}
+
+.reader-vocabulary-context-group > ol {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
 .reader-vocabulary-context-hanzi {
@@ -4992,7 +5088,8 @@ svg {
   }
 
   .reader-vocabulary-context-heading,
-  .reader-vocabulary-context-list {
+  .reader-vocabulary-context-list,
+  .reader-vocabulary-library-contexts {
     padding-right: 16px;
     padding-left: 16px;
   }

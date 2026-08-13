@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import { builtInLibrary } from "../../content/builtInLibrary";
 import {
   filterArticleVocabulary,
-  getArticleVocabulary
+  getArticleVocabulary,
+  getLibraryVocabularyContexts
 } from "./articleVocabulary";
 
 const morningArticle = builtInLibrary.find(
@@ -84,5 +85,58 @@ describe("offline article vocabulary", () => {
 
     expect(filterArticleVocabulary(entries, "   ")).toHaveLength(16);
     expect(filterArticleVocabulary(entries, "khong-co-tu-nay")).toEqual([]);
+  });
+
+  it("groups an exact vocabulary identity across the offline library", () => {
+    const entry = getArticleVocabulary(morningArticle).find(
+      (item) => item.hanzi === "我"
+    );
+    if (!entry) throw new Error("repeated word fixture is missing");
+
+    const groups = getLibraryVocabularyContexts(builtInLibrary, entry);
+
+    expect(groups).toHaveLength(9);
+    expect(
+      groups.reduce((total, group) => total + group.occurrences.length, 0)
+    ).toBe(25);
+    expect(groups[0]).toMatchObject({
+      articleId: "hsk1-my-morning",
+      articleTitle: "我的早上",
+      articleTitleTranslation: "Buổi sáng của tôi",
+      articleLevel: "HSK 1"
+    });
+    expect(groups[0]?.occurrences).toHaveLength(4);
+  });
+
+  it("finds library repetition even when the current article has one occurrence", () => {
+    const entry = getArticleVocabulary(morningArticle).find(
+      (item) => item.hanzi === "学校"
+    );
+    if (!entry) throw new Error("single article occurrence fixture is missing");
+
+    const groups = getLibraryVocabularyContexts(builtInLibrary, entry);
+
+    expect(entry.occurrences).toHaveLength(1);
+    expect(groups).toHaveLength(3);
+    expect(
+      groups.reduce((total, group) => total + group.occurrences.length, 0)
+    ).toBe(3);
+  });
+
+  it("does not merge the same Hanzi with a different authored reading or meaning", () => {
+    const entry = getArticleVocabulary(morningArticle).find(
+      (item) => item.hanzi === "我"
+    );
+    if (!entry) throw new Error("repeated word fixture is missing");
+
+    const changedIdentity = {
+      ...entry,
+      pinyin: "wò",
+      id: JSON.stringify([entry.hanzi, "wò", entry.meaning])
+    };
+
+    expect(
+      getLibraryVocabularyContexts(builtInLibrary, changedIdentity)
+    ).toEqual([]);
   });
 });
