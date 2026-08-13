@@ -17,7 +17,8 @@ outside its product scope.
 
 ScottBook uses one React + TypeScript frontend in two delivery forms: the PWA
 for browsers, Windows, macOS, and iPhone/iPad Home Screen; and a Capacitor
-Android shell whose debug APK bundles the same library for direct sideloading.
+Android shell whose debug and owner-signed release APKs bundle the same library
+for direct sideloading.
 
 ## Current status
 
@@ -67,6 +68,8 @@ Android shell whose debug APK bundles the same library for direct sideloading.
   assets, system-safe insets, hardware Back routing, and no remote server or
   Internet permission.
 - A GitHub Actions debug APK artifact for direct Android sideload testing.
+- A manual, fail-closed owner-signing workflow that verifies the APK certificate
+  fingerprint while keeping the keystore and passwords outside Git and patches.
 - A cross-platform ADB device-smoke runner that installs with data-preserving
   `-r`, verifies the effective APK/version/permission/foreground WebView,
   captures local screenshot and app-scoped log evidence, and never auto-uninstalls.
@@ -137,7 +140,7 @@ npm run android:sync
 npm run android:build:debug
 ```
 
-The final command writes `artifacts/ScottBook-v0.27.0-android-debug.apk` and
+The final command writes `artifacts/ScottBook-v0.28.0-android-debug.apk` and
 selects `gradlew.bat` automatically on Windows. `android:sync` proves that the
 native bundle contains local assets, has no browser service worker, and has no
 remote `server.url`; `android:build:debug` additionally runs Gradle. GitHub
@@ -148,13 +151,27 @@ After downloading or building the APK, connect one USB-debugging Android phone
 and run the reusable device check:
 
 ```bash
-npm run android:device:smoke -- /path/to/ScottBook-v0.27.0-android-debug.apk
+npm run android:device:smoke -- /path/to/ScottBook-v0.28.0-android-debug.apk
 ```
 
 On Windows, the APK path may be quoted normally. If more than one device is
 connected, append `--serial DEVICE_SERIAL`. Evidence stays under `artifacts/`
 and deliberately excludes the ADB serial. Full setup and failure handling are
 in [`docs/qa/ANDROID-DEVICE-SMOKE.md`](docs/qa/ANDROID-DEVICE-SMOKE.md).
+
+The release build is intentionally separate and never falls back to an
+unsigned APK:
+
+```bash
+npm run android:build:release
+```
+
+It requires the owner-held keystore environment, verifies the resulting
+certificate with `apksigner`, and writes
+`artifacts/ScottBook-v0.28.0-android-release.apk` plus a checksum/fingerprint
+report. Create and configure the key only through
+[`docs/qa/ANDROID-RELEASE-SIGNING.md`](docs/qa/ANDROID-RELEASE-SIGNING.md); the
+keystore and passwords must never enter the repository or a patch.
 
 ## Offline content contract
 
@@ -340,8 +357,9 @@ automated evidence and physical-device matrix are in
 [`docs/release/SCOTTBOOK-v0.9.0-RC.md`](docs/release/SCOTTBOOK-v0.9.0-RC.md).
 The intentionally visible blockers are in
 [`docs/release/KNOWN-LIMITATIONS.md`](docs/release/KNOWN-LIMITATIONS.md).
-Android APK signing, the final content count, and Safari/iPhone/Android
-real-device evidence remain unresolved. Import remains disabled.
+Owner execution and upgrade evidence for Android signing, the final content
+count, and Safari/iPhone/Android real-device evidence remain unresolved. Import
+remains disabled.
 
 Version 0.10 adds a fifth critical journey for the editable local Review list,
 so the desktop/mobile matrix now runs ten browser cases. Its implementation and
@@ -515,6 +533,17 @@ uninstalls or clears app data when a runner-generated debug signature differs.
 The release contract is recorded in
 [`docs/release/SCOTTBOOK-v0.27.0.md`](docs/release/SCOTTBOOK-v0.27.0.md).
 
+Version 0.28 fixes the Browser journeys failure exposed by v0.27: a new Reader
+without saved progress now starts at the top instead of inheriting the library
+scroll offset, while saved sentence restoration remains unchanged. It also adds
+a manual owner-signing workflow and local release builder. Both fail when the
+keystore is missing or stored inside the repository, verify the assembled APK
+certificate against a pinned public SHA-256 fingerprint, and retain a public
+APK checksum/fingerprint report. No private key or password is generated or
+committed. Owner setup and the future v0.28 → v0.29 upgrade proof remain manual.
+The release contract is recorded in
+[`docs/release/SCOTTBOOK-v0.28.0.md`](docs/release/SCOTTBOOK-v0.28.0.md).
+
 ## Install ScottBook
 
 Chromium browsers on Android, Windows, macOS, and Linux can expose ScottBook's
@@ -531,14 +560,21 @@ so they remain available in airplane mode without a separate download. External
 TXT/EPUB content and cache-on-demand imported books remain intentionally
 disabled until the import research phase is approved.
 
-For a direct Android install, open the successful **ScottBook CI** run for the
-v0.27 commits, download the `ScottBook-Android-debug-…` artifact, extract it, and
-install `ScottBook-v0.27.0-android-debug.apk`. Android may ask permission to
+For a direct Android test install, open the successful **ScottBook CI** run for
+the v0.28 commits, download the `ScottBook-Android-debug-…` artifact, extract it,
+and install `ScottBook-v0.28.0-android-debug.apk`. Android may ask permission to
 install apps from the browser or file manager used to open it. The debug APK is
 not Play Store signed and its runner-generated debug key is not a durable
 upgrade identity: if a later debug artifact reports a signature conflict,
 export a ScottBook JSON backup before uninstalling the old build. A future
 release keystore must remain owner-held and outside Git, patches, and CI logs.
+
+After the owner signing configuration is complete, the manual **ScottBook
+signed Android release** workflow produces
+`ScottBook-v0.28.0-android-release.apk`. A debug installation cannot be updated
+directly by this differently signed release APK: export JSON first, then follow
+the signing guide's backup/uninstall/restore boundary. Keep the v0.28 signed
+installation for the v0.29 in-place upgrade proof.
 
 ## GitHub linking
 

@@ -53,12 +53,13 @@ This list is intentionally release-blocking evidence, not a hidden backlog.
   airplane-mode launch, WebView persistence, Back behavior, backup
   download/restore, and system-inset behavior still need owner evidence.
 - GitHub-hosted runners may generate different debug signing keys. Debug APKs
-  are suitable for fresh installs but are not a guaranteed in-place upgrade
-  channel; uninstalling without first exporting a JSON backup can remove the
-  Android WebView's local ScottBook data.
-- A signed APK upgrade path cannot be promised until the owner creates and
-  safely retains one release key. That private key must never enter the repo or
-  a `git am` patch.
+  remain fresh-install test artifacts; uninstalling without first exporting a
+  JSON backup can remove the Android WebView's local ScottBook data.
+- The fail-closed owner-signing workflow is implemented, but it cannot produce
+  evidence until the owner creates, backs up, and configures exactly one release
+  key outside Git. The key and passwords must never enter the repo or a `git am`
+  patch. Durable upgrade evidence remains pending until a higher-version signed
+  APK updates the installed v0.28 build without losing local data.
 - Safari/iPhone Home Screen and installed Android PWA behavior still require
   real-device verification; Chrome viewport emulation is not equivalent
   evidence.

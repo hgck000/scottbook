@@ -54,7 +54,7 @@ from viewport emulation alone.
 | M-04 | macOS Chrome | Install PWA, backup/restore, controlled update | Pending real device |
 | M-05 | Android Chrome | Install PWA, touch assistance, airplane-mode reopen, safe area | Pending real device |
 | M-06 | iPhone Safari Home Screen | Add to Home Screen, touch assistance, offline reopen, safe area | Pending real device |
-| M-07 | Android APK | Fresh install, offline use, Back, upgrade retaining data | ADB runner available; real-device evidence pending; signed upgrade still blocked |
+| M-07 | Android APK | Fresh install, offline use, Back, upgrade retaining data | Owner-signing path ready; key setup, real-device run, and v0.28 → v0.29 upgrade evidence pending |
 
 For each manual run record device model, OS/browser version, install mode,
 result, screenshot/video evidence, and any issue ID. A failure that loses data
