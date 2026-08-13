@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { ImportedBook } from "../import/importedBook";
 import {
   LIBRARY_STATE_BACKUP_STORAGE_KEY,
   LIBRARY_STATE_STORAGE_KEY,
@@ -31,6 +32,53 @@ import {
   parseScottBookBackupText,
   undoLastScottBookRestore
 } from "./restoreBackup";
+
+function importedBookFixture(): ImportedBook {
+  return {
+    id: "imported:backup-fixture",
+    kind: "imported",
+    schemaVersion: 1,
+    sourceType: "paste",
+    sourceName: null,
+    author: null,
+    createdAt: 10,
+    updatedAt: 10,
+    characterCount: 3,
+    annotationSource: "automatic-offline",
+    analysisEngineVersion: "pinyin-pro-3.28.0+cvdict-c379d90",
+    title: "Bài riêng",
+    titlePinyin: "",
+    titleTranslation: "Văn bản tự nhập",
+    summary: "Phân tích tự động offline.",
+    level: "Tự nhập",
+    topic: "Phân tích tự động",
+    estimatedMinutes: 1,
+    accent: "jade",
+    paragraphs: [{
+      id: "imported:backup-fixture-p0",
+      sentences: [{
+        id: "imported:backup-fixture-p0-s0",
+        translation: "Chưa có bản dịch câu trong chế độ phân tích offline.",
+        translationStatus: "unavailable-offline",
+        tokens: [{
+          id: "imported:backup-fixture-p0-s0-t0",
+          kind: "word",
+          hanzi: "你好",
+          pinyin: "nǐ hǎo",
+          meaning: "xin chào",
+          characters: [
+            { hanzi: "你", pinyin: "nǐ", meaning: "bạn" },
+            { hanzi: "好", pinyin: "hǎo", meaning: "tốt" }
+          ]
+        }, {
+          id: "imported:backup-fixture-p0-s0-t1",
+          kind: "punctuation",
+          hanzi: "。"
+        }]
+      }]
+    }]
+  };
+}
 
 class MemoryStorage {
   readonly values: Map<string, string>;
@@ -201,6 +249,23 @@ describe("ScottBook backup restore", () => {
     });
   });
 
+  it("keeps validated imported books in backup v2 and preview", async () => {
+    const backup = await createScottBookBackup({
+      ...createRestoredData(),
+      importedBooks: [importedBookFixture()]
+    });
+    const result = await parseScottBookBackupText(JSON.stringify(backup));
+
+    expect(result).toMatchObject({
+      ok: true,
+      preview: { importedBookCount: 1 },
+      backup: {
+        formatVersion: 2,
+        data: { importedBooks: [{ id: "imported:backup-fixture" }] }
+      }
+    });
+  });
+
   it("migrates a valid v0.9 backup that has no assistance history", async () => {
     const current = await createScottBookBackup(createCurrentData());
     const legacy = JSON.parse(JSON.stringify(current)) as {
@@ -211,6 +276,8 @@ describe("ScottBook backup restore", () => {
       data: Record<string, unknown>;
       checksum: { algorithm: "SHA-256"; value: string };
     };
+    legacy.formatVersion = 1;
+    delete legacy.data.importedBooks;
     delete legacy.data.assistanceHistory;
     const legacyPreferences = legacy.data.preferences as Record<string, unknown>;
     delete legacyPreferences.assistanceScope;
@@ -257,7 +324,7 @@ describe("ScottBook backup restore", () => {
     });
   });
 
-  it("checks the 2 MB limit before a file is read", () => {
+  it("checks the 32 MB limit before a file is read", () => {
     expect(getBackupFileSizeError(MAX_BACKUP_FILE_BYTES)).toBeNull();
     expect(getBackupFileSizeError(MAX_BACKUP_FILE_BYTES + 1)).toContain(
       "2 MB"

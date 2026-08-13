@@ -25,9 +25,16 @@ const manifest = readFileSync(
   "android/app/src/main/AndroidManifest.xml",
   "utf8"
 );
+const versionParts = packageJson.version.split(".").map(Number);
+const expectedVersionCode = versionParts[0] === 0 && versionParts[2] === 0
+  ? versionParts[1]
+  : null;
 
 if (!existsSync("android/app/src/main/assets/public/index.html")) {
   fail("Capacitor did not copy the native web entrypoint");
+}
+if (!existsSync("android/app/src/main/assets/public/cvdict-v1.u8.gz")) {
+  fail("Capacitor did not copy the offline CVDICT import asset");
 }
 if (
   copiedConfig.appId !== "io.github.hgck000.scottbook" ||
@@ -45,8 +52,11 @@ if (manifest.includes("android.permission.INTERNET")) {
 if (!manifest.includes('android:allowBackup="false"')) {
   fail("Android cloud backup must remain disabled for device-only data");
 }
-if (!gradle.includes("versionCode 30")) {
-  fail("Android versionCode must be 30");
+if (
+  !Number.isSafeInteger(expectedVersionCode) ||
+  !gradle.includes(`versionCode ${expectedVersionCode}`)
+) {
+  fail(`Android versionCode must be ${expectedVersionCode ?? "a valid release integer"}`);
 }
 if (!gradle.includes(`versionName \"${packageJson.version}\"`)) {
   fail(`Android versionName must be ${packageJson.version}`);

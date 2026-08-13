@@ -29,7 +29,8 @@ export default defineConfig(({ mode }) => {
           "scottbook-icon-192.png",
           "scottbook-icon-512.png",
           "scottbook-icon-maskable-512.png",
-          "scottbook-apple-touch-icon.png"
+          "scottbook-apple-touch-icon.png",
+          "cvdict-v1.u8.gz"
         ],
         manifest: {
           id: base,
@@ -72,7 +73,8 @@ export default defineConfig(({ mode }) => {
         },
         workbox: {
           navigateFallback: `${base}index.html`,
-          cleanupOutdatedCaches: true
+          cleanupOutdatedCaches: true,
+          maximumFileSizeToCacheInBytes: 5 * 1024 * 1024
         }
       })
     ]

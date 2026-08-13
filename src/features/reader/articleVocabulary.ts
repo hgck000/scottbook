@@ -1,4 +1,4 @@
-import type { BuiltInArticle } from "../../content/types";
+import type { BuiltInArticle, ReaderArticle } from "../../content/types";
 import { normalizeLibrarySearchText } from "../library/libraryDiscovery";
 import { getSentenceText } from "./readerScope";
 
@@ -33,7 +33,7 @@ function getVocabularyId(
 }
 
 export function getArticleVocabulary(
-  article: BuiltInArticle
+  article: ReaderArticle
 ): ArticleVocabularyEntry[] {
   const entries = new Map<string, ArticleVocabularyEntry>();
 

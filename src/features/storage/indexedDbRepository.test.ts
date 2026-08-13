@@ -307,7 +307,7 @@ describe("IndexedDB local-data repository", () => {
     }));
     expect(report).toMatchObject({
       indexedDbAvailable: true,
-      schemaVersion: 3,
+      schemaVersion: 4,
       usageBytes: 4_096,
       quotaBytes: 1_048_576,
       bookCount: 1,
@@ -354,6 +354,7 @@ describe("IndexedDB local-data repository", () => {
     await expect(repository.bootstrap(data, data)).resolves.toEqual({
       available: false,
       data,
+      importedBooks: [],
       source: "fallback",
       quarantinedThisRun: 0
     });

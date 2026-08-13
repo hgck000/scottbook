@@ -79,7 +79,7 @@ describe("local diagnostic export", () => {
     expect(report).toMatchObject({
       format: "scottbook-local-diagnostics",
       formatVersion: 1,
-      appVersion: "0.30.0",
+      appVersion: "0.31.0",
       generatedAt: "2026-08-11T04:00:00.000Z",
       privacy: {
         transmitted: false,

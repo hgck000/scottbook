@@ -6,9 +6,13 @@ import {
   validateAssistanceHistorySnapshot
 } from "../review/assistanceHistory";
 import { validateLocalDataSnapshot } from "./localDataSnapshot";
+import {
+  validateImportedBook,
+  type ImportedBook
+} from "../import/importedBook";
 
 export const SCOTTBOOK_DATABASE_NAME = "scottbook-local-data";
-export const SCOTTBOOK_DATABASE_VERSION = 3;
+export const SCOTTBOOK_DATABASE_VERSION = 4;
 
 export const SCOTTBOOK_STORE_NAMES = {
   books: "books",
@@ -17,7 +21,8 @@ export const SCOTTBOOK_STORE_NAMES = {
   events: "events",
   cache: "cache",
   meta: "meta",
-  quarantine: "quarantine"
+  quarantine: "quarantine",
+  bookRestoreUndo: "book-restore-undo"
 } as const;
 
 const LIBRARY_STATE_RECORD_ID = "library-state";
@@ -40,6 +45,7 @@ type CorruptRecord = {
 export type IndexedDbBootstrapResult = {
   available: boolean;
   data: ScottBookBackupData;
+  importedBooks: ImportedBook[];
   source:
     | "local-storage"
     | "indexed-db"
@@ -184,6 +190,81 @@ function parseAssistanceRecord(value: unknown): {
   return { data, corrupt: data === null };
 }
 
+function parseImportedBooks(values: unknown[]): {
+  books: ImportedBook[];
+  corrupt: CorruptRecord[];
+} {
+  const books: ImportedBook[] = [];
+  const corrupt: CorruptRecord[] = [];
+  for (const value of values) {
+    const result = validateImportedBook(value);
+    if (result.ok) {
+      books.push(result.book);
+      continue;
+    }
+    const recordKey = isRecord(value) && typeof value.id === "string"
+      ? value.id
+      : `unknown-book-${corrupt.length}`;
+    corrupt.push({
+      storeName: SCOTTBOOK_STORE_NAMES.books,
+      recordKey,
+      reason: result.message,
+      payload: value
+    });
+  }
+  books.sort((left, right) => right.createdAt - left.createdAt);
+  return { books, corrupt };
+}
+
+function cloneImportedBooks(values: readonly ImportedBook[]): ImportedBook[] {
+  const seen = new Set<string>();
+  return values.map((value) => {
+    const result = validateImportedBook(value);
+    if (!result.ok || seen.has(value.id)) {
+      throw new Error(result.ok ? "Duplicate imported book id" : result.message);
+    }
+    seen.add(value.id);
+    return result.book;
+  });
+}
+
+function writeSnapshotRecords(
+  transaction: IDBTransaction,
+  data: ScottBookBackupData,
+  updatedAt: number,
+  marker: string
+): Array<Promise<unknown>> {
+  return [
+    requestResult(
+      transaction.objectStore(SCOTTBOOK_STORE_NAMES.progress).put({
+        id: LIBRARY_STATE_RECORD_ID,
+        value: data.libraryState,
+        updatedAt
+      })
+    ),
+    requestResult(
+      transaction.objectStore(SCOTTBOOK_STORE_NAMES.settings).put({
+        id: READER_PREFERENCES_RECORD_ID,
+        value: data.preferences,
+        updatedAt
+      })
+    ),
+    requestResult(
+      transaction.objectStore(SCOTTBOOK_STORE_NAMES.events).put({
+        id: ASSISTANCE_HISTORY_RECORD_ID,
+        value: data.assistanceHistory,
+        updatedAt
+      })
+    ),
+    requestResult(
+      transaction.objectStore(SCOTTBOOK_STORE_NAMES.meta).put({
+        key: marker,
+        completedAt: updatedAt
+      })
+    )
+  ];
+}
+
 export class ScottBookIndexedDbRepository {
   private readonly factory: IDBFactory | undefined;
   private readonly databaseName: string;
@@ -235,6 +316,9 @@ export class ScottBookIndexedDbRepository {
         createStoreIfMissing(database, SCOTTBOOK_STORE_NAMES.quarantine, {
           keyPath: "id",
           autoIncrement: true
+        });
+        createStoreIfMissing(database, SCOTTBOOK_STORE_NAMES.bookRestoreUndo, {
+          keyPath: "id"
         });
 
         const transaction = request.transaction;
@@ -289,6 +373,7 @@ export class ScottBookIndexedDbRepository {
       return {
         available: false,
         data: safeFallback,
+        importedBooks: [],
         source: "fallback",
         quarantinedThisRun: 0
       };
@@ -299,7 +384,8 @@ export class ScottBookIndexedDbRepository {
         [
           SCOTTBOOK_STORE_NAMES.progress,
           SCOTTBOOK_STORE_NAMES.settings,
-          SCOTTBOOK_STORE_NAMES.events
+          SCOTTBOOK_STORE_NAMES.events,
+          SCOTTBOOK_STORE_NAMES.books
         ],
         "readonly"
       );
@@ -313,17 +399,23 @@ export class ScottBookIndexedDbRepository {
       const assistanceRequest = readTransaction
         .objectStore(SCOTTBOOK_STORE_NAMES.events)
         .get(ASSISTANCE_HISTORY_RECORD_ID);
-      const [rawLibrary, rawPreferences, rawAssistance] = await Promise.all([
+      const booksRequest = readTransaction
+        .objectStore(SCOTTBOOK_STORE_NAMES.books)
+        .getAll();
+      const [rawLibrary, rawPreferences, rawAssistance, rawBooks] = await Promise.all([
         requestResult(libraryRequest),
         requestResult(preferencesRequest),
         requestResult(assistanceRequest),
+        requestResult(booksRequest),
         readDone
       ]);
 
       const library = parseLibraryRecord(rawLibrary);
       const preferences = parsePreferencesRecord(rawPreferences);
       const assistance = parseAssistanceRecord(rawAssistance);
+      const imported = parseImportedBooks(rawBooks);
       const corruptRecords: CorruptRecord[] = [];
+      corruptRecords.push(...imported.corrupt);
       if (library.corrupt) {
         corruptRecords.push({
           storeName: SCOTTBOOK_STORE_NAMES.progress,
@@ -381,6 +473,7 @@ export class ScottBookIndexedDbRepository {
       return {
         available: true,
         data,
+        importedBooks: imported.books,
         source,
         quarantinedThisRun: corruptRecords.length
       };
@@ -388,6 +481,7 @@ export class ScottBookIndexedDbRepository {
       return {
         available: false,
         data: safeFallback,
+        importedBooks: [],
         source: "fallback",
         quarantinedThisRun: 0
       };
@@ -406,7 +500,8 @@ export class ScottBookIndexedDbRepository {
         SCOTTBOOK_STORE_NAMES.settings,
         SCOTTBOOK_STORE_NAMES.events,
         SCOTTBOOK_STORE_NAMES.meta,
-        SCOTTBOOK_STORE_NAMES.quarantine
+        SCOTTBOOK_STORE_NAMES.quarantine,
+        SCOTTBOOK_STORE_NAMES.books
       ],
       "readwrite"
     );
@@ -455,6 +550,15 @@ export class ScottBookIndexedDbRepository {
           })
         )
       );
+      if (corruptRecord.storeName === SCOTTBOOK_STORE_NAMES.books) {
+        requests.push(
+          requestResult(
+            transaction
+              .objectStore(SCOTTBOOK_STORE_NAMES.books)
+              .delete(corruptRecord.recordKey)
+          )
+        );
+      }
     }
 
     await Promise.all([...requests, done]);
@@ -475,33 +579,7 @@ export class ScottBookIndexedDbRepository {
     const done = transactionDone(transaction);
     const updatedAt = this.now();
     await Promise.all([
-      requestResult(
-        transaction.objectStore(SCOTTBOOK_STORE_NAMES.progress).put({
-          id: LIBRARY_STATE_RECORD_ID,
-          value: safeData.libraryState,
-          updatedAt
-        })
-      ),
-      requestResult(
-        transaction.objectStore(SCOTTBOOK_STORE_NAMES.settings).put({
-          id: READER_PREFERENCES_RECORD_ID,
-          value: safeData.preferences,
-          updatedAt
-        })
-      ),
-      requestResult(
-        transaction.objectStore(SCOTTBOOK_STORE_NAMES.events).put({
-          id: ASSISTANCE_HISTORY_RECORD_ID,
-          value: safeData.assistanceHistory,
-          updatedAt
-        })
-      ),
-      requestResult(
-        transaction.objectStore(SCOTTBOOK_STORE_NAMES.meta).put({
-          key: "last-write",
-          completedAt: updatedAt
-        })
-      ),
+      ...writeSnapshotRecords(transaction, safeData, updatedAt, "last-write"),
       done
     ]);
   }
@@ -514,6 +592,152 @@ export class ScottBookIndexedDbRepository {
       () => true,
       () => false
     );
+  }
+
+  async saveImportedBook(book: ImportedBook): Promise<void> {
+    const [safeBook] = cloneImportedBooks([book]);
+    if (!safeBook) throw new Error("Invalid imported book");
+    await this.writeQueue;
+    const database = await this.openDatabase();
+    const transaction = database.transaction(
+      [SCOTTBOOK_STORE_NAMES.books, SCOTTBOOK_STORE_NAMES.meta],
+      "readwrite"
+    );
+    const done = transactionDone(transaction);
+    const updatedAt = this.now();
+    await Promise.all([
+      requestResult(
+        transaction.objectStore(SCOTTBOOK_STORE_NAMES.books).put(safeBook)
+      ),
+      requestResult(
+        transaction.objectStore(SCOTTBOOK_STORE_NAMES.meta).put({
+          key: "last-book-write",
+          bookId: safeBook.id,
+          completedAt: updatedAt
+        })
+      ),
+      done
+    ]);
+  }
+
+  async deleteImportedBookAndSaveSnapshot(
+    bookId: string,
+    data: ScottBookBackupData
+  ): Promise<void> {
+    const safeData = cloneSnapshot(data);
+    if (!bookId.startsWith("imported:") || bookId.length > 200) {
+      throw new Error("Invalid imported book id");
+    }
+    await this.writeQueue;
+    const database = await this.openDatabase();
+    const transaction = database.transaction(
+      [
+        SCOTTBOOK_STORE_NAMES.books,
+        SCOTTBOOK_STORE_NAMES.progress,
+        SCOTTBOOK_STORE_NAMES.settings,
+        SCOTTBOOK_STORE_NAMES.events,
+        SCOTTBOOK_STORE_NAMES.meta
+      ],
+      "readwrite"
+    );
+    const done = transactionDone(transaction);
+    const updatedAt = this.now();
+    await Promise.all([
+      requestResult(
+        transaction.objectStore(SCOTTBOOK_STORE_NAMES.books).delete(bookId)
+      ),
+      ...writeSnapshotRecords(transaction, safeData, updatedAt, "last-book-delete"),
+      done
+    ]);
+  }
+
+  async replaceImportedBooksForRestore(
+    data: ScottBookBackupData,
+    currentBooks: readonly ImportedBook[],
+    restoredBooks: readonly ImportedBook[]
+  ): Promise<void> {
+    const safeData = cloneSnapshot(data);
+    const safeCurrent = cloneImportedBooks(currentBooks);
+    const safeRestored = cloneImportedBooks(restoredBooks);
+    await this.writeQueue;
+    const database = await this.openDatabase();
+    const transaction = database.transaction(
+      [
+        SCOTTBOOK_STORE_NAMES.books,
+        SCOTTBOOK_STORE_NAMES.bookRestoreUndo,
+        SCOTTBOOK_STORE_NAMES.progress,
+        SCOTTBOOK_STORE_NAMES.settings,
+        SCOTTBOOK_STORE_NAMES.events,
+        SCOTTBOOK_STORE_NAMES.meta
+      ],
+      "readwrite"
+    );
+    const done = transactionDone(transaction);
+    const books = transaction.objectStore(SCOTTBOOK_STORE_NAMES.books);
+    const undo = transaction.objectStore(SCOTTBOOK_STORE_NAMES.bookRestoreUndo);
+    const requests: Array<Promise<unknown>> = [
+      requestResult(books.clear()),
+      requestResult(undo.clear())
+    ];
+    for (const book of safeCurrent) requests.push(requestResult(undo.put(book)));
+    for (const book of safeRestored) requests.push(requestResult(books.put(book)));
+    requests.push(
+      ...writeSnapshotRecords(
+        transaction,
+        safeData,
+        this.now(),
+        "last-portable-restore"
+      )
+    );
+    await Promise.all([...requests, done]);
+  }
+
+  async undoImportedBooksRestore(data: ScottBookBackupData): Promise<ImportedBook[]> {
+    const safeData = cloneSnapshot(data);
+    await this.writeQueue;
+    const database = await this.openDatabase();
+    const readTransaction = database.transaction(
+      SCOTTBOOK_STORE_NAMES.bookRestoreUndo,
+      "readonly"
+    );
+    const readDone = transactionDone(readTransaction);
+    const rawUndo = await Promise.all([
+      requestResult(
+        readTransaction.objectStore(SCOTTBOOK_STORE_NAMES.bookRestoreUndo).getAll()
+      ),
+      readDone
+    ]).then(([books]) => books);
+    const safeUndo = cloneImportedBooks(rawUndo);
+
+    const transaction = database.transaction(
+      [
+        SCOTTBOOK_STORE_NAMES.books,
+        SCOTTBOOK_STORE_NAMES.bookRestoreUndo,
+        SCOTTBOOK_STORE_NAMES.progress,
+        SCOTTBOOK_STORE_NAMES.settings,
+        SCOTTBOOK_STORE_NAMES.events,
+        SCOTTBOOK_STORE_NAMES.meta
+      ],
+      "readwrite"
+    );
+    const done = transactionDone(transaction);
+    const books = transaction.objectStore(SCOTTBOOK_STORE_NAMES.books);
+    const undo = transaction.objectStore(SCOTTBOOK_STORE_NAMES.bookRestoreUndo);
+    const requests: Array<Promise<unknown>> = [
+      requestResult(books.clear()),
+      requestResult(undo.clear())
+    ];
+    for (const book of safeUndo) requests.push(requestResult(books.put(book)));
+    requests.push(
+      ...writeSnapshotRecords(
+        transaction,
+        safeData,
+        this.now(),
+        "last-portable-restore-undo"
+      )
+    );
+    await Promise.all([...requests, done]);
+    return safeUndo.sort((left, right) => right.createdAt - left.createdAt);
   }
 
   async clearTranslationCache(): Promise<number> {

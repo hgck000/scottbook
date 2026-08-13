@@ -2,13 +2,15 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { builtInLibrary } from "./content/builtInLibrary";
 import type {
   AnnotatedSentence,
-  BuiltInArticle
+  BuiltInArticle,
+  ReaderArticle
 } from "./content/types";
 import {
   createScottBookBackup,
   downloadScottBookBackup,
   type ScottBookBackup,
-  type ScottBookBackupData
+  type ScottBookBackupData,
+  type ScottBookPortableData
 } from "./features/backup/exportBackup";
 import {
   getBackupFileSizeError,
@@ -152,6 +154,11 @@ import {
   type ScottBookStorageReport
 } from "./features/storage/indexedDbRepository";
 import { ScottBookLocalDataCoordinator } from "./features/storage/localDataCoordinator";
+import { ImportScreen } from "./features/import/ImportScreen";
+import {
+  removeImportedBookReferences,
+  type ImportedBook
+} from "./features/import/importedBook";
 import {
   loadLocalDataFallback,
   tryLoadPrimaryLocalData
@@ -159,6 +166,7 @@ import {
 
 type Route =
   | { name: "library" }
+  | { name: "import" }
   | { name: "discover" }
   | { name: "review" }
   | { name: "practice" }
@@ -178,6 +186,7 @@ type LocalDataStatus = {
 };
 
 function parseRoute(): Route {
+  if (window.location.hash === "#/import") return { name: "import" };
   if (window.location.hash === "#/review/practice") {
     return { name: "practice" };
   }
@@ -223,7 +232,7 @@ function useStoredState<T>(
 }
 
 function findSelectedContext(
-  article: BuiltInArticle,
+  article: ReaderArticle,
   selection: AssistanceSelection | null,
   scope: ReaderAssistanceScope
 ) {
@@ -324,6 +333,7 @@ function App() {
     useState<AssistanceHistoryState>(
       bootstrapData.fallback.assistanceHistory
     );
+  const [importedBooks, setImportedBooks] = useState<ImportedBook[]>([]);
   const [localDataCoordinator] = useState(
     () =>
       new ScottBookLocalDataCoordinator(
@@ -343,6 +353,8 @@ function App() {
   const routeTitle =
     route.name === "library"
       ? "Thư viện · ScottBook"
+      : route.name === "import"
+        ? "Nhập văn bản · ScottBook"
       : route.name === "discover"
         ? "Khám phá · ScottBook"
         : route.name === "review"
@@ -476,6 +488,7 @@ function App() {
       .then((result) => {
         if (!active) return;
         replaceLocalData(result.data);
+        setImportedBooks(result.importedBooks ?? []);
         setLocalDataStatus({
           phase: result.available ? "ready" : "fallback",
           source: result.source,
@@ -529,16 +542,20 @@ function App() {
   ]);
 
   const applyBackupRestore = useCallback(
-    async (restoredData: ScottBookBackupData) => {
+    async (restoredData: ScottBookPortableData) => {
       const result = await localDataCoordinator.applyRestore(
         {
           libraryState,
           preferences: readerPreferences,
           assistanceHistory
         },
+        importedBooks,
         restoredData
       );
-      if (result.ok) replaceLocalData(result.data);
+      if (result.ok) {
+        replaceLocalData(result.data);
+        setImportedBooks(result.importedBooks ?? []);
+      }
       if (!localDataCoordinator.isUsingIndexedDb()) {
         setLocalDataStatus((current) => ({
           ...current,
@@ -550,6 +567,7 @@ function App() {
     },
     [
       assistanceHistory,
+      importedBooks,
       libraryState,
       localDataCoordinator,
       readerPreferences,
@@ -563,7 +581,10 @@ function App() {
       preferences: readerPreferences,
       assistanceHistory
     });
-    if (result.ok) replaceLocalData(result.data);
+    if (result.ok) {
+      replaceLocalData(result.data);
+      setImportedBooks(result.importedBooks ?? []);
+    }
     if (!localDataCoordinator.isUsingIndexedDb()) {
       setLocalDataStatus((current) => ({
         ...current,
@@ -617,7 +638,7 @@ function App() {
 
   const saveAssistance = useCallback(
     (
-      article: BuiltInArticle,
+      article: ReaderArticle,
       sentence: AnnotatedSentence,
       unit: ReaderAssistanceUnit,
       level: AssistanceLevel
@@ -639,6 +660,45 @@ function App() {
       );
     },
     []
+  );
+
+  const saveImportedBook = useCallback(
+    async (book: ImportedBook) => {
+      const saved = await localDataCoordinator.saveImportedBook(book);
+      if (!saved) return false;
+      setImportedBooks((current) => [book, ...current]);
+      setLibraryState((current) => markArticleOpened(current, book.id, Date.now()));
+      window.location.assign(createReaderHash(book.id));
+      return true;
+    },
+    [localDataCoordinator]
+  );
+
+  const deleteImportedBook = useCallback(
+    async (bookId: string) => {
+      const currentData: ScottBookBackupData = {
+        libraryState,
+        preferences: readerPreferences,
+        assistanceHistory
+      };
+      const nextData = removeImportedBookReferences(currentData, bookId);
+      const result = await localDataCoordinator.deleteImportedBook(
+        bookId,
+        currentData,
+        nextData
+      );
+      if (!result.ok) return result.message;
+      replaceLocalData(result.data);
+      setImportedBooks((current) => current.filter((book) => book.id !== bookId));
+      return null;
+    },
+    [
+      assistanceHistory,
+      libraryState,
+      localDataCoordinator,
+      readerPreferences,
+      replaceLocalData
+    ]
   );
 
   const activeReviewCount = Object.values(assistanceHistory.items).filter(
@@ -682,9 +742,11 @@ function App() {
 
   let content;
   if (route.name === "reader") {
-    const article = builtInLibrary.find((item) => item.id === route.articleId);
-    const nextReading = article
-      ? getNextReadingChoice(builtInLibrary, article.id, libraryState)
+    const builtInArticle = builtInLibrary.find((item) => item.id === route.articleId);
+    const article: ReaderArticle | undefined =
+      builtInArticle ?? importedBooks.find((item) => item.id === route.articleId);
+    const nextReading = builtInArticle
+      ? getNextReadingChoice(builtInLibrary, builtInArticle.id, libraryState)
       : null;
     const readingProgress = article
       ? libraryState.progressByArticle[article.id]
@@ -763,6 +825,16 @@ function App() {
     ) : (
       <NotFound goHome={goHome} isOnline={pwaStatus.isOnline} />
     );
+  } else if (route.name === "import") {
+    content = (
+      <ImportScreen
+        theme={theme}
+        toggleTheme={toggleTheme}
+        storageReady={localDataStatus.phase === "ready"}
+        close={goHome}
+        saveBook={saveImportedBook}
+      />
+    );
   } else if (route.name === "detail") {
     const article = builtInLibrary.find((item) => item.id === route.articleId);
     const readingProgress = article
@@ -819,6 +891,7 @@ function App() {
         toggleTheme={toggleTheme}
         libraryState={libraryState}
         assistanceHistory={assistanceHistory}
+        importedBooks={importedBooks}
         reviewCount={activeReviewCount}
         setRecordingEnabled={(enabled) =>
           setAssistanceHistory((current) =>
@@ -856,9 +929,12 @@ function App() {
         theme={theme}
         toggleTheme={toggleTheme}
         openArticle={openArticle}
+        importedBooks={importedBooks}
         libraryState={libraryState}
         reviewCount={activeReviewCount}
         toggleFavorite={toggleFavorite}
+        openImport={() => window.location.assign("#/import")}
+        deleteImportedBook={deleteImportedBook}
       />
     );
   }
@@ -1132,16 +1208,22 @@ function LibraryScreen({
   theme,
   toggleTheme,
   openArticle,
+  importedBooks,
   libraryState,
   reviewCount,
-  toggleFavorite
+  toggleFavorite,
+  openImport,
+  deleteImportedBook
 }: {
   theme: ReaderTheme;
   toggleTheme: () => void;
   openArticle: (articleId: string, contextSentenceId?: string) => void;
+  importedBooks: readonly ImportedBook[];
   libraryState: LibraryState;
   reviewCount: number;
   toggleFavorite: (articleId: string) => void;
+  openImport: () => void;
+  deleteImportedBook: (bookId: string) => Promise<string | null>;
 }) {
   const [query, setQuery] = useState("");
   const [levelFilter, setLevelFilter] =
@@ -1190,9 +1272,10 @@ function LibraryScreen({
     setLevelFilter("all");
     setStatusFilter("all");
   };
-  const continueArticle = builtInLibrary.find(
-    (article) => article.id === libraryState.lastOpenedArticleId
-  );
+  const continueArticle: ReaderArticle | undefined = [
+    ...importedBooks,
+    ...builtInLibrary
+  ].find((article) => article.id === libraryState.lastOpenedArticleId);
   const continueProgress = continueArticle
     ? libraryState.progressByArticle[continueArticle.id]
     : undefined;
@@ -1241,6 +1324,14 @@ function LibraryScreen({
             onOpen={() => openArticle(continueArticle.id)}
           />
         ) : null}
+
+        <ImportedBooksSection
+          books={importedBooks}
+          libraryState={libraryState}
+          openArticle={openArticle}
+          openImport={openImport}
+          deleteImportedBook={deleteImportedBook}
+        />
 
         <section className="library-section" aria-labelledby="reference-heading">
           <div className="section-heading">
@@ -1371,21 +1462,91 @@ function LibraryScreen({
           )}
         </section>
 
-        <section className="import-note" aria-labelledby="import-heading">
-          <div className="import-mark" aria-hidden="true">＋</div>
-          <div>
-            <p className="eyebrow">Import nội dung riêng</p>
-            <h2 id="import-heading">Chưa vội chọn một cách làm nửa vời.</h2>
-            <p>
-              ScottBook sẽ chỉ thêm import sau khi cách tách từ, tạo pinyin và
-              dịch nội dung ngoài đủ chính xác để không làm hỏng trải nghiệm học.
-            </p>
-          </div>
-          <span className="research-pill">Đang nghiên cứu</span>
-        </section>
       </main>
       <MobileNavigation active="library" reviewCount={reviewCount} />
     </div>
+  );
+}
+
+function ImportedBooksSection({
+  books,
+  libraryState,
+  openArticle,
+  openImport,
+  deleteImportedBook
+}: {
+  books: readonly ImportedBook[];
+  libraryState: LibraryState;
+  openArticle: (articleId: string) => void;
+  openImport: () => void;
+  deleteImportedBook: (bookId: string) => Promise<string | null>;
+}) {
+  const [deletingId, setDeletingId] = useState<string>();
+  const [feedback, setFeedback] = useState("");
+  const removeBook = async (book: ImportedBook) => {
+    const confirmed = window.confirm(
+      `Xóa “${book.title}” cùng tiến độ và ngữ cảnh trợ giúp của riêng sách này?`
+    );
+    if (!confirmed) return;
+    setDeletingId(book.id);
+    setFeedback("");
+    const error = await deleteImportedBook(book.id);
+    setDeletingId(undefined);
+    setFeedback(error ?? `Đã xóa “${book.title}” khỏi thiết bị.`);
+  };
+  return (
+    <section className="imported-library-section" aria-labelledby="imported-library-heading">
+      <div className="section-heading imported-library-heading">
+        <div>
+          <p className="eyebrow">Nội dung của bạn</p>
+          <h2 id="imported-library-heading">Sách tự nhập trên thiết bị</h2>
+        </div>
+        <button type="button" className="import-library-button" onClick={openImport}>
+          <span aria-hidden="true">＋</span> Nhập Paste / TXT
+        </button>
+      </div>
+      <p className="automatic-analysis-note">
+        Pinyin và nghĩa từ/cụm được phân tích tự động offline; hãy đối chiếu khi cần độ chính xác cao.
+      </p>
+      {books.length > 0 ? (
+        <div className="imported-book-grid">
+          {books.map((book) => {
+            const progress = libraryState.progressByArticle[book.id]?.progressPercent ?? 0;
+            return (
+              <article className={`imported-book-card accent-${book.accent}`} key={book.id}>
+                <button type="button" className="imported-book-open" onClick={() => openArticle(book.id)}>
+                  <span className="automatic-badge">Tự nhập · tự động</span>
+                  <h3>{book.title}</h3>
+                  <p>{book.author ? `Tác giả: ${book.author}` : book.sourceName ?? "Văn bản đã dán"}</p>
+                  <span>{book.characterCount.toLocaleString("vi-VN")} ký tự · khoảng {book.estimatedMinutes} phút</span>
+                  {progress > 0 ? (
+                    <span className="progress-track" aria-label={`Đã đọc ${progress}%`}>
+                      <span style={{ width: `${progress}%` }} />
+                    </span>
+                  ) : null}
+                </button>
+                <button
+                  type="button"
+                  className="imported-book-delete"
+                  onClick={() => void removeBook(book)}
+                  disabled={deletingId === book.id}
+                  aria-label={`Xóa ${book.title}`}
+                >
+                  {deletingId === book.id ? "Đang xóa…" : "Xóa"}
+                </button>
+              </article>
+            );
+          })}
+        </div>
+      ) : (
+        <button type="button" className="empty-imported-library" onClick={openImport}>
+          <span aria-hidden="true">文</span>
+          <strong>Chưa có sách tự nhập.</strong>
+          <p>Dán một đoạn hoặc chọn TXT UTF-8; kết quả sẽ mở lại được khi mất mạng.</p>
+        </button>
+      )}
+      <p className="imported-library-feedback" aria-live="polite">{feedback}</p>
+    </section>
   );
 }
 
@@ -2048,6 +2209,7 @@ function ReviewScreen({
   toggleTheme,
   libraryState,
   assistanceHistory,
+  importedBooks,
   reviewCount,
   setRecordingEnabled,
   toggleReviewPinned,
@@ -2066,6 +2228,7 @@ function ReviewScreen({
   toggleTheme: () => void;
   libraryState: LibraryState;
   assistanceHistory: AssistanceHistoryState;
+  importedBooks: readonly ImportedBook[];
   reviewCount: number;
   setRecordingEnabled: (enabled: boolean) => void;
   toggleReviewPinned: (itemId: string) => void;
@@ -2076,7 +2239,7 @@ function ReviewScreen({
   storagePersistence: StoragePersistence;
   localDataStatus: LocalDataStatus;
   applyBackupRestore: (
-    data: ScottBookBackupData
+    data: ScottBookPortableData
   ) => Promise<RestoreTransactionResult>;
   undoBackupRestore: () => Promise<RestoreTransactionResult>;
   loadStorageReport: () => Promise<ScottBookStorageReport>;
@@ -2187,6 +2350,7 @@ function ReviewScreen({
         <DataProtectionCard
           libraryState={libraryState}
           assistanceHistory={assistanceHistory}
+          importedBooks={importedBooks}
           preferences={preferences}
           storagePersistence={storagePersistence}
           localDataStatus={localDataStatus}
@@ -2711,7 +2875,9 @@ function AssistanceReviewCard({
           <p lang="zh-Hans">{latestContext.sentenceText}</p>
           <p>{latestContext.sentenceTranslation}</p>
           <footer>
-            {article?.titleTranslation ?? "Bài dựng sẵn"} · gặp trong{" "}
+            {article?.titleTranslation ?? (latestContext.articleId.startsWith("imported:")
+              ? "Sách tự nhập"
+              : "Bài dựng sẵn")} · gặp trong{" "}
             {item.contexts.length} ngữ cảnh
           </footer>
         </blockquote>
@@ -2768,6 +2934,7 @@ function AssistanceReviewCard({
 function DataProtectionCard({
   libraryState,
   assistanceHistory,
+  importedBooks,
   preferences,
   storagePersistence,
   localDataStatus,
@@ -2778,11 +2945,12 @@ function DataProtectionCard({
 }: {
   libraryState: LibraryState;
   assistanceHistory: AssistanceHistoryState;
+  importedBooks: readonly ImportedBook[];
   preferences: ReaderPreferences;
   storagePersistence: StoragePersistence;
   localDataStatus: LocalDataStatus;
   applyBackupRestore: (
-    data: ScottBookBackupData
+    data: ScottBookPortableData
   ) => Promise<RestoreTransactionResult>;
   undoBackupRestore: () => Promise<RestoreTransactionResult>;
   loadStorageReport: () => Promise<ScottBookStorageReport>;
@@ -2799,7 +2967,7 @@ function DataProtectionCard({
     "idle" | "checking" | "applying" | "success" | "undone" | "error"
   >("idle");
   const [restoreMessage, setRestoreMessage] = useState(
-    "Chỉ nhận bản sao ScottBook JSON tối đa 2 MB; đây không phải nhập sách TXT/EPUB."
+    "Chỉ nhận bản sao ScottBook JSON tối đa 32 MB; TXT được nhập ở Thư viện."
   );
   const [pendingRestore, setPendingRestore] = useState<{
     fileName: string;
@@ -2865,7 +3033,8 @@ function DataProtectionCard({
       const backup = await createScottBookBackup({
         libraryState,
         preferences,
-        assistanceHistory
+        assistanceHistory,
+        importedBooks: [...importedBooks]
       });
       downloadScottBookBackup(backup);
       setExportStatus("done");
@@ -3056,7 +3225,7 @@ function DataProtectionCard({
             ? "Đã tải bản sao JSON có checksum."
             : exportStatus === "error"
               ? "Chưa thể tạo bản sao. Dữ liệu trong app không bị thay đổi."
-              : "Bản sao chứa tiến độ, từ cần ôn, yêu thích và tùy chỉnh giao diện."}
+              : "Bản sao chứa sách tự nhập, tiến độ, từ cần ôn, yêu thích và giao diện."}
         </p>
         <p
           className={`restore-feedback${restoreStatus === "error" ? " error" : ""}${restoreStatus === "success" || restoreStatus === "undone" ? " success" : ""}`}
@@ -3203,7 +3372,7 @@ function StorageOverview({
     localDataStatus.phase === "checking"
       ? "Đang khởi tạo"
       : localDataStatus.phase === "ready"
-        ? `IndexedDB v${report?.schemaVersion ?? 3}`
+        ? `IndexedDB v${report?.schemaVersion ?? 4}`
         : "localStorage fallback";
 
   return (
@@ -3260,9 +3429,8 @@ function StorageOverview({
 
       <div className="storage-overview-footer">
         <p>
-          Xóa cache chỉ tác động vùng dịch tạm; bài đọc, tiến độ, yêu thích và
-          cài đặt nằm ở các store khác. Có {report?.bookCount ?? 0} sách ngoài;
-          import vẫn đang khóa.
+          Xóa cache chỉ tác động vùng dịch tạm; sách tự nhập, tiến độ, yêu thích
+          và cài đặt nằm ở các store khác. Có {report?.bookCount ?? 0} sách tự nhập.
         </p>
         <div>
           <button type="button" onClick={onRefresh} disabled={storageBusy}>
@@ -3320,6 +3488,7 @@ function RestorePreview({
       </div>
 
       <div className="restore-preview-stats" aria-label="Dữ liệu trong bản sao">
+        <div><strong>{preview.importedBookCount}</strong><span>Sách tự nhập</span></div>
         <div><strong>{preview.historyCount}</strong><span>Bài đã mở</span></div>
         <div><strong>{preview.completedCount}</strong><span>Hoàn thành</span></div>
         <div><strong>{preview.activeProgressCount}</strong><span>Đang đọc</span></div>
@@ -3557,7 +3726,7 @@ function ContinueReadingCard({
   isCompleted,
   onOpen
 }: {
-  article: BuiltInArticle;
+  article: ReaderArticle;
   progressPercent: number;
   isCompleted: boolean;
   onOpen: () => void;
@@ -3621,7 +3790,7 @@ function ReaderScreen({
   saveAssistance,
   openVocabularyContext
 }: {
-  article: BuiltInArticle;
+  article: ReaderArticle;
   preferences: ReaderPreferences;
   updatePreferences: (updates: Partial<ReaderPreferences>) => void;
   toggleTheme: () => void;
@@ -4043,9 +4212,14 @@ function ReaderScreen({
         >
           <header className="article-header">
             <span className="reader-level">{article.level} · {article.topic}</span>
-            <h1 lang="zh-Hans">{article.title}</h1>
-            <p className="title-pinyin">{article.titlePinyin}</p>
+            <h1 lang={"kind" in article ? undefined : "zh-Hans"}>{article.title}</h1>
+            {article.titlePinyin ? <p className="title-pinyin">{article.titlePinyin}</p> : null}
             <p className="title-translation">{article.titleTranslation}</p>
+            {"kind" in article ? (
+              <p className="reader-automatic-warning">
+                Phân tích tự động offline · nghĩa từ/cụm có thể sai · chưa dịch cả câu
+              </p>
+            ) : null}
             <div className="reader-instruction">
               <span className="tap-demo">{scopeCopy.glyph}</span>
               <p>
@@ -4227,7 +4401,7 @@ function ArticleVocabularyPanel({
   jumpToSentence,
   jumpToLibrarySentence
 }: {
-  article: BuiltInArticle;
+  article: ReaderArticle;
   entries: readonly ArticleVocabularyEntry[];
   close: () => void;
   jumpToSentence: (sentenceId: string) => void;
@@ -4898,7 +5072,9 @@ function AssistancePanel({
           <div>
             <p className="assist-label">
               {unit.scope === "sentence"
-                ? "Bản dịch câu"
+                ? sentence.translationStatus === "unavailable-offline"
+                  ? "Giới hạn phân tích offline"
+                  : "Bản dịch câu"
                 : "Nghĩa trong ngữ cảnh"}
             </p>
             <strong className="assist-meaning">{unit.meaning}</strong>

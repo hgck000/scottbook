@@ -26,6 +26,7 @@ export type AnnotatedToken = WordToken | PunctuationToken;
 export type AnnotatedSentence = {
   id: string;
   translation: string;
+  translationStatus?: "authored" | "unavailable-offline";
   tokens: readonly AnnotatedToken[];
 };
 
@@ -34,15 +35,20 @@ export type AnnotatedParagraph = {
   sentences: readonly AnnotatedSentence[];
 };
 
-export type BuiltInArticle = {
+export type ReaderArticle = {
   id: string;
   title: string;
   titlePinyin: string;
   titleTranslation: string;
   summary: string;
-  level: HskLevel;
-  topic: "Đời sống" | "Kế hoạch" | "Học tập";
+  level: string;
+  topic: string;
   estimatedMinutes: number;
   accent: "jade" | "amber" | "coral";
   paragraphs: readonly AnnotatedParagraph[];
+};
+
+export type BuiltInArticle = ReaderArticle & {
+  level: HskLevel;
+  topic: "Đời sống" | "Kế hoạch" | "Học tập";
 };

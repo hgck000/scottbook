@@ -25,6 +25,7 @@ const packageLock = readJson("package-lock.json");
 const manifest = readJson("dist/manifest.webmanifest");
 const indexHtml = readFileSync("dist/index.html", "utf8");
 const serviceWorker = readFileSync("dist/sw.js", "utf8");
+const cvdictAsset = "cvdict-v1.u8.gz";
 
 if (packageLock.version !== packageJson.version) {
   fail("package-lock version does not match package.json");
@@ -69,6 +70,12 @@ if (!serviceWorker.includes("precacheAndRoute")) {
 }
 if (!serviceWorker.includes(`${expectedBase}index.html`)) {
   fail("service worker navigation fallback does not match the deployment base");
+}
+if (!existsSync(join("dist", cvdictAsset))) {
+  fail("offline CVDICT import asset is missing from dist");
+}
+if (!serviceWorker.includes(cvdictAsset)) {
+  fail("service worker does not precache the offline CVDICT import asset");
 }
 
 const productionAssets = readdirSync("dist/assets").filter((name) =>

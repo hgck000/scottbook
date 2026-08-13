@@ -26,8 +26,8 @@ describe("ScottBook JSON backup", () => {
     );
 
     expect(backup.format).toBe("scottbook-backup");
-    expect(backup.formatVersion).toBe(1);
-    expect(backup.appVersion).toBe("0.30.0");
+    expect(backup.formatVersion).toBe(2);
+    expect(backup.appVersion).toBe("0.31.0");
     expect(backup.exportedAt).toBe("2026-08-11T02:00:00.000Z");
     expect(backup.data.preferences).toEqual({
       theme: "night",
@@ -37,6 +37,7 @@ describe("ScottBook JSON backup", () => {
       lineHeight: "airy",
       contentWidth: "wide"
     });
+    expect(backup.data.importedBooks).toEqual([]);
     expect(backup.checksum).toEqual({
       algorithm: "SHA-256",
       value: expect.stringMatching(/^[a-f0-9]{64}$/)

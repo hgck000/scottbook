@@ -80,7 +80,7 @@ test("exports, restores, and undoes a local backup", async ({ page }) => {
   const pageErrors = collectPageErrors(page);
   await page.goto("/#/review");
   await dismissInstallNotice(page);
-  await expect(page.getByText("IndexedDB v3", { exact: true })).toBeVisible();
+  await expect(page.getByText("IndexedDB v4", { exact: true })).toBeVisible();
 
   const downloadPromise = page.waitForEvent("download");
   await page.getByRole("button", { name: "Tải bản sao JSON" }).click();
@@ -112,6 +112,43 @@ test("exports, restores, and undoes a local backup", async ({ page }) => {
     "data-theme",
     "night"
   );
+  expect(pageErrors).toEqual([]);
+});
+
+test("imports pasted Chinese and reopens the analyzed book offline", async ({
+  page,
+  context
+}) => {
+  const pageErrors = collectPageErrors(page);
+  await page.goto("/#/import");
+  await dismissInstallNotice(page);
+
+  await page.getByPlaceholder("Ví dụ: Một ngày ở Bắc Kinh").fill("Bài đọc riêng");
+  await page.getByPlaceholder("Dán nội dung vào đây…").fill(
+    "我喜欢学习中文。\n\n朋友每天看书，也用 ScottBook 😊。"
+  );
+  await page.getByRole("button", { name: "Xem trước" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Bài đọc riêng", level: 2 })
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Phân tích và lưu offline" }).click();
+
+  await expect(page.getByRole("heading", { name: "Bài đọc riêng" })).toBeVisible({
+    timeout: 20_000
+  });
+  await expect(page.getByText(/Phân tích tự động offline/)).toBeVisible();
+  const firstToken = page.locator("[data-reader-token]").first();
+  await firstToken.click();
+  await expect(page.getByText("wǒ", { exact: true })).toBeVisible();
+  await firstToken.click();
+  await expect(page.locator(".assist-meaning")).not.toBeEmpty();
+  await page.getByRole("button", { name: "Đóng trợ giúp" }).click();
+
+  await context.setOffline(true);
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "Bài đọc riêng" })).toBeVisible();
+  await expect(page.getByText("朋友每天看书，也用 ScottBook 😊。", { exact: true })).toBeVisible();
+  await context.setOffline(false);
   expect(pageErrors).toEqual([]);
 });
 

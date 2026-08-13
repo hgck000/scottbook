@@ -1,4 +1,4 @@
-import type { BuiltInArticle } from "../../content/types";
+import type { ReaderArticle } from "../../content/types";
 
 export const LIBRARY_STATE_STORAGE_KEY = "scottbook.libraryState.v2";
 export const LIBRARY_STATE_BACKUP_STORAGE_KEY =
@@ -533,7 +533,7 @@ export function resetArticleProgress(
   };
 }
 
-export function getArticleSentenceIds(article: BuiltInArticle): string[] {
+export function getArticleSentenceIds(article: ReaderArticle): string[] {
   return article.paragraphs.flatMap((paragraph) =>
     paragraph.sentences.map((sentence) => sentence.id)
   );

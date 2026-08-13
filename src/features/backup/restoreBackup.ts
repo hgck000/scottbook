@@ -18,10 +18,16 @@ import { validateLocalDataSnapshot } from "../storage/localDataSnapshot";
 import {
   verifyScottBookBackup,
   type ScottBookBackup,
-  type ScottBookBackupData
+  type ScottBookBackupData,
+  type ScottBookPortableData
 } from "./exportBackup";
+import {
+  MAX_IMPORTED_BOOKS_IN_BACKUP,
+  validateImportedBook,
+  type ImportedBook
+} from "../import/importedBook";
 
-export const MAX_BACKUP_FILE_BYTES = 2 * 1024 * 1024;
+export const MAX_BACKUP_FILE_BYTES = 32 * 1024 * 1024;
 export const RESTORE_UNDO_STORAGE_KEY = "scottbook.restoreUndo.v1";
 
 export type ScottBookBackupPreview = {
@@ -32,6 +38,7 @@ export type ScottBookBackupPreview = {
   completedCount: number;
   activeProgressCount: number;
   assistanceItemCount: number;
+  importedBookCount: number;
   theme: ScottBookBackupData["preferences"]["theme"];
   fontSize: number;
   assistanceScope: ScottBookBackupData["preferences"]["assistanceScope"];
@@ -114,8 +121,38 @@ function isCanonicalIsoDate(value: unknown): value is string {
 
 export function validateScottBookBackupData(
   value: unknown
-): ScottBookBackupData | null {
-  return validateLocalDataSnapshot(value);
+): ScottBookPortableData | null {
+  if (!isRecord(value)) return null;
+  const allowedKeys = ["libraryState", "preferences"];
+  if (Object.hasOwn(value, "assistanceHistory")) allowedKeys.push("assistanceHistory");
+  if (Object.hasOwn(value, "importedBooks")) allowedKeys.push("importedBooks");
+  if (!hasOnlyKeys(value, allowedKeys)) return null;
+  const importedBooksValue = Object.hasOwn(value, "importedBooks")
+    ? value.importedBooks
+    : [];
+  if (
+    !Array.isArray(importedBooksValue) ||
+    importedBooksValue.length > MAX_IMPORTED_BOOKS_IN_BACKUP
+  ) {
+    return null;
+  }
+  const importedBooks: ImportedBook[] = [];
+  const ids = new Set<string>();
+  for (const candidate of importedBooksValue) {
+    const result = validateImportedBook(candidate);
+    if (!result.ok || ids.has(result.book.id)) return null;
+    ids.add(result.book.id);
+    importedBooks.push(result.book);
+  }
+  const localCandidate: Record<string, unknown> = {
+    libraryState: value.libraryState,
+    preferences: value.preferences
+  };
+  if (Object.hasOwn(value, "assistanceHistory")) {
+    localCandidate.assistanceHistory = value.assistanceHistory;
+  }
+  const localData = validateLocalDataSnapshot(localCandidate);
+  return localData ? { ...localData, importedBooks } : null;
 }
 
 function buildPreview(backup: ScottBookBackup): ScottBookBackupPreview {
@@ -139,6 +176,7 @@ function buildPreview(backup: ScottBookBackup): ScottBookBackupPreview {
       .length,
     activeProgressCount,
     assistanceItemCount: Object.keys(backup.data.assistanceHistory.items).length,
+    importedBookCount: backup.data.importedBooks.length,
     theme: preferences.theme,
     fontSize: preferences.fontSize,
     assistanceScope: preferences.assistanceScope,
@@ -153,7 +191,7 @@ export function getBackupFileSizeError(fileSize: number): string | null {
     return "Không đọc được kích thước file đã chọn.";
   }
   if (fileSize > MAX_BACKUP_FILE_BYTES) {
-    return "File vượt quá giới hạn 2 MB của bản sao ScottBook.";
+    return "File vượt quá giới hạn 32 MB của bản sao ScottBook.";
   }
   return null;
 }
@@ -180,7 +218,7 @@ export async function parseScottBookBackupText(
     };
   }
 
-  if (candidate.formatVersion !== 1) {
+  if (candidate.formatVersion !== 1 && candidate.formatVersion !== 2) {
     return {
       ok: false,
       code: "unsupported-version",
@@ -224,6 +262,18 @@ export async function parseScottBookBackupText(
   }
 
   const data = validateScottBookBackupData(candidate.data);
+  if (
+    data &&
+    (!isRecord(candidate.data) ||
+      (candidate.formatVersion === 2 && !Object.hasOwn(candidate.data, "importedBooks")) ||
+      (candidate.formatVersion === 1 && Object.hasOwn(candidate.data, "importedBooks")))
+  ) {
+    return {
+      ok: false,
+      code: "invalid-data",
+      message: "Dữ liệu sách tự nhập không khớp phiên bản bản sao."
+    };
+  }
   if (!data) {
     return {
       ok: false,
@@ -234,7 +284,7 @@ export async function parseScottBookBackupText(
 
   const backup: ScottBookBackup = {
     format: "scottbook-backup",
-    formatVersion: 1,
+    formatVersion: candidate.formatVersion,
     appVersion: candidate.appVersion,
     exportedAt: candidate.exportedAt,
     data,
@@ -341,8 +391,8 @@ export function applyScottBookRestore(
   restoredData: ScottBookBackupData,
   createdAt = new Date().toISOString()
 ): RestoreTransactionResult {
-  const safeCurrentData = validateScottBookBackupData(currentData);
-  const safeRestoredData = validateScottBookBackupData(restoredData);
+  const safeCurrentData = validateLocalDataSnapshot(currentData);
+  const safeRestoredData = validateLocalDataSnapshot(restoredData);
   if (!safeCurrentData || !safeRestoredData || !isCanonicalIsoDate(createdAt)) {
     return {
       ok: false,
@@ -397,7 +447,7 @@ function parseUndoRecord(serialized: string | null): ScottBookRestoreUndo | null
       return null;
     }
 
-    const data = validateScottBookBackupData(candidate.data);
+    const data = validateLocalDataSnapshot(candidate.data);
     return data
       ? {
           format: "scottbook-restore-undo",
@@ -425,7 +475,7 @@ export function undoLastScottBookRestore(
   storage: RestoreStorage,
   currentData: ScottBookBackupData
 ): RestoreTransactionResult {
-  const safeCurrentData = validateScottBookBackupData(currentData);
+  const safeCurrentData = validateLocalDataSnapshot(currentData);
   if (!safeCurrentData) {
     return {
       ok: false,

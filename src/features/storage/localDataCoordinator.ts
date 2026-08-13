@@ -1,4 +1,8 @@
-import type { ScottBookBackupData } from "../backup/exportBackup";
+import type {
+  ScottBookBackupData,
+  ScottBookPortableData
+} from "../backup/exportBackup";
+import type { ImportedBook } from "../import/importedBook";
 import {
   applyScottBookRestore,
   captureRestoreStorageSnapshot,
@@ -19,8 +23,13 @@ import {
   validateLocalDataSnapshot
 } from "./localDataSnapshot";
 
+export type PortableRestoreResult =
+  | { ok: true; data: ScottBookBackupData; importedBooks?: ImportedBook[] }
+  | { ok: false; message: string; rollbackSucceeded: boolean };
+
 export class ScottBookLocalDataCoordinator {
   private indexedDbAvailable = false;
+  private portableRestoreActive = false;
   private bootstrapPromise: Promise<IndexedDbBootstrapResult> | null = null;
 
   constructor(
@@ -55,6 +64,57 @@ export class ScottBookLocalDataCoordinator {
 
   isUsingIndexedDb(): boolean {
     return this.indexedDbAvailable;
+  }
+
+  async saveImportedBook(book: ImportedBook): Promise<boolean> {
+    if (!this.indexedDbAvailable) return false;
+    try {
+      await this.repository.saveImportedBook(book);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async deleteImportedBook(
+    bookId: string,
+    currentData: ScottBookBackupData,
+    nextData: ScottBookBackupData
+  ): Promise<RestoreTransactionResult> {
+    if (!this.indexedDbAvailable) {
+      return {
+        ok: false,
+        rollbackSucceeded: true,
+        message: "IndexedDB không khả dụng nên ScottBook chưa thể xóa sách an toàn."
+      };
+    }
+    let exactLocalSnapshot;
+    try {
+      exactLocalSnapshot = captureRestoreStorageSnapshot(this.localStorage);
+      writeScottBookDataBundle(this.localStorage, nextData, currentData);
+    } catch {
+      return {
+        ok: false,
+        rollbackSucceeded: true,
+        message: "Không thể chuẩn bị transaction xóa sách trên bộ nhớ local."
+      };
+    }
+    try {
+      await this.repository.deleteImportedBookAndSaveSnapshot(bookId, nextData);
+      return { ok: true, data: nextData };
+    } catch {
+      const rollbackSucceeded = restoreCapturedStorageSnapshot(
+        this.localStorage,
+        exactLocalSnapshot
+      );
+      return {
+        ok: false,
+        rollbackSucceeded,
+        message: rollbackSucceeded
+          ? "Chưa xóa được sách; dữ liệu trước thao tác đã được giữ nguyên."
+          : "Xóa sách thất bại và localStorage không hoàn tác đầy đủ. Hãy tải lại app."
+      };
+    }
   }
 
   async prepareForUpdate(data: ScottBookBackupData): Promise<boolean> {
@@ -100,8 +160,57 @@ export class ScottBookLocalDataCoordinator {
 
   async applyRestore(
     currentData: ScottBookBackupData,
-    restoredData: ScottBookBackupData
-  ): Promise<RestoreTransactionResult> {
+    currentBooksOrRestoredData: readonly ImportedBook[] | ScottBookBackupData,
+    portableRestoredData?: ScottBookPortableData
+  ): Promise<PortableRestoreResult> {
+    if (portableRestoredData === undefined && !Array.isArray(currentBooksOrRestoredData)) {
+      let exactLocalSnapshot;
+      try {
+        exactLocalSnapshot = this.indexedDbAvailable
+          ? captureRestoreStorageSnapshot(this.localStorage)
+          : null;
+      } catch {
+        return {
+          ok: false,
+          rollbackSucceeded: true,
+          message: "Trình duyệt không cho ScottBook đọc vùng lưu trữ local."
+        };
+      }
+      const localResult = applyScottBookRestore(
+        this.localStorage,
+        currentData,
+        currentBooksOrRestoredData as ScottBookBackupData
+      );
+      if (!localResult.ok || !this.indexedDbAvailable) return localResult;
+      const indexedDbSaved = await this.persist(localResult.data);
+      if (indexedDbSaved) return localResult;
+      const rollbackSucceeded = exactLocalSnapshot
+        ? restoreCapturedStorageSnapshot(this.localStorage, exactLocalSnapshot)
+        : false;
+      return {
+        ok: false,
+        rollbackSucceeded,
+        message: rollbackSucceeded
+          ? "IndexedDB chưa ghi được bản khôi phục; dữ liệu trước đó đã được giữ nguyên."
+          : "Không thể đồng bộ IndexedDB và hoàn tác local đầy đủ. Hãy tải lại app trước khi tiếp tục."
+      };
+    }
+    this.portableRestoreActive = true;
+    const currentBooks = Array.isArray(currentBooksOrRestoredData)
+      ? currentBooksOrRestoredData
+      : [];
+    const restoredData: ScottBookPortableData = portableRestoredData ?? {
+      ...(currentBooksOrRestoredData as ScottBookBackupData),
+      importedBooks: []
+    };
+    const { importedBooks: restoredBooks, ...restoredLocalData } = restoredData;
+    if (!this.indexedDbAvailable && restoredBooks.length > 0) {
+      return {
+        ok: false,
+        rollbackSucceeded: true,
+        message: "Bản sao có sách tự nhập nhưng IndexedDB không khả dụng; chưa thay đổi dữ liệu."
+      };
+    }
     let exactLocalSnapshot;
     try {
       exactLocalSnapshot = this.indexedDbAvailable
@@ -118,12 +227,23 @@ export class ScottBookLocalDataCoordinator {
     const localResult = applyScottBookRestore(
       this.localStorage,
       currentData,
-      restoredData
+      restoredLocalData
     );
-    if (!localResult.ok || !this.indexedDbAvailable) return localResult;
+    if (!localResult.ok) return localResult;
+    if (!this.indexedDbAvailable) {
+      return { ...localResult, importedBooks: [] };
+    }
 
-    const indexedDbSaved = await this.persist(localResult.data);
-    if (indexedDbSaved) return localResult;
+    try {
+      await this.repository.replaceImportedBooksForRestore(
+        localResult.data,
+        currentBooks,
+        restoredBooks
+      );
+      return { ...localResult, importedBooks: [...restoredBooks] };
+    } catch {
+      this.indexedDbAvailable = false;
+    }
 
     const rollbackSucceeded = exactLocalSnapshot
       ? restoreCapturedStorageSnapshot(this.localStorage, exactLocalSnapshot)
@@ -139,7 +259,7 @@ export class ScottBookLocalDataCoordinator {
 
   async undoRestore(
     currentData: ScottBookBackupData
-  ): Promise<RestoreTransactionResult> {
+  ): Promise<PortableRestoreResult> {
     let exactLocalSnapshot;
     try {
       exactLocalSnapshot = this.indexedDbAvailable
@@ -157,10 +277,35 @@ export class ScottBookLocalDataCoordinator {
       this.localStorage,
       currentData
     );
-    if (!localResult.ok || !this.indexedDbAvailable) return localResult;
+    if (!localResult.ok) return localResult;
+    if (!this.portableRestoreActive) {
+      if (!this.indexedDbAvailable) return localResult;
+      const indexedDbSaved = await this.persist(localResult.data);
+      if (indexedDbSaved) return localResult;
+      const rollbackSucceeded = exactLocalSnapshot
+        ? restoreCapturedStorageSnapshot(this.localStorage, exactLocalSnapshot)
+        : false;
+      return {
+        ok: false,
+        rollbackSucceeded,
+        message: rollbackSucceeded
+          ? "IndexedDB chưa hoàn tác được; dữ liệu trước thao tác đã được giữ nguyên."
+          : "Không thể đồng bộ IndexedDB và hoàn tác local đầy đủ. Hãy tải lại app trước khi tiếp tục."
+      };
+    }
+    if (!this.indexedDbAvailable) {
+      return { ...localResult, importedBooks: [] };
+    }
 
-    const indexedDbSaved = await this.persist(localResult.data);
-    if (indexedDbSaved) return localResult;
+    try {
+      const importedBooks = await this.repository.undoImportedBooksRestore(
+        localResult.data
+      );
+      this.portableRestoreActive = false;
+      return { ...localResult, importedBooks };
+    } catch {
+      this.indexedDbAvailable = false;
+    }
 
     const rollbackSucceeded = exactLocalSnapshot
       ? restoreCapturedStorageSnapshot(this.localStorage, exactLocalSnapshot)

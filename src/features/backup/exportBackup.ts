@@ -2,6 +2,7 @@ import { version as appVersion } from "../../../package.json";
 import type { LibraryState } from "../library/readingState";
 import type { ReaderPreferences } from "../preferences/readerPreferences";
 import type { AssistanceHistoryState } from "../review/assistanceHistory";
+import type { ImportedBook } from "../import/importedBook";
 
 export type { ReaderPreferences } from "../preferences/readerPreferences";
 
@@ -11,12 +12,16 @@ export type ScottBookBackupData = {
   assistanceHistory: AssistanceHistoryState;
 };
 
+export type ScottBookPortableData = ScottBookBackupData & {
+  importedBooks: ImportedBook[];
+};
+
 export type ScottBookBackup = {
   format: "scottbook-backup";
-  formatVersion: 1;
+  formatVersion: 1 | 2;
   appVersion: string;
   exportedAt: string;
-  data: ScottBookBackupData;
+  data: ScottBookPortableData;
   checksum: {
     algorithm: "SHA-256";
     value: string;
@@ -44,15 +49,18 @@ function unsignedBackup(backup: ScottBookBackup): UnsignedBackup {
 }
 
 export async function createScottBookBackup(
-  data: ScottBookBackupData,
+  data: ScottBookBackupData | ScottBookPortableData,
   exportedAt = new Date().toISOString()
 ): Promise<ScottBookBackup> {
+  const portableData: ScottBookPortableData = "importedBooks" in data
+    ? data
+    : { ...data, importedBooks: [] };
   const unsigned: UnsignedBackup = {
     format: "scottbook-backup",
-    formatVersion: 1,
+    formatVersion: 2,
     appVersion,
     exportedAt,
-    data
+    data: portableData
   };
 
   return {

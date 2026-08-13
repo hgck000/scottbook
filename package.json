@@ -1,7 +1,7 @@
 {
   "name": "scottbook",
   "private": true,
-  "version": "0.30.0",
+  "version": "0.31.0",
   "type": "module",
   "scripts": {
     "audit:security": "node scripts/audit-security.mjs && node scripts/audit-runtime-licenses.mjs && npm audit --omit=dev --audit-level=high",
@@ -13,6 +13,7 @@
     "dev": "vite",
     "build": "npm run validate:content && tsc -b && vite build && npm run verify:release",
     "build:android:web": "npm run validate:content && tsc -b && vite build --mode native && node scripts/verify-android-web.mjs",
+    "data:cvdict": "node scripts/build-cvdict-data.mjs",
     "data:han-viet": "node scripts/build-han-viet-data.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
@@ -28,6 +29,8 @@
     "@capacitor/android": "^8.5.0",
     "@capacitor/app": "^8.1.1",
     "@capacitor/core": "^8.5.0",
+    "fflate": "^0.8.2",
+    "pinyin-pro": "^3.28.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },
