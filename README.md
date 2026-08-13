@@ -43,7 +43,7 @@ Capacitor will use the same frontend in a later sprint.
   highlight and a direct return to Review.
 - Each Reader exposes a searchable offline **Từ trong bài** index with unique
   authored words/phrases, pinyin, Vietnamese meaning, occurrence counts, and a
-  jump to the first containing sentence.
+  context comparison for repeated words plus a jump to any containing sentence.
 - A local reading-history screen with open counts and latest-reading order.
 - Assistance history that distinguishes character, word/phrase, and sentence
   scope as well as “needed pinyin” from “needed meaning”.
@@ -67,7 +67,7 @@ Capacitor will use the same frontend in a later sprint.
 - A redacted local diagnostic download with counts and capability flags only.
 - A restrictive content-security policy plus automated API, license, and dependency audits.
 - A 20,000-Hanzi reader fixture that guards the long-document render budget.
-- Twenty-eight production-browser journeys across desktop and mobile Chrome profiles.
+- Thirty production-browser journeys across desktop and mobile Chrome profiles.
 - Root and configurable subpath PWA builds with an artifact contract check.
 - GitHub Actions builds on Ubuntu, Windows, and macOS and retains QA evidence.
 - Generated service worker precaches the complete prototype.
@@ -389,6 +389,16 @@ provider is introduced. Its fourteenth critical journey brings the
 desktop/mobile browser matrix to twenty-eight cases. The release contract and
 manual checks are recorded in
 [`docs/release/SCOTTBOOK-v0.21.0.md`](docs/release/SCOTTBOOK-v0.21.0.md).
+
+Version 0.22 makes repeated vocabulary useful for contextual comparison. A word
+that occurs more than once now opens every authored sentence and Vietnamese
+translation in reading order, highlights the word inside each Hanzi sentence,
+and lets the reader jump to any chosen occurrence. Single-occurrence words keep
+the direct **Tới câu** action. The comparison is temporary derived UI state, so
+opening it creates no assistance record, schema migration, or network request.
+Its fifteenth critical journey brings the desktop/mobile browser matrix to
+thirty cases. The release contract and manual checks are recorded in
+[`docs/release/SCOTTBOOK-v0.22.0.md`](docs/release/SCOTTBOOK-v0.22.0.md).
 
 ## Install ScottBook
 

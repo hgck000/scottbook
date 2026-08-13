@@ -12,8 +12,9 @@ This list is intentionally release-blocking evidence, not a hidden backlog.
   or an approved import pipeline.
 - Reader now derives a searchable **Từ trong bài** index from each authored
   article. Identical Hanzi are distinct entries when their contextual pinyin or
-  meaning differs; repeated occurrences can jump to the first containing
-  sentence, not cycle through every occurrence.
+  meaning differs. Repeated entries can compare and jump to every occurrence in
+  the current article, but there is no cross-article concordance or custom
+  vocabulary editor.
 - The authored translation language is Vietnamese. Choosing another target
   language is not implemented yet.
 - Reader customization now provides Paper/Night/OLED themes, text size,
