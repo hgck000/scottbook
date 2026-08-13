@@ -42,6 +42,23 @@ describe("offline article vocabulary", () => {
     ]);
   });
 
+  it("keeps the authored Hanzi and translation for context comparison", () => {
+    const entry = getArticleVocabulary(morningArticle).find(
+      (item) => item.hanzi === "我"
+    );
+
+    expect(entry?.occurrences[0]).toEqual({
+      sentenceId: "s1",
+      sentenceText: "早上六点，我起床。",
+      sentenceTranslation: "Sáu giờ sáng, tôi thức dậy."
+    });
+    expect(entry?.occurrences[3]).toEqual({
+      sentenceId: "s4",
+      sentenceText: "今天有汉语课，我很高兴。",
+      sentenceTranslation: "Hôm nay có tiết tiếng Trung, tôi rất vui."
+    });
+  });
+
   it("searches Hanzi, tone-free pinyin, compact pinyin, and Vietnamese", () => {
     const entries = getArticleVocabulary(morningArticle);
 

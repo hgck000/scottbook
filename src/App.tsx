@@ -4041,10 +4041,28 @@ function ArticleVocabularyPanel({
   jumpToSentence: (sentenceId: string) => void;
 }) {
   const [query, setQuery] = useState("");
+  const [selectedEntryId, setSelectedEntryId] = useState<string>();
+  const contextBackButtonRef = useRef<HTMLButtonElement>(null);
   const filteredEntries = useMemo(
     () => filterArticleVocabulary(entries, query),
     [entries, query]
   );
+  const selectedEntry = entries.find((entry) => entry.id === selectedEntryId);
+
+  useEffect(() => {
+    if (!selectedEntry) return;
+    const frame = window.requestAnimationFrame(() => {
+      contextBackButtonRef.current?.focus();
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [selectedEntry]);
+
+  const returnToVocabularyList = () => {
+    setSelectedEntryId(undefined);
+    window.requestAnimationFrame(() => {
+      document.getElementById("reader-vocabulary-search")?.focus();
+    });
+  };
 
   return (
     <aside
@@ -4057,29 +4075,91 @@ function ArticleVocabularyPanel({
         <div>
           <p className="eyebrow">{article.level} · dữ liệu offline</p>
           <h2 id="reader-vocabulary-heading">Từ trong bài</h2>
-          <span>{entries.length} từ/cụm duy nhất</span>
+          <span>
+            {selectedEntry
+              ? `${selectedEntry.occurrences.length} ngữ cảnh trong bài`
+              : `${entries.length} từ/cụm duy nhất`}
+          </span>
         </div>
         <button type="button" onClick={close} aria-label="Đóng từ trong bài">
           ×
         </button>
       </header>
 
-      <div className="reader-vocabulary-search">
-        <label htmlFor="reader-vocabulary-search">Tìm trong bài này</label>
-        <input
-          id="reader-vocabulary-search"
-          type="search"
-          value={query}
-          placeholder="Hanzi, pinyin hoặc nghĩa"
-          autoComplete="off"
-          onChange={(event) => setQuery(event.target.value)}
-        />
-        <span aria-live="polite">
-          {filteredEntries.length}/{entries.length} từ/cụm
-        </span>
-      </div>
-
-      {filteredEntries.length > 0 ? (
+      {selectedEntry ? (
+        <>
+          <div className="reader-vocabulary-context-heading">
+            <button
+              ref={contextBackButtonRef}
+              type="button"
+              onClick={returnToVocabularyList}
+              aria-label="Về danh sách từ"
+            >
+              <span aria-hidden="true">←</span>
+              Danh sách từ
+            </button>
+            <div>
+              <strong lang="zh-Hans">{selectedEntry.hanzi}</strong>
+              <span>{selectedEntry.pinyin}</span>
+              <p>{selectedEntry.meaning}</p>
+            </div>
+          </div>
+          <ol
+            className="reader-vocabulary-context-list"
+            aria-label={`Các ngữ cảnh của ${selectedEntry.hanzi}`}
+          >
+            {selectedEntry.occurrences.map((occurrence, index) => (
+              <li key={`${occurrence.sentenceId}:${index}`}>
+                <article>
+                  <header>
+                    <span>
+                      Ngữ cảnh {index + 1}/{selectedEntry.occurrences.length}
+                    </span>
+                    <button
+                      type="button"
+                      aria-label={`Tới ngữ cảnh ${index + 1} của ${selectedEntry.hanzi}`}
+                      onClick={() => jumpToSentence(occurrence.sentenceId)}
+                    >
+                      Tới câu <span aria-hidden="true">→</span>
+                    </button>
+                  </header>
+                  <p className="reader-vocabulary-context-hanzi" lang="zh-Hans">
+                    {occurrence.sentenceText.split(selectedEntry.hanzi).map(
+                      (part, partIndex, parts) => (
+                        <span key={`${partIndex}:${part}`}>
+                          {part}
+                          {partIndex < parts.length - 1 ? (
+                            <mark>{selectedEntry.hanzi}</mark>
+                          ) : null}
+                        </span>
+                      )
+                    )}
+                  </p>
+                  <p className="reader-vocabulary-context-translation">
+                    {occurrence.sentenceTranslation}
+                  </p>
+                </article>
+              </li>
+            ))}
+          </ol>
+        </>
+      ) : (
+        <>
+          <div className="reader-vocabulary-search">
+            <label htmlFor="reader-vocabulary-search">Tìm trong bài này</label>
+            <input
+              id="reader-vocabulary-search"
+              type="search"
+              value={query}
+              placeholder="Hanzi, pinyin hoặc nghĩa"
+              autoComplete="off"
+              onChange={(event) => setQuery(event.target.value)}
+            />
+            <span aria-live="polite">
+              {filteredEntries.length}/{entries.length} từ/cụm
+            </span>
+          </div>
+          {filteredEntries.length > 0 ? (
         <ol
           className="reader-vocabulary-list"
           aria-label="Danh sách từ trong bài"
@@ -4097,11 +4177,19 @@ function ArticleVocabularyPanel({
                   <p>{entry.meaning}</p>
                   <button
                     type="button"
-                    aria-label={`Tới câu đầu có ${entry.hanzi}`}
-                    onClick={() => jumpToSentence(firstOccurrence.sentenceId)}
+                    aria-label={
+                      entry.occurrences.length > 1
+                        ? `Xem ${entry.occurrences.length} ngữ cảnh của ${entry.hanzi}`
+                        : `Tới câu đầu có ${entry.hanzi}`
+                    }
+                    onClick={() =>
+                      entry.occurrences.length > 1
+                        ? setSelectedEntryId(entry.id)
+                        : jumpToSentence(firstOccurrence.sentenceId)
+                    }
                   >
                     {entry.occurrences.length > 1
-                      ? `${entry.occurrences.length} lần · Tới câu đầu`
+                      ? `${entry.occurrences.length} ngữ cảnh`
                       : "Tới câu"}
                     <span aria-hidden="true">→</span>
                   </button>
@@ -4110,12 +4198,14 @@ function ArticleVocabularyPanel({
             );
           })}
         </ol>
-      ) : (
-        <div className="reader-vocabulary-empty">
-          <strong>Không tìm thấy từ/cụm phù hợp</strong>
-          <p>Thử Hanzi, pinyin không dấu thanh hoặc nghĩa tiếng Việt.</p>
-          <button type="button" onClick={() => setQuery("")}>Xóa tìm kiếm</button>
-        </div>
+          ) : (
+            <div className="reader-vocabulary-empty">
+              <strong>Không tìm thấy từ/cụm phù hợp</strong>
+              <p>Thử Hanzi, pinyin không dấu thanh hoặc nghĩa tiếng Việt.</p>
+              <button type="button" onClick={() => setQuery("")}>Xóa tìm kiếm</button>
+            </div>
+          )}
+        </>
       )}
     </aside>
   );

@@ -394,6 +394,55 @@ test("searches the offline article vocabulary and jumps to its sentence", async 
   expect(pageErrors).toEqual([]);
 });
 
+test("compares every authored context of a repeated article word", async ({
+  page
+}) => {
+  const pageErrors = collectPageErrors(page);
+  await page.goto("/");
+  await dismissInstallNotice(page);
+  await page
+    .getByRole("button", { name: "Mở bài Buổi sáng của tôi" })
+    .click();
+
+  await page.getByRole("button", { name: "Mở từ trong bài" }).click();
+  await page.getByLabel("Tìm trong bài này").fill("wo");
+  await page
+    .getByRole("button", { name: "Xem 4 ngữ cảnh của 我" })
+    .click();
+
+  await expect(page.getByText("4 ngữ cảnh trong bài")).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Về danh sách từ" })
+  ).toBeFocused();
+  const contextList = page.getByRole("list", {
+    name: "Các ngữ cảnh của 我"
+  });
+  await expect(contextList.getByRole("listitem")).toHaveCount(4);
+  await expect(
+    contextList.getByText("Sáu giờ sáng, tôi thức dậy.", { exact: true })
+  ).toBeVisible();
+  await expect(
+    contextList.getByText("Hôm nay có tiết tiếng Trung, tôi rất vui.", {
+      exact: true
+    })
+  ).toBeVisible();
+
+  await contextList
+    .getByRole("button", { name: "Tới ngữ cảnh 4 của 我" })
+    .click();
+  await expect(page).toHaveURL(/#\/read\/hsk1-my-morning$/);
+  const targetSentence = page.locator(
+    '.sentence[data-sentence-id="s4"][data-vocabulary-target="true"]'
+  );
+  await expect(targetSentence).toBeVisible();
+  await expect(targetSentence).toBeInViewport();
+  await targetSentence
+    .locator('[data-assistance-key="s4:word:s4-t5"]')
+    .click();
+  await expect(page.getByText("wǒ", { exact: true })).toBeVisible();
+  expect(pageErrors).toEqual([]);
+});
+
 test("personalizes the reader layout and restores safe defaults", async ({
   page
 }) => {
