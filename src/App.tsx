@@ -55,6 +55,10 @@ import {
   type LibraryStatusFilter
 } from "./features/library/libraryDiscovery";
 import {
+  getLearningProgressOverview,
+  type LearningProgressOverview
+} from "./features/library/learningProgress";
+import {
   countAssistanceReviewItems,
   filterAssistanceReviewItems,
   type AssistanceReviewFilter,
@@ -1755,6 +1759,15 @@ function ReviewScreen({
   const completedCount = historyItems.filter(
     ({ entry }) => entry.completedAt !== null
   ).length;
+  const learningProgress = getLearningProgressOverview(
+    builtInLibrary,
+    libraryState
+  );
+  const continueArticle = learningProgress.continueArticleId
+    ? builtInLibrary.find(
+        (article) => article.id === learningProgress.continueArticleId
+      )
+    : undefined;
 
   return (
     <div className="app-shell">
@@ -1812,6 +1825,12 @@ function ReviewScreen({
             </div>
           </div>
         </section>
+
+        <LearningProgressSection
+          overview={learningProgress}
+          continueArticle={continueArticle}
+          openArticle={openArticle}
+        />
 
         <AssistanceReviewSection
           history={assistanceHistory}
@@ -1879,6 +1898,95 @@ function ReviewScreen({
 
       <MobileNavigation active="review" reviewCount={reviewCount} />
     </div>
+  );
+}
+
+function LearningProgressSection({
+  overview,
+  continueArticle,
+  openArticle
+}: {
+  overview: LearningProgressOverview;
+  continueArticle: BuiltInArticle | undefined;
+  openArticle: (articleId: string) => void;
+}) {
+  return (
+    <section
+      className="learning-progress-section"
+      aria-labelledby="learning-progress-heading"
+    >
+      <div className="section-heading">
+        <div>
+          <p className="eyebrow">Toàn thư viện</p>
+          <h2 id="learning-progress-heading">Tiến độ học của bạn</h2>
+        </div>
+        <span className="offline-pill">Tính hoàn toàn trên thiết bị</span>
+      </div>
+
+      <div className="learning-progress-layout">
+        <div className="learning-progress-summary">
+          <div className="learning-progress-percent" aria-hidden="true">
+            <strong>{overview.progressPercent}%</strong>
+            <span>đã đọc</span>
+          </div>
+          <div className="learning-progress-copy">
+            <p>
+              <strong>{overview.completed}</strong> hoàn thành ·{" "}
+              <strong>{overview.inProgress}</strong> đang đọc ·{" "}
+              <strong>{overview.unread}</strong> chưa đọc
+            </p>
+            <div
+              className="progress-track learning-overall-track"
+              role="progressbar"
+              aria-label="Tiến độ toàn thư viện"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={overview.progressPercent}
+            >
+              <span style={{ width: `${overview.progressPercent}%` }} />
+            </div>
+            {continueArticle ? (
+              <button
+                type="button"
+                onClick={() => openArticle(continueArticle.id)}
+                aria-label={`Tiếp tục ${continueArticle.titleTranslation}`}
+              >
+                Tiếp tục · {continueArticle.titleTranslation}
+              </button>
+            ) : (
+              <a href="#/discover">Chọn bài để bắt đầu</a>
+            )}
+          </div>
+        </div>
+
+        <div className="learning-level-list" aria-label="Tiến độ theo cấp HSK">
+          {overview.byLevel.map((level) => (
+            <div className="learning-level-row" key={level.level}>
+              <div>
+                <strong>{level.level}</strong>
+                <span>
+                  {level.completed}/{level.total} hoàn thành
+                  {level.inProgress > 0
+                    ? ` · ${level.inProgress} đang đọc`
+                    : ""}
+                </span>
+              </div>
+              <div
+                className="progress-track"
+                role="progressbar"
+                aria-label={`Tiến độ ${level.level}`}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={level.progressPercent}
+              >
+                <span style={{ width: `${level.progressPercent}%` }} />
+              </div>
+              <span>{level.progressPercent}%</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }
 

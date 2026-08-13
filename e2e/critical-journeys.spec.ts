@@ -198,8 +198,17 @@ test("switches authored assistance between character, word, and sentence", async
   await expect(
     page.locator(".review-scope-badge", { hasText: "Câu" })
   ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Tiến độ học của bạn" })
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Tiếp tục Buổi sáng của tôi" })
+  ).toBeVisible();
+  await expect(
+    page.getByRole("progressbar", { name: "Tiến độ HSK 1" })
+  ).toBeVisible();
   await page
-    .getByRole("textbox", { name: "Tìm trong danh sách ôn lại" })
+    .getByLabel("Tìm trong danh sách ôn lại")
     .fill("zao");
   await expect(page.getByText("zǎo", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Chữ", exact: true }).click();
