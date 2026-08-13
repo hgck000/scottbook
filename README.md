@@ -82,7 +82,8 @@ for direct sideloading.
 - Automatic recovery from the previous valid local record.
 - Versioned JSON backup export protected by a SHA-256 checksum.
 - Validated JSON backup restore with preview, rollback, and one-level undo.
-- IndexedDB v3 mirror with migration, corrupt-record quarantine, and fallback.
+- IndexedDB v4 mirror with imported-book transactions, corrupt-record quarantine,
+  restore undo, and localStorage fallback for lightweight reader state.
 - On-device storage usage plus an isolated translation-cache clear action.
 - Storage-pressure warnings at 80% and 95%, with backup-first recovery guidance.
 - Keyboard navigation, route focus, and progressive screen-reader descriptions.
@@ -94,7 +95,8 @@ for direct sideloading.
 - GitHub Actions builds on Ubuntu, Windows, and macOS, builds the Android debug
   APK, and retains QA evidence.
 - Generated service worker precaches the complete prototype.
-- Import is intentionally deferred while its language-processing design is evaluated.
+- Offline Paste/TXT import with preview, cancellable worker analysis, pinyin,
+  Hán-Việt readings, CVDICT meanings, and explicit automatic-quality labels.
 
 ## Run locally
 
@@ -145,7 +147,7 @@ npm run android:sync
 npm run android:build:debug
 ```
 
-The final command writes `artifacts/ScottBook-v0.30.0-android-debug.apk` and
+The final command writes `artifacts/ScottBook-v0.31.0-android-debug.apk` and
 selects `gradlew.bat` automatically on Windows. `android:sync` proves that the
 native bundle contains local assets, has no browser service worker, and has no
 remote `server.url`; `android:build:debug` additionally runs Gradle. GitHub
@@ -156,7 +158,7 @@ After downloading or building the APK, connect one USB-debugging Android phone
 and run the reusable device check:
 
 ```bash
-npm run android:device:smoke -- /path/to/ScottBook-v0.30.0-android-debug.apk
+npm run android:device:smoke -- /path/to/ScottBook-v0.31.0-android-debug.apk
 ```
 
 On Windows, the APK path may be quoted normally. If more than one device is
@@ -173,7 +175,7 @@ npm run android:build:release
 
 It requires the owner-held keystore environment, verifies the resulting
 certificate with `apksigner`, and writes
-`artifacts/ScottBook-v0.30.0-android-release.apk` plus a checksum/fingerprint
+`artifacts/ScottBook-v0.31.0-android-release.apk` plus a checksum/fingerprint
 report. Create and configure the key only through
 [`docs/qa/ANDROID-RELEASE-SIGNING.md`](docs/qa/ANDROID-RELEASE-SIGNING.md); the
 keystore and passwords must never enter the repository or a patch.
@@ -232,24 +234,24 @@ progress/completion while retaining the fact that it was opened.
 
 No account, cloud sync, analytics, or network request is involved. IndexedDB now
 has isolated stores reserved for books, progress, settings, learning events,
-translation cache, metadata, and quarantined records. External-book import is
-still disabled.
+translation cache, metadata, restore undo, and quarantined records. Imported
+books live only in IndexedDB and reopen without a network connection.
 
 Version 0.4 keeps the previous valid v2 record before replacing the primary
 record. If the primary JSON later becomes corrupt, startup falls back to that
 local safety copy before trying the legacy v1 key. The Review screen can also
 request persistent browser storage and download a versioned JSON backup.
 
-Version 0.5 can restore that backup entirely offline. ScottBook rejects files
-larger than 2 MB, malformed JSON, unsupported formats, invalid reading-state
+Version 0.5 can restore that backup entirely offline. The current format rejects files
+larger than 32 MB, malformed JSON, unsupported formats, invalid reading-state
 schemas, and checksum mismatches before showing a preview. Nothing is written
 until the reader confirms. The confirmed restore writes the reading state,
 theme, and font size as one guarded transaction; a failed write rolls every
 touched key back to its exact prior value. A successful restore keeps one local
 undo record so the previous state can be restored after a refresh as well.
 
-Backup restore is not external-content import: ScottBook still does not accept
-TXT, EPUB, pasted books, or unannotated reading content in this version.
+Backup restore is distinct from content import. Paste/TXT starts from the
+Library import flow; backup JSON restores ScottBook state and saved imported books.
 
 Version 0.6 migrates a complete valid v0.5 local snapshot into IndexedDB on the
 first open. A v1 database fixture upgrades to v2 without losing valid progress
@@ -290,7 +292,7 @@ serif/sans type, line spacing, and content width persist entirely on device.
 Existing v0.11 preferences migrate to Paper-compatible typography defaults;
 the selected assistance scope remains unchanged. Backup, restore preview,
 confirmed restore, one-level undo, pre-update checkpoints, localStorage
-fallback, and the IndexedDB v3 mirror all carry the complete six-field reader
+fallback, and the IndexedDB mirror all carry the complete six-field reader
 preference record. A corrupt new preference cannot replace a healthy local
 snapshot.
 
@@ -357,7 +359,8 @@ The app shell now declares a restrictive content-security policy. CI rejects
 production use of dynamic code evaluation, direct HTML injection, high-severity
 runtime dependency advisories, or runtime packages outside the audited
 permissive-license set. Development websocket access remains limited to local
-Vite hosts. External-content import remains disabled.
+Vite hosts. Paste/TXT analysis remains on-device and does not add a remote
+content endpoint.
 
 ## Release qualification
 
@@ -583,6 +586,17 @@ reading-history and saved-position path; it adds no recommendation service,
 score, goal, account, or schema migration. The release contract is recorded in
 [`docs/release/SCOTTBOOK-v0.30.0.md`](docs/release/SCOTTBOOK-v0.30.0.md).
 
+Version 0.31 adds the complete local Paste/TXT path. It validates UTF-8, shows a
+normalized preview, analyzes Chinese in a cancellable Web Worker, and stores the
+result only after analysis succeeds. `pinyin-pro` supplies contextual pinyin;
+the pinned CVDICT snapshot supplies Vietnamese word/character meanings; existing
+Hán-Việt data remains available in Reader. Automatic annotations are labeled and
+sentence translation is deliberately reported unavailable instead of fabricated.
+Imported books participate in reading progress, favorites, review contexts,
+transactional delete, backup v2, restore, and one-level undo. EPUB remains deferred;
+PDF/OCR remain excluded. See
+[`docs/release/SCOTTBOOK-v0.31.0.md`](docs/release/SCOTTBOOK-v0.31.0.md).
+
 ## Install ScottBook
 
 Chromium browsers on Android, Windows, macOS, and Linux can expose ScottBook's
@@ -594,14 +608,13 @@ Screen**. On macOS Safari, choose **Share → Add to Dock**; Chrome and Edge use
 their install action in the address bar. The manifest includes 192 px, 512 px,
 maskable, and Apple touch icons.
 
-All nine built-in reference articles are compiled into the precached app shell,
-so they remain available in airplane mode without a separate download. External
-TXT/EPUB content and cache-on-demand imported books remain intentionally
-disabled until the import research phase is approved.
+All nine built-in reference articles and the pinned import dictionary are
+pre-cached. Paste/TXT books are analyzed once and stored in IndexedDB, so they
+reopen in airplane mode. EPUB remains deferred.
 
 For a direct Android test install, open the successful **ScottBook CI** run for
-the v0.30 commits, download the `ScottBook-Android-debug-…` artifact, extract it,
-and install `ScottBook-v0.30.0-android-debug.apk`. Android may ask permission to
+the v0.31 commits, download the `ScottBook-Android-debug-…` artifact, extract it,
+and install `ScottBook-v0.31.0-android-debug.apk`. Android may ask permission to
 install apps from the browser or file manager used to open it. The debug APK is
 not Play Store signed and its runner-generated debug key is not a durable
 upgrade identity: if a later debug artifact reports a signature conflict,

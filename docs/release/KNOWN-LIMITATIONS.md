@@ -8,13 +8,13 @@ This list is intentionally release-blocking evidence, not a hidden backlog.
   each for HSK 1–3, not the proposed target of 30. The HSK versioning system and
   final 1.0 content count are not yet approved.
 - Character, word/phrase, and sentence assistance is available for the nine
-  authored pilot articles. It is not yet backed by a content-authoring editor
-  or an approved import pipeline.
+  authored pilot articles. Paste/TXT imports receive automatic offline pinyin
+  and word/character meanings, not authored sentence translations.
 - Character and word/phrase assistance now derives Hán-Việt readings entirely
   offline from pinned Unicode Unihan and MIT-licensed pinyin-specific data.
   Some characters legitimately expose several readings; ScottBook shows the
-  alternatives instead of claiming context-sensitive certainty. This reusable
-  lookup does not enable import or analyze external files yet.
+  alternatives instead of claiming context-sensitive certainty. The same
+  lookup is reused when reading imported content.
 - Reader now derives a searchable **Từ trong bài** index from each authored
   article. Identical Hanzi are distinct entries when their contextual pinyin or
   meaning differs. Repeated entries can compare and jump to every exact authored
@@ -32,7 +32,8 @@ This list is intentionally release-blocking evidence, not a hidden backlog.
   and gamification are intentionally excluded. Spaced-repetition scheduling
   and CSV/Anki export remain outside the current scope. A quick session is
   capped at twenty active items.
-- Search and Discover cover the authored offline library only. Discover does
+- Search and Discover filters cover the authored offline library only. Imported
+  books appear in their own Library section and are not mixed into HSK filters. Discover does
   not use personalized recommendations or a remote content feed. A saved
   reading queue and user-authored topic taxonomy are not implemented. Reader's
   end card now follows fixed authored order, skips completed articles, resumes
@@ -74,7 +75,11 @@ This list is intentionally release-blocking evidence, not a hidden backlog.
 
 ## Deferred or intentionally excluded
 
-- Paste, TXT, EPUB, external translation, PDF, and OCR import remain disabled.
+- EPUB and external machine translation remain deferred. PDF and OCR import are
+  intentionally excluded.
+- Paste/TXT accepts UTF-8 Chinese text up to 120,000 normalized characters per
+  book. Automatic CVDICT definitions may contain errors, sentence translation
+  is unavailable offline, and imported metadata cannot yet be edited after save.
 - Accounts, cloud sync, telemetry, scoring, streaks, goals, gamification, and
   commercial services are intentionally outside the product scope.
 - Audio, SRS, and a native iOS app are not part of the current reader baseline.
