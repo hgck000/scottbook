@@ -27,19 +27,19 @@ $env:SCOTTBOOK_ADB_PATH = "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe"
 
 ## Run against the GitHub Actions APK
 
-Download and extract `ScottBook-v0.29.0-android-debug.apk`, open PowerShell in
+Download and extract `ScottBook-v0.30.0-android-debug.apk`, open PowerShell in
 the ScottBook repository, then run:
 
 ```powershell
 npm ci
-npm run android:device:smoke -- "C:\Users\vligh\Downloads\ScottBook-v0.29.0-android-debug.apk"
+npm run android:device:smoke -- "C:\Users\vligh\Downloads\ScottBook-v0.30.0-android-debug.apk"
 ```
 
 When several devices or emulators are attached, choose the serial shown by
 `adb devices -l`:
 
 ```powershell
-npm run android:device:smoke -- "C:\Users\vligh\Downloads\ScottBook-v0.29.0-android-debug.apk" --serial "DEVICE_SERIAL"
+npm run android:device:smoke -- "C:\Users\vligh\Downloads\ScottBook-v0.30.0-android-debug.apk" --serial "DEVICE_SERIAL"
 ```
 
 The default evidence folder is `artifacts/android-device-smoke-<timestamp>/`.

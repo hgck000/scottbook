@@ -34,7 +34,10 @@ This list is intentionally release-blocking evidence, not a hidden backlog.
   capped at twenty active items.
 - Search and Discover cover the authored offline library only. Discover does
   not use personalized recommendations or a remote content feed. A saved
-  reading queue and user-authored topic taxonomy are not implemented.
+  reading queue and user-authored topic taxonomy are not implemented. Reader's
+  end card now follows fixed authored order, skips completed articles, resumes
+  unfinished reading, and only falls back to a reread after the whole catalog
+  is complete; it is not a personalized recommendation system.
 - The learning overview derives lifetime progress from the current nine-article
   pack. Its per-article assistance insight uses the recent contexts retained by
   each local review record and distinct authored word/phrase coverage; it is not

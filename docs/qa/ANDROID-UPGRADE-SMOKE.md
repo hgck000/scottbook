@@ -2,7 +2,8 @@
 
 This command proves an in-place Android upgrade only after two consecutive APK
 versions have been signed by the same owner-held key. It is intentionally
-usable later: creating the key is not required to build, test, or apply v0.29.
+usable later: creating the key is not required to build, test, or apply the
+current unsigned/debug milestone.
 
 The runner never invokes `adb uninstall`, `pm clear`, downgrade flags, or any
 command that deliberately removes app data.

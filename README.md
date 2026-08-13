@@ -59,6 +59,9 @@ for direct sideloading.
   lets the reader keep an item active or mark it known.
 - An opt-out switch that stops recording history without disabling assistance.
 - Automatic/manual completion status and a reset-progress action.
+- An end-of-article continuation card that follows stable offline library order,
+  skips completed articles, resumes saved unfinished reading, and only suggests
+  a reread after the complete library is finished.
 - Offline reading remains the quiet default; only actionable install, update,
   storage, or failure notices appear instead of a persistent connection chip.
 - Controlled PWA updates that reload only after the reader accepts.
@@ -86,7 +89,7 @@ for direct sideloading.
 - A redacted local diagnostic download with counts and capability flags only.
 - A restrictive content-security policy plus automated API, license, and dependency audits.
 - A 20,000-Hanzi reader fixture that guards the long-document render budget.
-- Thirty-four production-browser journeys across desktop and mobile Chrome profiles.
+- Thirty-six production-browser journeys across desktop and mobile Chrome profiles.
 - Root and configurable subpath PWA builds with an artifact contract check.
 - GitHub Actions builds on Ubuntu, Windows, and macOS, builds the Android debug
   APK, and retains QA evidence.
@@ -142,7 +145,7 @@ npm run android:sync
 npm run android:build:debug
 ```
 
-The final command writes `artifacts/ScottBook-v0.29.0-android-debug.apk` and
+The final command writes `artifacts/ScottBook-v0.30.0-android-debug.apk` and
 selects `gradlew.bat` automatically on Windows. `android:sync` proves that the
 native bundle contains local assets, has no browser service worker, and has no
 remote `server.url`; `android:build:debug` additionally runs Gradle. GitHub
@@ -153,7 +156,7 @@ After downloading or building the APK, connect one USB-debugging Android phone
 and run the reusable device check:
 
 ```bash
-npm run android:device:smoke -- /path/to/ScottBook-v0.29.0-android-debug.apk
+npm run android:device:smoke -- /path/to/ScottBook-v0.30.0-android-debug.apk
 ```
 
 On Windows, the APK path may be quoted normally. If more than one device is
@@ -170,7 +173,7 @@ npm run android:build:release
 
 It requires the owner-held keystore environment, verifies the resulting
 certificate with `apksigner`, and writes
-`artifacts/ScottBook-v0.29.0-android-release.apk` plus a checksum/fingerprint
+`artifacts/ScottBook-v0.30.0-android-release.apk` plus a checksum/fingerprint
 report. Create and configure the key only through
 [`docs/qa/ANDROID-RELEASE-SIGNING.md`](docs/qa/ANDROID-RELEASE-SIGNING.md); the
 keystore and passwords must never enter the repository or a patch.
@@ -571,6 +574,15 @@ rollback path. The first version signed later can be the baseline; the next
 signed version becomes the candidate. The release contract is recorded in
 [`docs/release/SCOTTBOOK-v0.29.0.md`](docs/release/SCOTTBOOK-v0.29.0.md).
 
+Version 0.30 removes the library round trip after reaching the end of an
+article. A compact continuation card follows the authored offline order, wraps
+once through the nine-article catalog, skips completed articles, and identifies
+whether the destination is new or already in progress. It offers a deterministic
+reread only after every article is complete. Opening the card uses the existing
+reading-history and saved-position path; it adds no recommendation service,
+score, goal, account, or schema migration. The release contract is recorded in
+[`docs/release/SCOTTBOOK-v0.30.0.md`](docs/release/SCOTTBOOK-v0.30.0.md).
+
 ## Install ScottBook
 
 Chromium browsers on Android, Windows, macOS, and Linux can expose ScottBook's
@@ -588,8 +600,8 @@ TXT/EPUB content and cache-on-demand imported books remain intentionally
 disabled until the import research phase is approved.
 
 For a direct Android test install, open the successful **ScottBook CI** run for
-the v0.29 commits, download the `ScottBook-Android-debug-…` artifact, extract it,
-and install `ScottBook-v0.29.0-android-debug.apk`. Android may ask permission to
+the v0.30 commits, download the `ScottBook-Android-debug-…` artifact, extract it,
+and install `ScottBook-v0.30.0-android-debug.apk`. Android may ask permission to
 install apps from the browser or file manager used to open it. The debug APK is
 not Play Store signed and its runner-generated debug key is not a durable
 upgrade identity: if a later debug artifact reports a signature conflict,
