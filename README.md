@@ -67,6 +67,9 @@ Android shell whose debug APK bundles the same library for direct sideloading.
   assets, system-safe insets, hardware Back routing, and no remote server or
   Internet permission.
 - A GitHub Actions debug APK artifact for direct Android sideload testing.
+- A cross-platform ADB device-smoke runner that installs with data-preserving
+  `-r`, verifies the effective APK/version/permission/foreground WebView,
+  captures local screenshot and app-scoped log evidence, and never auto-uninstalls.
 - Pre-update data checkpoint that blocks unsafe service-worker reloads.
 - Automatic recovery from the previous valid local record.
 - Versioned JSON backup export protected by a SHA-256 checksum.
@@ -134,12 +137,24 @@ npm run android:sync
 npm run android:build:debug
 ```
 
-The final command writes `artifacts/ScottBook-v0.26.0-android-debug.apk` and
+The final command writes `artifacts/ScottBook-v0.27.0-android-debug.apk` and
 selects `gradlew.bat` automatically on Windows. `android:sync` proves that the
 native bundle contains local assets, has no browser service worker, and has no
 remote `server.url`; `android:build:debug` additionally runs Gradle. GitHub
 Actions is the authoritative APK builder when the local machine has no Android
 SDK.
+
+After downloading or building the APK, connect one USB-debugging Android phone
+and run the reusable device check:
+
+```bash
+npm run android:device:smoke -- /path/to/ScottBook-v0.27.0-android-debug.apk
+```
+
+On Windows, the APK path may be quoted normally. If more than one device is
+connected, append `--serial DEVICE_SERIAL`. Evidence stays under `artifacts/`
+and deliberately excludes the ADB serial. Full setup and failure handling are
+in [`docs/qa/ANDROID-DEVICE-SMOKE.md`](docs/qa/ANDROID-DEVICE-SMOKE.md).
 
 ## Offline content contract
 
@@ -490,6 +505,16 @@ exits only from the library root. Import remains disabled. The release contract
 and manual checks are recorded in
 [`docs/release/SCOTTBOOK-v0.26.0.md`](docs/release/SCOTTBOOK-v0.26.0.md).
 
+Version 0.27 turns the Android real-device gate into a repeatable local test
+instead of a memory-based checklist. One cross-platform Node command selects
+exactly one authorized ADB target, installs the APK with `install -r`, starts
+the fixed MainActivity, verifies the installed version and absence of Internet
+permission, rejects blank/inaccessible WebView startup, and records a local
+screenshot, app-scoped log, JSON result, and five-item manual report. It never
+uninstalls or clears app data when a runner-generated debug signature differs.
+The release contract is recorded in
+[`docs/release/SCOTTBOOK-v0.27.0.md`](docs/release/SCOTTBOOK-v0.27.0.md).
+
 ## Install ScottBook
 
 Chromium browsers on Android, Windows, macOS, and Linux can expose ScottBook's
@@ -507,8 +532,8 @@ TXT/EPUB content and cache-on-demand imported books remain intentionally
 disabled until the import research phase is approved.
 
 For a direct Android install, open the successful **ScottBook CI** run for the
-v0.26 commit, download the `ScottBook-Android-debug-…` artifact, extract it, and
-install `ScottBook-v0.26.0-android-debug.apk`. Android may ask permission to
+v0.27 commits, download the `ScottBook-Android-debug-…` artifact, extract it, and
+install `ScottBook-v0.27.0-android-debug.apk`. Android may ask permission to
 install apps from the browser or file manager used to open it. The debug APK is
 not Play Store signed and its runner-generated debug key is not a durable
 upgrade identity: if a later debug artifact reports a signature conflict,

@@ -47,9 +47,11 @@ This list is intentionally release-blocking evidence, not a hidden backlog.
 
 - ScottBook now has a Capacitor Android project and CI-built debug APK. Android
   Back handling is implemented for reader sheets, internal history, direct deep
-  links, and root exit, but a clean physical-device install, airplane-mode
-  launch, WebView persistence, Back behavior, backup download/restore, and
-  system-inset behavior still need owner verification on a real Android device.
+  links, and root exit. A repeatable ADB runner can verify data-preserving debug
+  installation, app/version/permissions, foreground MainActivity, accessible
+  WebView content, and screenshot capture. A clean physical-device run,
+  airplane-mode launch, WebView persistence, Back behavior, backup
+  download/restore, and system-inset behavior still need owner evidence.
 - GitHub-hosted runners may generate different debug signing keys. Debug APKs
   are suitable for fresh installs but are not a guaranteed in-place upgrade
   channel; uninstalling without first exporting a JSON backup can remove the
