@@ -26,6 +26,11 @@ import {
   advanceAssistance,
   type AssistanceSelection
 } from "./features/reader/assistance";
+import {
+  filterArticleVocabulary,
+  getArticleVocabulary,
+  type ArticleVocabularyEntry
+} from "./features/reader/articleVocabulary";
 import { SentenceLine } from "./features/reader/SentenceLine";
 import {
   getAssistanceScopeLabel,
@@ -3587,10 +3592,18 @@ function ReaderScreen({
   } = preferences;
   const [selection, setSelection] = useState<AssistanceSelection | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [vocabularyOpen, setVocabularyOpen] = useState(false);
+  const [vocabularyTargetSentenceId, setVocabularyTargetSentenceId] =
+    useState<string>();
   const articleBodyRef = useRef<HTMLDivElement>(null);
   const settingsButtonRef = useRef<HTMLButtonElement>(null);
+  const vocabularyButtonRef = useRef<HTMLButtonElement>(null);
   const restoredArticleRef = useRef<string | null>(null);
   const initialResumeSentenceRef = useRef(resumeSentenceId);
+  const articleVocabulary = useMemo(
+    () => getArticleVocabulary(article),
+    [article]
+  );
 
   const selectedContext = findSelectedContext(
     article,
@@ -3646,6 +3659,43 @@ function ReaderScreen({
       window.removeEventListener("keydown", closeOnEscape);
     };
   }, [closeReaderSettings, settingsOpen]);
+
+  const closeArticleVocabulary = useCallback((restoreFocus: boolean) => {
+    setVocabularyOpen(false);
+    if (!restoreFocus) return;
+    window.requestAnimationFrame(() => vocabularyButtonRef.current?.focus());
+  }, []);
+
+  useEffect(() => {
+    if (!vocabularyOpen) return;
+    const frame = window.requestAnimationFrame(() => {
+      document.getElementById("reader-vocabulary-search")?.focus();
+    });
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      closeArticleVocabulary(true);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [closeArticleVocabulary, vocabularyOpen]);
+
+  const jumpToVocabularySentence = (sentenceId: string) => {
+    setVocabularyTargetSentenceId(sentenceId);
+    setVocabularyOpen(false);
+    setSelection(null);
+
+    window.requestAnimationFrame(() => {
+      const sentence = Array.from(
+        articleBodyRef.current?.querySelectorAll<HTMLElement>(".sentence") ?? []
+      ).find((candidate) => candidate.dataset.sentenceId === sentenceId);
+      sentence?.scrollIntoView({ block: "center", behavior: "auto" });
+      sentence?.focus({ preventScroll: true });
+    });
+  };
 
   useEffect(() => {
     if (restoredArticleRef.current === article.id) return;
@@ -3798,11 +3848,27 @@ function ReaderScreen({
             {theme === "paper" ? "☾" : "☀"}
           </button>
           <button
+            ref={vocabularyButtonRef}
+            className="icon-button reader-vocabulary-button"
+            type="button"
+            onClick={() => {
+              setSelection(null);
+              setSettingsOpen(false);
+              setVocabularyOpen(true);
+            }}
+            aria-label="Mở từ trong bài"
+            aria-controls="reader-vocabulary"
+            aria-expanded={vocabularyOpen}
+          >
+            <span aria-hidden="true" lang="zh-Hans">词</span>
+          </button>
+          <button
             ref={settingsButtonRef}
             className="icon-button reader-settings-button"
             type="button"
             onClick={() => {
               setSelection(null);
+              setVocabularyOpen(false);
               setSettingsOpen(true);
             }}
             aria-label="Mở cài đặt đọc"
@@ -3879,7 +3945,13 @@ function ReaderScreen({
                     scope={assistanceScope}
                     selection={selection}
                     chooseUnit={chooseUnit}
-                    isContextTarget={sentence.id === contextSentenceId}
+                    targetSource={
+                      sentence.id === contextSentenceId
+                        ? "review"
+                        : sentence.id === vocabularyTargetSentenceId
+                          ? "vocabulary"
+                          : undefined
+                    }
                   />
                 ))}
               </p>
@@ -3928,6 +4000,23 @@ function ReaderScreen({
         </>
       ) : null}
 
+      {vocabularyOpen ? (
+        <>
+          <button
+            className="reader-settings-scrim"
+            type="button"
+            aria-label="Đóng từ trong bài"
+            onClick={() => closeArticleVocabulary(true)}
+          />
+          <ArticleVocabularyPanel
+            article={article}
+            entries={articleVocabulary}
+            close={() => closeArticleVocabulary(true)}
+            jumpToSentence={jumpToVocabularySentence}
+          />
+        </>
+      ) : null}
+
       {selection && selectedContext ? (
         <AssistancePanel
           level={selection.level}
@@ -3937,6 +4026,98 @@ function ReaderScreen({
         />
       ) : null}
     </div>
+  );
+}
+
+function ArticleVocabularyPanel({
+  article,
+  entries,
+  close,
+  jumpToSentence
+}: {
+  article: BuiltInArticle;
+  entries: readonly ArticleVocabularyEntry[];
+  close: () => void;
+  jumpToSentence: (sentenceId: string) => void;
+}) {
+  const [query, setQuery] = useState("");
+  const filteredEntries = useMemo(
+    () => filterArticleVocabulary(entries, query),
+    [entries, query]
+  );
+
+  return (
+    <aside
+      id="reader-vocabulary"
+      className="reader-vocabulary-panel"
+      role="region"
+      aria-labelledby="reader-vocabulary-heading"
+    >
+      <header>
+        <div>
+          <p className="eyebrow">{article.level} · dữ liệu offline</p>
+          <h2 id="reader-vocabulary-heading">Từ trong bài</h2>
+          <span>{entries.length} từ/cụm duy nhất</span>
+        </div>
+        <button type="button" onClick={close} aria-label="Đóng từ trong bài">
+          ×
+        </button>
+      </header>
+
+      <div className="reader-vocabulary-search">
+        <label htmlFor="reader-vocabulary-search">Tìm trong bài này</label>
+        <input
+          id="reader-vocabulary-search"
+          type="search"
+          value={query}
+          placeholder="Hanzi, pinyin hoặc nghĩa"
+          autoComplete="off"
+          onChange={(event) => setQuery(event.target.value)}
+        />
+        <span aria-live="polite">
+          {filteredEntries.length}/{entries.length} từ/cụm
+        </span>
+      </div>
+
+      {filteredEntries.length > 0 ? (
+        <ol
+          className="reader-vocabulary-list"
+          aria-label="Danh sách từ trong bài"
+        >
+          {filteredEntries.map((entry) => {
+            const firstOccurrence = entry.occurrences[0];
+            if (!firstOccurrence) return null;
+            return (
+              <li key={entry.id}>
+                <article>
+                  <div className="reader-vocabulary-word">
+                    <strong lang="zh-Hans">{entry.hanzi}</strong>
+                    <span>{entry.pinyin}</span>
+                  </div>
+                  <p>{entry.meaning}</p>
+                  <button
+                    type="button"
+                    aria-label={`Tới câu đầu có ${entry.hanzi}`}
+                    onClick={() => jumpToSentence(firstOccurrence.sentenceId)}
+                  >
+                    {entry.occurrences.length > 1
+                      ? `${entry.occurrences.length} lần · Tới câu đầu`
+                      : "Tới câu"}
+                    <span aria-hidden="true">→</span>
+                  </button>
+                </article>
+              </li>
+            );
+          })}
+        </ol>
+      ) : (
+        <div className="reader-vocabulary-empty">
+          <strong>Không tìm thấy từ/cụm phù hợp</strong>
+          <p>Thử Hanzi, pinyin không dấu thanh hoặc nghĩa tiếng Việt.</p>
+          <button type="button" onClick={() => setQuery("")}>Xóa tìm kiếm</button>
+        </div>
+      )}
+    </aside>
   );
 }
 

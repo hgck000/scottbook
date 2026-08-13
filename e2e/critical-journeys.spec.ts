@@ -351,6 +351,49 @@ test("returns from Review to the exact saved sentence context", async ({ page })
   expect(pageErrors).toEqual([]);
 });
 
+test("searches the offline article vocabulary and jumps to its sentence", async ({
+  page
+}) => {
+  const pageErrors = collectPageErrors(page);
+  await page.goto("/");
+  await dismissInstallNotice(page);
+  await page
+    .getByRole("button", { name: "Mở bài Buổi sáng của tôi" })
+    .click();
+
+  await page.getByRole("button", { name: "Mở từ trong bài" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Từ trong bài" })
+  ).toBeVisible();
+  await expect(page.getByText("16 từ/cụm duy nhất")).toBeVisible();
+
+  await page.getByLabel("Tìm trong bài này").fill("gaoxing");
+  await expect(page.getByText("1/16 từ/cụm", { exact: true })).toBeVisible();
+  const vocabularyList = page.getByRole("list", {
+    name: "Danh sách từ trong bài"
+  });
+  await expect(vocabularyList.getByText("高兴", { exact: true })).toBeVisible();
+  await expect(
+    vocabularyList.getByText("gāoxìng", { exact: true })
+  ).toBeVisible();
+  await expect(vocabularyList.getByText("vui", { exact: true })).toBeVisible();
+  await vocabularyList
+    .getByRole("button", { name: "Tới câu đầu có 高兴" })
+    .click();
+
+  await expect(page).toHaveURL(/#\/read\/hsk1-my-morning$/);
+  const targetSentence = page.locator(
+    '.sentence[data-sentence-id="s4"][data-vocabulary-target="true"]'
+  );
+  await expect(targetSentence).toBeVisible();
+  await expect(targetSentence).toBeInViewport();
+  await targetSentence
+    .locator('[data-assistance-key="s4:word:s4-t7"]')
+    .click();
+  await expect(page.getByText("gāoxìng", { exact: true })).toBeVisible();
+  expect(pageErrors).toEqual([]);
+});
+
 test("personalizes the reader layout and restores safe defaults", async ({
   page
 }) => {

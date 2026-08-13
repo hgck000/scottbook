@@ -3260,6 +3260,12 @@ svg {
   margin-left: 2px;
 }
 
+.reader-actions .reader-vocabulary-button {
+  margin-left: 2px;
+  font-family: "Songti SC", "Noto Serif CJK SC", serif;
+  font-size: 1rem;
+}
+
 .reader-page {
   min-height: calc(100vh - 70px);
   padding: clamp(38px, 8vw, 96px) 20px 220px;
@@ -3810,6 +3816,200 @@ svg {
   border: 0;
   color: #f6f1e7;
   background: #193c35;
+}
+
+.reader-vocabulary-panel {
+  position: fixed;
+  z-index: 65;
+  top: 86px;
+  right: 18px;
+  bottom: 18px;
+  width: min(470px, calc(100vw - 36px));
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  color: var(--ink);
+  background: var(--paper-raised);
+  box-shadow: 0 30px 90px rgb(7 16 13 / 28%);
+  backdrop-filter: blur(24px);
+  animation: settings-enter 180ms ease-out both;
+}
+
+.reader-vocabulary-panel > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--line);
+}
+
+.reader-vocabulary-panel > header h2 {
+  margin: 3px 0 2px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.35rem;
+}
+
+.reader-vocabulary-panel > header p {
+  margin: 0;
+}
+
+.reader-vocabulary-panel > header span {
+  color: var(--muted);
+  font-size: 0.64rem;
+}
+
+.reader-vocabulary-panel > header button {
+  width: 36px;
+  height: 36px;
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 50%;
+  color: var(--muted);
+  background: var(--line);
+  font-size: 1.15rem;
+  cursor: pointer;
+}
+
+.reader-vocabulary-search {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 7px 12px;
+  padding: 15px 20px;
+  border-bottom: 1px solid var(--line);
+}
+
+.reader-vocabulary-search label {
+  color: var(--ink);
+  font-size: 0.7rem;
+  font-weight: 850;
+}
+
+.reader-vocabulary-search > span {
+  color: var(--muted);
+  font-size: 0.62rem;
+}
+
+.reader-vocabulary-search input {
+  min-height: 42px;
+  grid-column: 1 / -1;
+  padding: 0 13px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--paper) 65%, transparent);
+  font: inherit;
+  font-size: 0.76rem;
+  outline: none;
+}
+
+.reader-vocabulary-search input:focus {
+  border-color: color-mix(in srgb, var(--jade) 58%, var(--line));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--jade) 11%, transparent);
+}
+
+.reader-vocabulary-list {
+  min-height: 0;
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  margin: 0;
+  padding: 14px 20px 24px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  list-style: none;
+}
+
+.reader-vocabulary-list article {
+  display: grid;
+  grid-template-columns: minmax(92px, 0.72fr) minmax(100px, 1fr) auto;
+  align-items: center;
+  gap: 13px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  background: color-mix(in srgb, var(--paper) 45%, transparent);
+}
+
+.reader-vocabulary-word {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.reader-vocabulary-word strong {
+  overflow-wrap: anywhere;
+  font-family: "Songti SC", "Noto Serif CJK SC", serif;
+  font-size: 1.15rem;
+  font-weight: 650;
+}
+
+.reader-vocabulary-word span {
+  overflow-wrap: anywhere;
+  color: var(--coral);
+  font-size: 0.68rem;
+  font-weight: 750;
+}
+
+.reader-vocabulary-list article > p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.7rem;
+  line-height: 1.45;
+}
+
+.reader-vocabulary-list article > button {
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 10px;
+  color: var(--jade);
+  background: var(--jade-soft);
+  font-size: 0.62rem;
+  font-weight: 850;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.reader-vocabulary-empty {
+  align-self: start;
+  display: grid;
+  justify-items: start;
+  gap: 8px;
+  margin: 18px 20px;
+  padding: 22px;
+  border: 1px dashed var(--line);
+  border-radius: 16px;
+}
+
+.reader-vocabulary-empty strong {
+  font-size: 0.82rem;
+}
+
+.reader-vocabulary-empty p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.7rem;
+  line-height: 1.5;
+}
+
+.reader-vocabulary-empty button {
+  min-height: 36px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 10px;
+  color: #f6f1e7;
+  background: #193c35;
+  font-size: 0.67rem;
+  font-weight: 800;
+  cursor: pointer;
 }
 
 .assist-panel {
@@ -4526,6 +4726,20 @@ svg {
     animation-name: settings-enter-mobile;
   }
 
+  .reader-vocabulary-panel {
+    top: auto;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    max-height: calc(100dvh - 68px);
+    border-right: 0;
+    border-bottom: 0;
+    border-left: 0;
+    border-radius: 24px 24px 0 0;
+    animation-name: settings-enter-mobile;
+  }
+
   .assist-panel {
     right: 0;
     bottom: 0;
@@ -4638,6 +4852,30 @@ svg {
   .reader-settings-scroll {
     padding-right: 16px;
     padding-left: 16px;
+  }
+
+  .reader-vocabulary-panel > header,
+  .reader-vocabulary-search {
+    padding-right: 16px;
+    padding-left: 16px;
+  }
+
+  .reader-vocabulary-list {
+    padding-right: 16px;
+    padding-left: 16px;
+  }
+
+  .reader-vocabulary-list article {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .reader-vocabulary-list article > p {
+    grid-column: 1;
+  }
+
+  .reader-vocabulary-list article > button {
+    grid-row: 1 / 3;
+    grid-column: 2;
   }
 
   .reader-setting-heading {

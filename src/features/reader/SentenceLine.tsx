@@ -40,7 +40,7 @@ export function SentenceLine({
   scope,
   selection,
   chooseUnit,
-  isContextTarget = false
+  targetSource
 }: {
   sentence: AnnotatedSentence;
   scope: ReaderAssistanceScope;
@@ -49,13 +49,16 @@ export function SentenceLine({
     sentence: AnnotatedSentence,
     unit: ReaderAssistanceUnit
   ) => void;
-  isContextTarget?: boolean;
+  targetSource?: "review" | "vocabulary";
 }) {
+  const isTarget = targetSource !== undefined;
   const sentenceProps = {
-    className: `sentence${isContextTarget ? " context-target" : ""}`,
+    className: `sentence${isTarget ? " context-target" : ""}`,
     "data-sentence-id": sentence.id,
-    "data-context-target": isContextTarget ? "true" : undefined,
-    tabIndex: isContextTarget ? -1 : undefined
+    "data-context-target": targetSource === "review" ? "true" : undefined,
+    "data-vocabulary-target":
+      targetSource === "vocabulary" ? "true" : undefined,
+    tabIndex: isTarget ? -1 : undefined
   } as const;
 
   const renderUnit = (unit: ReaderAssistanceUnit, content?: string) => {

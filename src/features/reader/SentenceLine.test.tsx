@@ -79,13 +79,36 @@ describe("reader keyboard and screen-reader behavior", () => {
         scope="word"
         selection={null}
         chooseUnit={() => undefined}
-        isContextTarget
+        targetSource="review"
       />
     );
 
     expect(markup).toContain('class="sentence context-target"');
     expect(markup).toContain('data-context-target="true"');
     expect(markup).toContain('data-sentence-id="s4"');
+    expect(markup).toContain('tabindex="-1"');
+  });
+
+  it("distinguishes a vocabulary jump from a Review context", () => {
+    const sentence: AnnotatedSentence = {
+      id: "s2",
+      translation: "Tôi học từ trong bài.",
+      tokens: [token]
+    };
+
+    const markup = renderToStaticMarkup(
+      <SentenceLine
+        sentence={sentence}
+        scope="word"
+        selection={null}
+        chooseUnit={() => undefined}
+        targetSource="vocabulary"
+      />
+    );
+
+    expect(markup).toContain('class="sentence context-target"');
+    expect(markup).toContain('data-vocabulary-target="true"');
+    expect(markup).not.toContain("data-context-target");
     expect(markup).toContain('tabindex="-1"');
   });
 });
