@@ -17,18 +17,20 @@ This list is intentionally release-blocking evidence, not a hidden backlog.
   overrides, and automatic device-specific profiles are not implemented.
 - “Ôn lại” now keeps character/word/sentence scope, assistance contexts,
   pin/known state, local need/scope filters, offline search, sorting, and an
-  unscored quick-review session. It does not yet implement spaced-repetition
-  scheduling, graded quizzes, or CSV/Anki export. A quick session is capped at
-  twenty active items.
+  unscored quick-review session. Scores, streaks, daily goals, graded quizzes,
+  and gamification are intentionally excluded. Spaced-repetition scheduling
+  and CSV/Anki export remain outside the current scope. A quick session is
+  capped at twenty active items.
 - Search and Discover cover the authored offline library only. Discover does
-  not yet offer personalized recommendations, a saved reading queue, or a
-  user-authored topic taxonomy.
+  not use personalized recommendations or a remote content feed. A saved
+  reading queue and user-authored topic taxonomy are not implemented.
 - The learning overview derives lifetime progress from the current nine-article
   pack. Its per-article assistance insight uses the recent contexts retained by
   each local review record and distinct authored word/phrase coverage; it is not
   a complete lifetime analytics log or a difficulty score. Assistance records
-  retain at most eight recent contexts. ScottBook does not yet keep daily
-  sessions, streaks, time spent, weekly goals, or cross-device progress.
+  retain at most eight recent contexts. ScottBook intentionally does not keep
+  scores, streaks, time-spent targets, daily/weekly goals, or cross-device
+  progress.
 
 ## Platform gaps
 
@@ -42,10 +44,12 @@ This list is intentionally release-blocking evidence, not a hidden backlog.
 - The generated artifact supports root hosting and configured subpath hosting,
   but production HTTPS hosting and cache headers are deployment responsibilities.
 
-## Deliberately deferred
+## Deferred or intentionally excluded
 
 - Paste, TXT, EPUB, external translation, PDF, and OCR import remain disabled.
-- There is no account, cloud sync, telemetry, audio, SRS, or native iOS app.
+- Accounts, cloud sync, telemetry, scoring, streaks, goals, gamification, and
+  commercial services are intentionally outside the product scope.
+- Audio, SRS, and a native iOS app are not part of the current reader baseline.
 
 None of these limitations should be silently described as complete in release
 notes. Update this file when evidence changes.

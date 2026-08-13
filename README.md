@@ -9,6 +9,11 @@ ScottBook is an offline-first Chinese reading app. It reveals help gradually:
 4. Tap it again to reveal its contextual Vietnamese meaning.
 5. Tap a third time to close the help panel.
 
+ScottBook is intentionally a single-user, local reading tool for improving
+reading comprehension and vocabulary. Accounts, cloud sync, scores, streaks,
+daily goals, gamification, telemetry, and commercial-service features are
+outside its product scope.
+
 The first vertical slice is a React + TypeScript PWA. Android packaging with
 Capacitor will use the same frontend in a later sprint.
 
@@ -34,6 +39,8 @@ Capacitor will use the same frontend in a later sprint.
   shortcut back to the most recently opened unfinished article.
 - Per-article assistance insights that compare distinct authored word/phrase
   coverage, local help opens, active review items, and known items.
+- Review items reopen the exact saved sentence in Reader, with a focused
+  highlight and a direct return to Review.
 - A local reading-history screen with open counts and latest-reading order.
 - Assistance history that distinguishes character, word/phrase, and sentence
   scope as well as “needed pinyin” from “needed meaning”.
@@ -57,7 +64,7 @@ Capacitor will use the same frontend in a later sprint.
 - A redacted local diagnostic download with counts and capability flags only.
 - A restrictive content-security policy plus automated API, license, and dependency audits.
 - A 20,000-Hanzi reader fixture that guards the long-document render budget.
-- Twenty-four production-browser journeys across desktop and mobile Chrome profiles.
+- Twenty-six production-browser journeys across desktop and mobile Chrome profiles.
 - Root and configurable subpath PWA builds with an artifact contract check.
 - GitHub Actions builds on Ubuntu, Windows, and macOS and retains QA evidence.
 - Generated service worker precaches the complete prototype.
@@ -358,6 +365,16 @@ provider is added. Its twelfth critical journey brings the desktop/mobile
 browser matrix to twenty-four cases. The release contract and manual checks are
 recorded in
 [`docs/release/SCOTTBOOK-v0.19.0.md`](docs/release/SCOTTBOOK-v0.19.0.md).
+
+Version 0.20 makes saved vocabulary context immediately useful again. Each
+Review item can reopen its exact authored sentence, center and highlight that
+sentence in Reader, then return directly to Review. Existing article links and
+saved reading-position behavior remain compatible, and malformed context links
+fall back safely. No persistent schema, account, network provider, score,
+streak, goal, or gamification layer is introduced. Its thirteenth critical
+journey brings the desktop/mobile browser matrix to twenty-six cases. The
+release contract and manual checks are recorded in
+[`docs/release/SCOTTBOOK-v0.20.0.md`](docs/release/SCOTTBOOK-v0.20.0.md).
 
 ## Install ScottBook
 
