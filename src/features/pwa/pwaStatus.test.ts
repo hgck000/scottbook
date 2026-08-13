@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   createPwaStatusStore,
   detectManualInstallMethod,
+  getPwaConnectionLabel,
   type PwaNativeInstallPrompt
 } from "./pwaStatus";
 
@@ -150,6 +151,73 @@ describe("controlled PWA lifecycle", () => {
 
     store.showRefresh();
     expect(store.getSnapshot().needRefresh).toBe(true);
+  });
+
+  it("restores persistent offline readiness from an active service worker", () => {
+    const store = createPwaStatusStore({
+      getOnline: () => true,
+      supportsServiceWorker: true,
+      getServiceWorkerControlled: () => false,
+      addConnectionListener: () => () => undefined,
+      reload: () => undefined
+    });
+
+    expect(store.getSnapshot().offlineCapability).toBe("checking");
+    store.notifyServiceWorkerRegistered({ active: {} });
+    expect(store.getSnapshot().offlineCapability).toBe("ready");
+    expect(store.getSnapshot().offlineReady).toBe(false);
+  });
+
+  it("keeps a completed precache ready even when a later update check fails", () => {
+    const store = createPwaStatusStore({
+      getOnline: () => true,
+      supportsServiceWorker: true,
+      addConnectionListener: () => () => undefined,
+      reload: () => undefined
+    });
+
+    store.notifyOfflineReady();
+    expect(store.getSnapshot()).toMatchObject({
+      offlineCapability: "ready",
+      offlineReady: true
+    });
+
+    store.notifyRegisterError();
+    expect(store.getSnapshot().offlineCapability).toBe("ready");
+    expect(store.getSnapshot().updateError).toContain(
+      "Bản hiện tại vẫn dùng được offline"
+    );
+  });
+
+  it("reports unsupported offline setup without promising a usable cache", () => {
+    const store = createPwaStatusStore({
+      getOnline: () => true,
+      supportsServiceWorker: true,
+      getServiceWorkerControlled: () => false,
+      addConnectionListener: () => () => undefined,
+      reload: () => undefined
+    });
+
+    store.notifyRegisterError();
+    expect(store.getSnapshot().offlineCapability).toBe("unavailable");
+    expect(store.getSnapshot().updateError).toContain(
+      "Chưa thể chuẩn bị bản offline"
+    );
+  });
+
+  it("reports concise online and offline capability labels", () => {
+    expect(getPwaConnectionLabel(true, "checking")).toBe(
+      "Có mạng · đang chuẩn bị offline"
+    );
+    expect(getPwaConnectionLabel(true, "ready")).toBe(
+      "Có mạng · sẵn sàng offline"
+    );
+    expect(getPwaConnectionLabel(true, "unavailable")).toBe(
+      "Có mạng · offline chưa sẵn sàng"
+    );
+    expect(getPwaConnectionLabel(false, "unavailable")).toBe(
+      "Đang ngoại tuyến"
+    );
   });
 });
 

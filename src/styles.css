@@ -282,6 +282,16 @@ svg {
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--amber) 16%, transparent);
 }
 
+.connection-chip.preparing > span {
+  background: var(--amber);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--amber) 16%, transparent);
+}
+
+.connection-chip.unavailable > span {
+  background: var(--coral);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--coral) 16%, transparent);
+}
+
 .update-notice,
 .install-notice,
 .offline-ready-notice,

@@ -6,6 +6,8 @@ export type StoragePersistence =
   | "granted"
   | "unsupported";
 
+export type OfflineCapability = "checking" | "ready" | "unavailable";
+
 export type PwaInstallMethod = "native" | "ios" | "macos" | "browser";
 export type PwaInstallState =
   | "hidden"
@@ -37,6 +39,7 @@ export const PWA_INSTALL_DISMISSED_STORAGE_KEY =
 
 export type PwaStatusSnapshot = {
   isOnline: boolean;
+  offlineCapability: OfflineCapability;
   needRefresh: boolean;
   updateAvailable: boolean;
   reloadPending: boolean;
@@ -51,6 +54,8 @@ export type PwaStatusSnapshot = {
 
 export type PwaStatusEnvironment = {
   getOnline: () => boolean;
+  supportsServiceWorker?: boolean;
+  getServiceWorkerControlled?: () => boolean;
   addConnectionListener: (listener: () => void) => () => void;
   reload: () => void;
   storage?: {
@@ -66,6 +71,7 @@ type Listener = () => void;
 
 const serverSnapshot: PwaStatusSnapshot = {
   isOnline: true,
+  offlineCapability: "checking",
   needRefresh: false,
   updateAvailable: false,
   reloadPending: false,
@@ -167,6 +173,10 @@ function createBrowserEnvironment(): PwaStatusEnvironment {
 
   return {
     getOnline: () => navigator.onLine,
+    supportsServiceWorker: "serviceWorker" in navigator,
+    getServiceWorkerControlled: () =>
+      "serviceWorker" in navigator &&
+      navigator.serviceWorker.controller !== null,
     addConnectionListener: (listener) => {
       window.addEventListener("online", listener);
       window.addEventListener("offline", listener);
@@ -190,6 +200,12 @@ export function createPwaStatusStore(environment: PwaStatusEnvironment) {
   let snapshot: PwaStatusSnapshot = {
     ...serverSnapshot,
     isOnline: environment.getOnline(),
+    offlineCapability:
+      environment.supportsServiceWorker === false
+        ? "unavailable"
+        : environment.getServiceWorkerControlled?.()
+          ? "ready"
+          : "checking",
     storagePersistence: environment.storage ? "checking" : "unsupported",
     installState: initiallyInstalled
       ? "installed"
@@ -375,12 +391,28 @@ export function createPwaStatusStore(environment: PwaStatusEnvironment) {
         updateAvailable: true,
         updateError: null
       }),
-    notifyOfflineReady: () => publish({ offlineReady: true }),
-    notifyRegisterError: () =>
+    notifyServiceWorkerRegistered: (registration?: {
+      active?: unknown | null;
+    }) =>
       publish({
-        updateError:
-          "Không thể kiểm tra bản PWA mới. Bản hiện tại vẫn dùng được offline."
+        offlineCapability:
+          environment.supportsServiceWorker === false
+            ? "unavailable"
+            : registration?.active
+              ? "ready"
+              : "checking"
       }),
+    notifyOfflineReady: () =>
+      publish({ offlineReady: true, offlineCapability: "ready" }),
+    notifyRegisterError: () => {
+      const remainsOfflineReady = snapshot.offlineCapability === "ready";
+      publish({
+        offlineCapability: remainsOfflineReady ? "ready" : "unavailable",
+        updateError: remainsOfflineReady
+          ? "Không thể kiểm tra bản PWA mới. Bản hiện tại vẫn dùng được offline."
+          : "Chưa thể chuẩn bị bản offline. Hãy giữ kết nối và thử mở lại ScottBook."
+      });
+    },
     handleServiceWorkerNeedsReload: () => {
       if (updateAccepted) {
         environment.reload();
@@ -419,6 +451,20 @@ export function createPwaStatusStore(environment: PwaStatusEnvironment) {
       });
     }
   };
+}
+
+export function getPwaConnectionLabel(
+  isOnline: boolean,
+  offlineCapability: OfflineCapability
+): string {
+  if (!isOnline) return "Đang ngoại tuyến";
+  if (offlineCapability === "ready") {
+    return "Có mạng · sẵn sàng offline";
+  }
+  if (offlineCapability === "unavailable") {
+    return "Có mạng · offline chưa sẵn sàng";
+  }
+  return "Có mạng · đang chuẩn bị offline";
 }
 
 export const pwaStatusStore = createPwaStatusStore(createBrowserEnvironment());

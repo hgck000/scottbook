@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { registerSW } from "virtual:pwa-register";
 import App from "./App";
 import { pwaStatusStore } from "./features/pwa/pwaStatus";
+import { startBrowserPwaUpdateChecks } from "./features/pwa/pwaUpdateChecks";
 import "./styles.css";
 
 pwaStatusStore.initialize();
@@ -11,6 +12,10 @@ const updateServiceWorker = registerSW({
   onNeedRefresh: pwaStatusStore.notifyNeedRefresh,
   onNeedReload: pwaStatusStore.handleServiceWorkerNeedsReload,
   onOfflineReady: pwaStatusStore.notifyOfflineReady,
+  onRegisteredSW: (_serviceWorkerUrl, registration) => {
+    pwaStatusStore.notifyServiceWorkerRegistered(registration);
+    if (registration) startBrowserPwaUpdateChecks(registration);
+  },
   onRegisterError: pwaStatusStore.notifyRegisterError
 });
 pwaStatusStore.setUpdateServiceWorker(() => updateServiceWorker(true));

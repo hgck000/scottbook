@@ -132,6 +132,7 @@ import {
   type AssistanceReviewItem
 } from "./features/review/assistanceHistory";
 import {
+  getPwaConnectionLabel,
   pwaStatusStore,
   usePwaStatus,
   type PwaStatusSnapshot,
@@ -998,11 +999,22 @@ function PwaStatusNotice({
       </div>
 
       <div
-        className={`connection-chip${status.isOnline ? "" : " offline"}`}
+        className={`connection-chip${
+          !status.isOnline
+            ? " offline"
+            : status.offlineCapability === "checking"
+              ? " preparing"
+              : status.offlineCapability === "unavailable"
+                ? " unavailable"
+                : ""
+        }`}
         role="status"
       >
         <span aria-hidden="true" />
-        {status.isOnline ? "Đã kết nối" : "Đang ngoại tuyến"}
+        {getPwaConnectionLabel(
+          status.isOnline,
+          status.offlineCapability
+        )}
       </div>
     </div>
   );

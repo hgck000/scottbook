@@ -767,3 +767,33 @@ test("reopens a precached article while the browser is offline", async ({
   }
   expect(pageErrors).toEqual([]);
 });
+
+test("keeps offline readiness visible after a controlled reload", async ({
+  context,
+  page
+}) => {
+  const pageErrors = collectPageErrors(page);
+  await page.goto("/");
+  await dismissInstallNotice(page);
+  await page.evaluate(() => navigator.serviceWorker.ready);
+  await page.reload();
+  await expect
+    .poll(() => page.evaluate(() => Boolean(navigator.serviceWorker.controller)))
+    .toBe(true);
+  await expect(page.getByRole("status")).toContainText(
+    "Có mạng · sẵn sàng offline"
+  );
+
+  try {
+    await context.setOffline(true);
+    await page.evaluate(() => window.dispatchEvent(new Event("offline")));
+    await expect(page.getByRole("status")).toContainText("Đang ngoại tuyến");
+  } finally {
+    await context.setOffline(false);
+  }
+  await page.evaluate(() => window.dispatchEvent(new Event("online")));
+  await expect(page.getByRole("status")).toContainText(
+    "Có mạng · sẵn sàng offline"
+  );
+  expect(pageErrors).toEqual([]);
+});
