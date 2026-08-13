@@ -65,6 +65,29 @@ describe("reader keyboard and screen-reader behavior", () => {
     expect(markup).toContain('lang="zh-Hans"');
     expect(markup).not.toContain("aria-pressed");
   });
+
+  it("marks an exact review context as a focusable reader target", () => {
+    const sentence: AnnotatedSentence = {
+      id: "s4",
+      translation: "Hôm nay tôi rất vui.",
+      tokens: [token]
+    };
+
+    const markup = renderToStaticMarkup(
+      <SentenceLine
+        sentence={sentence}
+        scope="word"
+        selection={null}
+        chooseUnit={() => undefined}
+        isContextTarget
+      />
+    );
+
+    expect(markup).toContain('class="sentence context-target"');
+    expect(markup).toContain('data-context-target="true"');
+    expect(markup).toContain('data-sentence-id="s4"');
+    expect(markup).toContain('tabindex="-1"');
+  });
 });
 
 describe("long-reader rendering budget", () => {

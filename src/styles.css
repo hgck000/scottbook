@@ -3150,6 +3150,39 @@ svg {
   transition: width 180ms ease;
 }
 
+.reader-context-notice {
+  position: absolute;
+  top: calc(100% + 11px);
+  left: 50%;
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 7px 6px 14px;
+  border: 1px solid color-mix(in srgb, var(--jade) 35%, var(--line));
+  border-radius: 14px;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--paper-raised) 95%, transparent);
+  box-shadow: 0 12px 34px rgb(18 35 30 / 13%);
+  font-size: 0.68rem;
+  font-weight: 800;
+  white-space: nowrap;
+  transform: translateX(-50%);
+  backdrop-filter: blur(18px);
+}
+
+.reader-context-notice button {
+  min-height: 30px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 9px;
+  color: #f6f1e7;
+  background: var(--jade);
+  font-size: 0.65rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
 .back-button,
 .text-control {
   min-height: 40px;
@@ -3409,6 +3442,31 @@ svg {
 
 .sentence {
   display: inline;
+}
+
+.sentence.context-target {
+  padding: 0.12em 0.18em;
+  border-radius: 0.28em;
+  background: color-mix(in srgb, var(--amber) 28%, transparent);
+  box-decoration-break: clone;
+  scroll-margin-block: 11rem;
+  animation: context-target-arrive 900ms ease-out both;
+  -webkit-box-decoration-break: clone;
+}
+
+.sentence.context-target:focus {
+  outline: 2px solid color-mix(in srgb, var(--amber) 75%, var(--jade));
+  outline-offset: 0.2em;
+}
+
+@keyframes context-target-arrive {
+  from {
+    background: color-mix(in srgb, var(--amber) 55%, transparent);
+  }
+
+  to {
+    background: color-mix(in srgb, var(--amber) 28%, transparent);
+  }
 }
 
 .word-token {
@@ -4419,6 +4477,14 @@ svg {
   .reader-toolbar {
     grid-template-columns: auto 1fr;
     min-height: 64px;
+  }
+
+  .reader-context-notice {
+    top: calc(100% + 8px);
+    max-width: calc(100vw - 24px);
+    gap: 8px;
+    padding-left: 11px;
+    font-size: 0.63rem;
   }
 
   .back-button span:last-child,

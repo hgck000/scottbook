@@ -37,6 +37,10 @@ import {
   type ReaderAssistanceUnit
 } from "./features/reader/readerScope";
 import {
+  createReaderHash,
+  parseReaderHash
+} from "./features/reader/readerNavigation";
+import {
   getArticleSentenceIds,
   getSentenceProgressPercent,
   markArticleCompleted,
@@ -144,7 +148,11 @@ type Route =
   | { name: "review" }
   | { name: "practice" }
   | { name: "detail"; articleId: string }
-  | { name: "reader"; articleId: string };
+  | {
+      name: "reader";
+      articleId: string;
+      contextSentenceId?: string;
+    };
 
 type LocalDataStatus = {
   phase: "checking" | "ready" | "fallback";
@@ -159,9 +167,9 @@ function parseRoute(): Route {
   if (window.location.hash === "#/review") return { name: "review" };
   if (window.location.hash === "#/discover") return { name: "discover" };
 
-  const readerMatch = window.location.hash.match(/^#\/read\/(.+)$/);
-  if (readerMatch?.[1]) {
-    return { name: "reader", articleId: decodeURIComponent(readerMatch[1]) };
+  const readerDestination = parseReaderHash(window.location.hash);
+  if (readerDestination) {
+    return { name: "reader", ...readerDestination };
   }
 
   const detailMatch = window.location.hash.match(/^#\/article\/(.+)$/);
@@ -358,11 +366,11 @@ function App() {
     persistAssistanceHistory(window.localStorage, assistanceHistory);
   }, [assistanceHistory]);
 
-  const openArticle = (articleId: string) => {
+  const openArticle = (articleId: string, contextSentenceId?: string) => {
     setLibraryState((current) =>
       markArticleOpened(current, articleId, Date.now())
     );
-    window.location.assign(`#/read/${encodeURIComponent(articleId)}`);
+    window.location.assign(createReaderHash(articleId, contextSentenceId));
   };
 
   const openArticleDetails = (articleId: string) => {
@@ -644,17 +652,29 @@ function App() {
     const readingProgress = article
       ? libraryState.progressByArticle[article.id]
       : undefined;
+    const contextSentenceId =
+      article &&
+      route.contextSentenceId &&
+      getArticleSentenceIds(article).includes(route.contextSentenceId)
+        ? route.contextSentenceId
+        : undefined;
     content = article ? (
       <ReaderScreen
-        key={article.id}
+        key={`${article.id}:${contextSentenceId ?? "reading"}`}
         article={article}
         preferences={readerPreferences}
         updatePreferences={updateReaderPreferences}
         toggleTheme={toggleTheme}
-        goHome={goHome}
+        goBack={
+          contextSentenceId
+            ? () => window.location.assign("#/review")
+            : goHome
+        }
+        backLabel={contextSentenceId ? "Về Ôn lại" : "Về thư viện"}
         isFavorite={libraryState.favoriteArticleIds.includes(article.id)}
         toggleFavorite={() => toggleFavorite(article.id)}
-        resumeSentenceId={readingProgress?.sentenceId}
+        resumeSentenceId={contextSentenceId ?? readingProgress?.sentenceId}
+        contextSentenceId={contextSentenceId}
         progressPercent={readingProgress?.progressPercent ?? 0}
         saveReadingPosition={saveReadingPosition}
         isCompleted={Boolean(
@@ -1054,7 +1074,7 @@ function LibraryScreen({
 }: {
   theme: ReaderTheme;
   toggleTheme: () => void;
-  openArticle: (articleId: string) => void;
+  openArticle: (articleId: string, contextSentenceId?: string) => void;
   libraryState: LibraryState;
   reviewCount: number;
   toggleFavorite: (articleId: string) => void;
@@ -1987,7 +2007,7 @@ function ReviewScreen({
   toggleReviewPinned: (itemId: string) => void;
   markReviewKnown: (itemId: string, known: boolean) => void;
   deleteReviewItem: (itemId: string) => void;
-  openArticle: (articleId: string) => void;
+  openArticle: (articleId: string, contextSentenceId?: string) => void;
   resetProgress: (articleId: string) => void;
   storagePersistence: StoragePersistence;
   localDataStatus: LocalDataStatus;
@@ -2391,7 +2411,7 @@ function AssistanceReviewSection({
   togglePinned: (itemId: string) => void;
   markKnown: (itemId: string, known: boolean) => void;
   deleteItem: (itemId: string) => void;
-  openArticle: (articleId: string) => void;
+  openArticle: (articleId: string, contextSentenceId?: string) => void;
 }) {
   const [filter, setFilter] = useState<AssistanceReviewFilter>("reading");
   const [scope, setScope] = useState<AssistanceReviewScopeFilter>("all");
@@ -2585,7 +2605,7 @@ function AssistanceReviewCard({
   togglePinned: () => void;
   markKnown: (known: boolean) => void;
   deleteItem: () => void;
-  openArticle: (articleId: string) => void;
+  openArticle: (articleId: string, contextSentenceId?: string) => void;
 }) {
   const latestContext = item.contexts[0];
   const article = latestContext
@@ -2643,10 +2663,12 @@ function AssistanceReviewCard({
           {latestContext ? (
             <button
               type="button"
-              onClick={() => openArticle(latestContext.articleId)}
-              aria-label={`Mở bài chứa ${item.hanzi}`}
+              onClick={() =>
+                openArticle(latestContext.articleId, latestContext.sentenceId)
+              }
+              aria-label={`Mở đúng câu có ${item.hanzi}`}
             >
-              Mở bài
+              Mở đúng câu
             </button>
           ) : null}
           <button
@@ -3519,10 +3541,12 @@ function ReaderScreen({
   preferences,
   updatePreferences,
   toggleTheme,
-  goHome,
+  goBack,
+  backLabel,
   isFavorite,
   toggleFavorite,
   resumeSentenceId,
+  contextSentenceId,
   progressPercent,
   saveReadingPosition,
   isCompleted,
@@ -3533,10 +3557,12 @@ function ReaderScreen({
   preferences: ReaderPreferences;
   updatePreferences: (updates: Partial<ReaderPreferences>) => void;
   toggleTheme: () => void;
-  goHome: () => void;
+  goBack: () => void;
+  backLabel: "Về thư viện" | "Về Ôn lại";
   isFavorite: boolean;
   toggleFavorite: () => void;
   resumeSentenceId?: string;
+  contextSentenceId?: string;
   progressPercent: number;
   saveReadingPosition: (
     articleId: string,
@@ -3633,9 +3659,10 @@ function ReaderScreen({
 
     const frame = window.requestAnimationFrame(() => {
       sentence.scrollIntoView({ block: "center", behavior: "auto" });
+      if (contextSentenceId) sentence.focus({ preventScroll: true });
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [article.id, resumeSentenceId]);
+  }, [article.id, contextSentenceId, resumeSentenceId]);
 
   useEffect(() => {
     const articleBody = articleBodyRef.current;
@@ -3719,11 +3746,11 @@ function ReaderScreen({
         <button
           className="back-button"
           type="button"
-          onClick={goHome}
-          aria-label="Về thư viện"
+          onClick={goBack}
+          aria-label={backLabel}
         >
           <span aria-hidden="true">←</span>
-          <span>Thư viện</span>
+          <span>{contextSentenceId ? "Ôn lại" : "Thư viện"}</span>
         </button>
         <div className="reader-title-small">
           <strong>{article.title}</strong>
@@ -3795,6 +3822,14 @@ function ReaderScreen({
         >
           <span style={{ width: `${progressPercent}%` }} />
         </div>
+        {contextSentenceId ? (
+          <div className="reader-context-notice" role="status">
+            <span>Đã mở đúng câu từ Ôn lại</span>
+            <button type="button" onClick={goBack}>
+              Về Ôn lại
+            </button>
+          </div>
+        ) : null}
       </header>
 
       <main id="main-content" className="reader-page" tabIndex={-1}>
@@ -3844,6 +3879,7 @@ function ReaderScreen({
                     scope={assistanceScope}
                     selection={selection}
                     chooseUnit={chooseUnit}
+                    isContextTarget={sentence.id === contextSentenceId}
                   />
                 ))}
               </p>

@@ -176,6 +176,8 @@ describe("ScottBook routes", () => {
     expect(markup).toContain("zǎoshang");
     expect(markup).toContain("Ghi lịch sử trợ giúp");
     expect(markup).toContain("Xóa 早上 khỏi lịch sử trợ giúp");
+    expect(markup).toContain("Mở đúng câu có 早上");
+    expect(markup).toContain("Mở đúng câu");
     expect(markup).toContain('href="#/review/practice"');
     expect(markup).toContain("Luyện nhanh · 2 mục");
     expect(markup).toContain("Bài nào từng cần trợ giúp nhiều?");
@@ -209,6 +211,18 @@ describe("ScottBook routes", () => {
     expect(markup).toContain("Hiện pinyin");
     expect(markup).not.toContain("zǎoshang");
     expect(markup).not.toContain("buổi sáng");
+  });
+
+  it("renders an exact Review context as the highlighted Reader target", () => {
+    installWindow("#/read/hsk1-my-morning/context/s4");
+
+    const markup = renderToStaticMarkup(<App />);
+
+    expect(markup).toContain("Đã mở đúng câu từ Ôn lại");
+    expect(markup).toContain('aria-label="Về Ôn lại"');
+    expect(markup).toContain('data-sentence-id="s4"');
+    expect(markup).toContain('data-context-target="true"');
+    expect(markup).toContain('class="sentence context-target"');
   });
 
   it("keeps a screen-reader name on the compact mobile back button", () => {

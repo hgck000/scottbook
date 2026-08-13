@@ -39,7 +39,8 @@ export function SentenceLine({
   sentence,
   scope,
   selection,
-  chooseUnit
+  chooseUnit,
+  isContextTarget = false
 }: {
   sentence: AnnotatedSentence;
   scope: ReaderAssistanceScope;
@@ -48,7 +49,15 @@ export function SentenceLine({
     sentence: AnnotatedSentence,
     unit: ReaderAssistanceUnit
   ) => void;
+  isContextTarget?: boolean;
 }) {
+  const sentenceProps = {
+    className: `sentence${isContextTarget ? " context-target" : ""}`,
+    "data-sentence-id": sentence.id,
+    "data-context-target": isContextTarget ? "true" : undefined,
+    tabIndex: isContextTarget ? -1 : undefined
+  } as const;
+
   const renderUnit = (unit: ReaderAssistanceUnit, content?: string) => {
     const key = getAssistanceUnitKey(sentence, unit);
     const isSelected = selection?.key === key;
@@ -75,14 +84,14 @@ export function SentenceLine({
   if (scope === "sentence") {
     const unit = getSentenceAssistanceUnits(sentence, scope)[0];
     return unit ? (
-      <span className="sentence" data-sentence-id={sentence.id}>
+      <span {...sentenceProps}>
         {renderUnit(unit)}
       </span>
     ) : null;
   }
 
   return (
-    <span className="sentence" data-sentence-id={sentence.id}>
+    <span {...sentenceProps}>
       {sentence.tokens.map((token) => {
         if (token.kind === "punctuation") {
           return <span key={token.id} lang="zh-Hans">{token.hanzi}</span>;

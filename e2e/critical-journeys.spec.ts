@@ -315,6 +315,42 @@ test("compares local assistance evidence by article and reopens the reader", asy
   expect(pageErrors).toEqual([]);
 });
 
+test("returns from Review to the exact saved sentence context", async ({ page }) => {
+  const pageErrors = collectPageErrors(page);
+  await page.goto("/");
+  await dismissInstallNotice(page);
+  await page
+    .getByRole("button", { name: "Mở bài Buổi sáng của tôi" })
+    .click();
+
+  const contextToken = page.locator(
+    '[data-assistance-key="s4:word:s4-t7"]'
+  );
+  await contextToken.click();
+  await page.getByRole("button", { name: "Về thư viện" }).click();
+  await page.locator('a[href="#/review"]:visible').click();
+
+  await page
+    .getByRole("button", { name: "Mở đúng câu có 高兴" })
+    .click();
+  await expect(page).toHaveURL(
+    /#\/read\/hsk1-my-morning\/context\/s4$/
+  );
+  const targetSentence = page.locator(
+    '.sentence[data-sentence-id="s4"][data-context-target="true"]'
+  );
+  await expect(targetSentence).toBeVisible();
+  await expect(targetSentence).toBeInViewport();
+  await expect(
+    page.getByText("Đã mở đúng câu từ Ôn lại", { exact: true })
+  ).toBeVisible();
+
+  await page.getByRole("button", { name: "Về Ôn lại" }).first().click();
+  await expect(page).toHaveURL(/#\/review$/);
+  await expect(page.getByText("gāoxìng", { exact: true })).toBeVisible();
+  expect(pageErrors).toEqual([]);
+});
+
 test("personalizes the reader layout and restores safe defaults", async ({
   page
 }) => {
