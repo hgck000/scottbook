@@ -16,7 +16,8 @@ This list is intentionally release-blocking evidence, not a hidden backlog.
   serif/sans type, line spacing, and content width. Uploaded fonts, per-article
   overrides, and automatic device-specific profiles are not implemented.
 - “Ôn lại” now keeps character/word/sentence scope, assistance contexts,
-  pin/known state, and local filters. It does not yet implement spaced
+  pin/known state, local need/scope filters, offline search, and sorting. It
+  does not yet implement spaced
   repetition, quizzes, or CSV/Anki export.
 - Search and Discover cover the authored offline library only. Discover does
   not yet offer personalized recommendations, a saved reading queue, or a

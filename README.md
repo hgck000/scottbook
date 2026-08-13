@@ -33,7 +33,8 @@ Capacitor will use the same frontend in a later sprint.
 - A local reading-history screen with open counts and latest-reading order.
 - Assistance history that distinguishes character, word/phrase, and sentence
   scope as well as “needed pinyin” from “needed meaning”.
-- Local review filters, pin, known/relearn, recent contexts, and safe deletion.
+- Local review filters, search across Hanzi/tone-free pinyin/Vietnamese context,
+  scope filtering, sorting, pin, known/relearn, recent contexts, and safe deletion.
 - An opt-out switch that stops recording history without disabling assistance.
 - Automatic/manual completion status and a reset-progress action.
 - Explicit online/offline and first-install offline-ready notices.
@@ -50,7 +51,7 @@ Capacitor will use the same frontend in a later sprint.
 - A redacted local diagnostic download with counts and capability flags only.
 - A restrictive content-security policy plus automated API, license, and dependency audits.
 - A 20,000-Hanzi reader fixture that guards the long-document render budget.
-- Eighteen production-browser journeys across desktop and mobile Chrome profiles.
+- Twenty production-browser journeys across desktop and mobile Chrome profiles.
 - Root and configurable subpath PWA builds with an artifact contract check.
 - GitHub Actions builds on Ubuntu, Windows, and macOS and retains QA evidence.
 - Generated service worker precaches the complete prototype.
@@ -310,6 +311,16 @@ journey covers this route from filtering through reading start, so the
 desktop/mobile matrix now contains twenty browser cases. The release contract
 is recorded in
 [`docs/release/SCOTTBOOK-v0.15.0.md`](docs/release/SCOTTBOOK-v0.15.0.md).
+
+Version 0.16 makes the local Review list easier to use once it grows: it can
+search authored Hanzi, tone-free pinyin, Vietnamese meanings, and saved reading
+contexts; narrow results to character, word/phrase, or sentence records; and
+sort them by review priority, recency, or Hanzi. These are temporary display
+controls, so no personal-data schema, backup, or migration changes are needed.
+The existing assistance-scope journey now covers the controls on both browser
+profiles, so the desktop/mobile matrix remains at twenty cases. The release contract
+is recorded in
+[`docs/release/SCOTTBOOK-v0.16.0.md`](docs/release/SCOTTBOOK-v0.16.0.md).
 
 ## Install ScottBook
 
