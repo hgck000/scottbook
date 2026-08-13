@@ -13,7 +13,7 @@ import {
   type ReaderAssistanceUnit
 } from "./readerScope";
 
-function moveReaderTokenFocus(event: KeyboardEvent<HTMLButtonElement>): void {
+function moveReaderTokenFocus(event: KeyboardEvent<HTMLElement>): void {
   if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) {
     return;
   }
@@ -21,7 +21,7 @@ function moveReaderTokenFocus(event: KeyboardEvent<HTMLButtonElement>): void {
 
   const article = event.currentTarget.closest(".reader-article");
   const tokens = Array.from(
-    article?.querySelectorAll<HTMLButtonElement>("[data-reader-unit]") ?? []
+    article?.querySelectorAll<HTMLElement>("[data-reader-unit]") ?? []
   );
   const currentIndex = tokens.indexOf(event.currentTarget);
   const nextIndex = getNextReaderTokenIndex(
@@ -86,11 +86,36 @@ export function SentenceLine({
 
   if (scope === "sentence") {
     const unit = getSentenceAssistanceUnits(sentence, scope)[0];
-    return unit ? (
+    if (!unit) return null;
+    const key = getAssistanceUnitKey(sentence, unit);
+    const isSelected = selection?.key === key;
+    return (
       <span {...sentenceProps}>
-        {renderUnit(unit)}
+        <span
+          className={`word-token scope-sentence${isSelected ? " selected" : ""}`}
+          role="button"
+          tabIndex={0}
+          data-reader-token
+          data-reader-unit
+          data-assistance-key={key}
+          data-assistance-scope={unit.scope}
+          onClick={() => chooseUnit(sentence, unit)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              chooseUnit(sentence, unit);
+              return;
+            }
+            moveReaderTokenFocus(event);
+          }}
+          aria-label={getReaderTokenLabel(unit, selection, key)}
+          aria-controls={isSelected ? "reader-assistance" : undefined}
+          aria-expanded={isSelected}
+        >
+          <span lang="zh-Hans">{unit.hanzi}</span>
+        </span>
       </span>
-    ) : null;
+    );
   }
 
   return (

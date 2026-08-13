@@ -132,12 +132,15 @@ import {
   type AssistanceReviewItem
 } from "./features/review/assistanceHistory";
 import {
-  getPwaConnectionLabel,
   pwaStatusStore,
   usePwaStatus,
   type PwaStatusSnapshot,
   type StoragePersistence
 } from "./features/pwa/pwaStatus";
+import {
+  NATIVE_BACK_EVENT,
+  registerAndroidBackNavigation
+} from "./features/native/androidBackNavigation";
 import { getInstallCopy } from "./features/pwa/installGuidance";
 import {
   scottBookRepository,
@@ -351,6 +354,23 @@ function App() {
     const onHashChange = () => setRoute(parseRoute());
     window.addEventListener("hashchange", onHashChange);
     return () => window.removeEventListener("hashchange", onHashChange);
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    let removeListener: (() => Promise<void>) | undefined;
+    void registerAndroidBackNavigation().then((handle) => {
+      if (!handle) return;
+      if (!active) {
+        void handle.remove();
+        return;
+      }
+      removeListener = () => handle.remove();
+    });
+    return () => {
+      active = false;
+      void removeListener?.();
+    };
   }, []);
 
   useEffect(() => {
@@ -998,25 +1018,6 @@ function PwaStatusNotice({
         ) : null}
       </div>
 
-      <div
-        data-testid="connection-status"
-        className={`connection-chip${
-          !status.isOnline
-            ? " offline"
-            : status.offlineCapability === "checking"
-              ? " preparing"
-              : status.offlineCapability === "unavailable"
-                ? " unavailable"
-                : ""
-        }`}
-        role="status"
-      >
-        <span aria-hidden="true" />
-        {getPwaConnectionLabel(
-          status.isOnline,
-          status.offlineCapability
-        )}
-      </div>
     </div>
   );
 }
@@ -3644,6 +3645,7 @@ function ReaderScreen({
   const [selection, setSelection] = useState<AssistanceSelection | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [vocabularyOpen, setVocabularyOpen] = useState(false);
+  const [scopeCompact, setScopeCompact] = useState(false);
   const [vocabularyTargetSentenceId, setVocabularyTargetSentenceId] =
     useState<string>();
   const articleBodyRef = useRef<HTMLDivElement>(null);
@@ -3669,7 +3671,7 @@ function ReaderScreen({
 
     window.requestAnimationFrame(() => {
       const selectedToken = Array.from(
-        articleBodyRef.current?.querySelectorAll<HTMLButtonElement>(
+        articleBodyRef.current?.querySelectorAll<HTMLElement>(
           "[data-reader-unit]"
         ) ?? []
       ).find((candidate) => candidate.dataset.assistanceKey === selectedKey);
@@ -3734,6 +3736,47 @@ function ReaderScreen({
     };
   }, [closeArticleVocabulary, vocabularyOpen]);
 
+  useEffect(() => {
+    const handleNativeBack = (event: Event) => {
+      if (selection) {
+        event.preventDefault();
+        closeAssistance(false);
+      } else if (settingsOpen) {
+        event.preventDefault();
+        closeReaderSettings(false);
+      } else if (vocabularyOpen) {
+        event.preventDefault();
+        closeArticleVocabulary(false);
+      }
+    };
+    window.addEventListener(NATIVE_BACK_EVENT, handleNativeBack);
+    return () =>
+      window.removeEventListener(NATIVE_BACK_EVENT, handleNativeBack);
+  }, [
+    closeArticleVocabulary,
+    closeAssistance,
+    closeReaderSettings,
+    selection,
+    settingsOpen,
+    vocabularyOpen
+  ]);
+
+  useEffect(() => {
+    let frame = 0;
+    const updateCompactState = () => {
+      window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(() => {
+        setScopeCompact(window.scrollY > 260);
+      });
+    };
+    updateCompactState();
+    window.addEventListener("scroll", updateCompactState, { passive: true });
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", updateCompactState);
+    };
+  }, [article.id]);
+
   const jumpToVocabularySentence = (sentenceId: string) => {
     setVocabularyTargetSentenceId(sentenceId);
     setVocabularyOpen(false);
@@ -3743,7 +3786,12 @@ function ReaderScreen({
       const sentence = Array.from(
         articleBodyRef.current?.querySelectorAll<HTMLElement>(".sentence") ?? []
       ).find((candidate) => candidate.dataset.sentenceId === sentenceId);
-      sentence?.scrollIntoView({ block: "center", behavior: "auto" });
+      sentence?.scrollIntoView({
+        block: "center",
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? "auto"
+          : "smooth"
+      });
       sentence?.focus({ preventScroll: true });
     });
   };
@@ -3982,14 +4030,17 @@ function ReaderScreen({
               <span className="tap-demo">{scopeCopy.glyph}</span>
               <p>
                 <strong>Chạm vào {scopeCopy.target}.</strong><br />
-                Lần một hiện pinyin · lần hai hiện {scopeCopy.result} · lần ba
-                đóng.
+                Lần một hiện {assistanceScope === "sentence"
+                  ? "pinyin"
+                  : "pinyin + âm Hán-Việt"} · lần hai hiện {scopeCopy.result} ·
+                lần ba đóng.
               </p>
             </div>
           </header>
 
           <ReaderScopeSelector
             scope={assistanceScope}
+            compact={scopeCompact}
             onChange={(nextScope) => {
               setSelection(null);
               updatePreferences({ assistanceScope: nextScope });
@@ -4426,9 +4477,11 @@ function VocabularyContextCard({
 
 function ReaderScopeSelector({
   scope,
+  compact,
   onChange
 }: {
   scope: ReaderAssistanceScope;
+  compact: boolean;
   onChange: (scope: ReaderAssistanceScope) => void;
 }) {
   const options: Array<{
@@ -4442,8 +4495,8 @@ function ReaderScopeSelector({
   ];
 
   return (
-    <div className="reader-scope-bar">
-      <div>
+    <div className="reader-scope-bar" data-compact={compact}>
+      <div className="reader-scope-copy" aria-hidden={compact}>
         <strong>Phạm vi trợ giúp</strong>
         <span>Dữ liệu viết sẵn · dùng offline</span>
       </div>
@@ -4461,8 +4514,10 @@ function ReaderScopeSelector({
             aria-label={`${option.label} (${option.glyph})`}
             onClick={() => onChange(option.value)}
           >
-            <span lang="zh-Hans">{option.glyph}</span>
-            {option.label}
+            <span className="reader-scope-glyph" lang="zh-Hans">
+              {option.glyph}
+            </span>
+            <span className="reader-scope-label">{option.label}</span>
           </button>
         ))}
       </div>
@@ -4734,9 +4789,24 @@ function AssistancePanel({
       <div className="assist-handle" aria-hidden="true" />
       <div className={`assist-word scope-${unit.scope}`}>
         <span className="assist-hanzi" lang="zh-Hans">{unit.hanzi}</span>
-        <div>
-          <p className="assist-label">Pinyin</p>
-          <strong className="assist-pinyin">{unit.pinyin}</strong>
+        <div className="assist-pronunciations">
+          <div>
+            <p className="assist-label">Pinyin</p>
+            <strong className="assist-pinyin">{unit.pinyin}</strong>
+          </div>
+          {unit.scope !== "sentence" && unit.hanViet ? (
+            <div>
+              <p className="assist-label">Âm Hán-Việt</p>
+              <strong
+                className="assist-han-viet"
+                title={unit.hanVietAmbiguous
+                  ? "Chữ này có nhiều âm Hán-Việt; ScottBook giữ lại các khả năng."
+                  : undefined}
+              >
+                {unit.hanViet}
+              </strong>
+            </div>
+          ) : null}
         </div>
       </div>
 

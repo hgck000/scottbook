@@ -46,7 +46,13 @@ describe("reader assistance scopes", () => {
       { id: "character:t1:1", scope: "character", hanzi: "上", pinyin: "shang" }
     ]);
     expect(getTokenAssistanceUnits(token, "word")).toMatchObject([
-      { id: "word:t1", scope: "word", hanzi: "早上", pinyin: "zǎoshang" }
+      {
+        id: "word:t1",
+        scope: "word",
+        hanzi: "早上",
+        pinyin: "zǎoshang",
+        hanViet: "tảo thượng"
+      }
     ]);
   });
 

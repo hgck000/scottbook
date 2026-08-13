@@ -66,6 +66,27 @@ describe("reader keyboard and screen-reader behavior", () => {
     expect(markup).not.toContain("aria-pressed");
   });
 
+  it("keeps sentence scope inline and wrappable without a button box", () => {
+    const sentence: AnnotatedSentence = {
+      id: "s1",
+      translation: "Tôi học tiếng Trung.",
+      tokens: [token, { id: "p1", kind: "punctuation", hanzi: "。" }]
+    };
+
+    const markup = renderToStaticMarkup(
+      <SentenceLine
+        sentence={sentence}
+        scope="sentence"
+        selection={null}
+        chooseUnit={() => undefined}
+      />
+    );
+
+    expect(markup).toContain('class="word-token scope-sentence"');
+    expect(markup).toContain('role="button"');
+    expect(markup).not.toContain("<button");
+  });
+
   it("marks an exact review context as a focusable reader target", () => {
     const sentence: AnnotatedSentence = {
       id: "s4",

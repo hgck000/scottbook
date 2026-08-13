@@ -2,7 +2,6 @@ import { describe, expect, it, vi } from "vitest";
 import {
   createPwaStatusStore,
   detectManualInstallMethod,
-  getPwaConnectionLabel,
   type PwaNativeInstallPrompt
 } from "./pwaStatus";
 
@@ -222,20 +221,6 @@ describe("controlled PWA lifecycle", () => {
     );
   });
 
-  it("reports concise online and offline capability labels", () => {
-    expect(getPwaConnectionLabel(true, "checking")).toBe(
-      "Có mạng · đang chuẩn bị offline"
-    );
-    expect(getPwaConnectionLabel(true, "ready")).toBe(
-      "Có mạng · sẵn sàng offline"
-    );
-    expect(getPwaConnectionLabel(true, "unavailable")).toBe(
-      "Có mạng · offline chưa sẵn sàng"
-    );
-    expect(getPwaConnectionLabel(false, "unavailable")).toBe(
-      "Đang ngoại tuyến"
-    );
-  });
 });
 
 describe("PWA installation", () => {

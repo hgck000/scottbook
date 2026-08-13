@@ -2,6 +2,7 @@ import type {
   AnnotatedSentence,
   WordToken
 } from "../../content/types";
+import { getHanVietReading } from "../../content/hanVietReadings";
 
 export const READER_ASSISTANCE_SCOPES = [
   "character",
@@ -18,6 +19,8 @@ export type ReaderAssistanceUnit = {
   hanzi: string;
   pinyin: string;
   meaning: string;
+  hanViet?: string;
+  hanVietAmbiguous?: boolean;
 };
 
 export function isReaderAssistanceScope(
@@ -39,24 +42,35 @@ export function getTokenAssistanceUnits(
   scope: Exclude<ReaderAssistanceScope, "sentence">
 ): ReaderAssistanceUnit[] {
   if (scope === "word") {
+    const hanViet = getHanVietReading(
+      token.hanzi,
+      token.characters.map((character) => character.pinyin)
+    );
     return [
       {
         id: `word:${token.id}`,
         scope,
         hanzi: token.hanzi,
         pinyin: token.pinyin,
-        meaning: token.meaning
+        meaning: token.meaning,
+        hanViet: hanViet?.display,
+        hanVietAmbiguous: hanViet?.ambiguous
       }
     ];
   }
 
-  return token.characters.map((item, index) => ({
-    id: `character:${token.id}:${index}`,
-    scope,
-    hanzi: item.hanzi,
-    pinyin: item.pinyin,
-    meaning: item.meaning
-  }));
+  return token.characters.map((item, index) => {
+    const hanViet = getHanVietReading(item.hanzi, [item.pinyin]);
+    return {
+      id: `character:${token.id}:${index}`,
+      scope,
+      hanzi: item.hanzi,
+      pinyin: item.pinyin,
+      meaning: item.meaning,
+      hanViet: hanViet?.display,
+      hanVietAmbiguous: hanViet?.ambiguous
+    };
+  });
 }
 
 export function getSentenceText(sentence: AnnotatedSentence): string {

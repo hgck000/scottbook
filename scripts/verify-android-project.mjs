@@ -13,6 +13,14 @@ const copiedConfig = readJson(
   "android/app/src/main/assets/capacitor.config.json"
 );
 const gradle = readFileSync("android/app/build.gradle", "utf8");
+const capacitorBuild = readFileSync(
+  "android/app/capacitor.build.gradle",
+  "utf8"
+);
+const capacitorSettings = readFileSync(
+  "android/capacitor.settings.gradle",
+  "utf8"
+);
 const manifest = readFileSync(
   "android/app/src/main/AndroidManifest.xml",
   "utf8"
@@ -37,11 +45,17 @@ if (manifest.includes("android.permission.INTERNET")) {
 if (!manifest.includes('android:allowBackup="false"')) {
   fail("Android cloud backup must remain disabled for device-only data");
 }
-if (!gradle.includes("versionCode 25")) {
-  fail("Android versionCode must be 25");
+if (!gradle.includes("versionCode 26")) {
+  fail("Android versionCode must be 26");
 }
 if (!gradle.includes(`versionName \"${packageJson.version}\"`)) {
   fail(`Android versionName must be ${packageJson.version}`);
+}
+if (
+  !capacitorBuild.includes("implementation project(':capacitor-app')") ||
+  !capacitorSettings.includes("include ':capacitor-app'")
+) {
+  fail("Capacitor App plugin must be synced for Android Back handling");
 }
 
 console.log(

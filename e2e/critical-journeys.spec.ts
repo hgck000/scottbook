@@ -36,6 +36,7 @@ test("reads, reveals assistance, and keeps local preferences", async ({ page }) 
   await expect(firstToken).toHaveAttribute("aria-label", /mở pinyin/);
   await firstToken.click();
   await expect(page.getByText("zǎoshang", { exact: true })).toBeVisible();
+  await expect(page.getByText("tảo thượng", { exact: true })).toBeVisible();
   await firstToken.click();
   await expect(page.getByText("buổi sáng", { exact: true })).toBeVisible();
   await expect(
@@ -44,6 +45,16 @@ test("reads, reveals assistance, and keeps local preferences", async ({ page }) 
   await page
     .getByRole("button", { name: "Đóng trợ giúp", exact: true })
     .click();
+
+  await firstToken.click();
+  await page.evaluate(() =>
+    window.dispatchEvent(
+      new Event("scottbook:native-back", { cancelable: true })
+    )
+  );
+  await expect(
+    page.getByRole("button", { name: "Đóng trợ giúp", exact: true })
+  ).toHaveCount(0);
 
   await page.getByRole("button", { name: "Bật giao diện tối" }).click();
   await page.getByRole("button", { name: "Thêm bài vào yêu thích" }).click();
@@ -158,12 +169,19 @@ test("switches authored assistance between character, word, and sentence", async
     .click();
 
   await page.getByRole("button", { name: "Chữ (字)" }).click();
+  const scopeBar = page.locator(".reader-scope-bar");
+  await expect(scopeBar).toHaveAttribute("data-compact", "false");
+  await page.evaluate(() => window.scrollTo(0, 700));
+  await expect(scopeBar).toHaveAttribute("data-compact", "true");
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await expect(scopeBar).toHaveAttribute("data-compact", "false");
   const firstCharacter = page.locator(
     '[data-assistance-key="s1:character:s1-t1:0"]'
   );
   await expect(firstCharacter).toHaveAccessibleName(/Chữ 早; mở pinyin/);
   await firstCharacter.click();
   await expect(page.getByText("zǎo", { exact: true })).toBeVisible();
+  await expect(page.getByText("tảo", { exact: true })).toBeVisible();
   await firstCharacter.click();
   await expect(page.getByText("sớm", { exact: true })).toBeVisible();
   await page
@@ -761,16 +779,14 @@ test("reopens a precached article while the browser is offline", async ({
     await context.setOffline(true);
     await page.reload({ waitUntil: "domcontentloaded" });
     await expect(page.getByRole("heading", { name: "我的早上" })).toBeVisible();
-    await expect(page.getByTestId("connection-status")).toContainText(
-      "Đang ngoại tuyến"
-    );
+    await expect(page.getByTestId("connection-status")).toHaveCount(0);
   } finally {
     await context.setOffline(false);
   }
   expect(pageErrors).toEqual([]);
 });
 
-test("keeps offline readiness visible after a controlled reload", async ({
+test("keeps the precached reading shell available without a status chip", async ({
   context,
   page
 }) => {
@@ -782,22 +798,16 @@ test("keeps offline readiness visible after a controlled reload", async ({
   await expect
     .poll(() => page.evaluate(() => Boolean(navigator.serviceWorker.controller)))
     .toBe(true);
-  await expect(page.getByTestId("connection-status")).toContainText(
-    "Có mạng · sẵn sàng offline"
-  );
+  await expect(page.getByTestId("connection-status")).toHaveCount(0);
 
   try {
     await context.setOffline(true);
     await page.evaluate(() => window.dispatchEvent(new Event("offline")));
-    await expect(page.getByTestId("connection-status")).toContainText(
-      "Đang ngoại tuyến"
-    );
+    await expect(page.locator("#main-content")).toBeVisible();
   } finally {
     await context.setOffline(false);
   }
   await page.evaluate(() => window.dispatchEvent(new Event("online")));
-  await expect(page.getByTestId("connection-status")).toContainText(
-    "Có mạng · sẵn sàng offline"
-  );
+  await expect(page.getByTestId("connection-status")).toHaveCount(0);
   expect(pageErrors).toEqual([]);
 });

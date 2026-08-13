@@ -461,20 +461,6 @@ export function createPwaStatusStore(environment: PwaStatusEnvironment) {
   };
 }
 
-export function getPwaConnectionLabel(
-  isOnline: boolean,
-  offlineCapability: OfflineCapability
-): string {
-  if (!isOnline) return "Đang ngoại tuyến";
-  if (offlineCapability === "ready") {
-    return "Có mạng · sẵn sàng offline";
-  }
-  if (offlineCapability === "unavailable") {
-    return "Có mạng · offline chưa sẵn sàng";
-  }
-  return "Có mạng · đang chuẩn bị offline";
-}
-
 export const pwaStatusStore = createPwaStatusStore(createBrowserEnvironment());
 
 export function usePwaStatus() {
