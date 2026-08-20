@@ -112,6 +112,57 @@ describe("assistance review history", () => {
     ]);
   });
 
+  it("does not turn whole-sentence help into a review item", () => {
+    const state = createEmptyAssistanceHistory();
+    const result = recordAssistance(state, {
+      ...baseInput,
+      scope: "sentence",
+      hanzi: "早上六点，我起床。",
+      pinyin: "zǎoshang liù diǎn, wǒ qǐchuáng.",
+      meaning: "Sáu giờ sáng, tôi thức dậy.",
+      level: "meaning"
+    });
+
+    expect(result).toBe(state);
+  });
+
+  it("drops sentence records saved by an earlier release", () => {
+    const current = recordAssistance(createEmptyAssistanceHistory(), baseInput);
+    const sentenceId = getAssistanceItemId({
+      scope: "sentence",
+      hanzi: "早上六点，我起床。",
+      pinyin: "zǎoshang liù diǎn, wǒ qǐchuáng.",
+      meaning: "Sáu giờ sáng, tôi thức dậy."
+    });
+    const sentenceItem = {
+      id: sentenceId,
+      scope: "sentence",
+      hanzi: "早上六点，我起床。",
+      pinyin: "zǎoshang liù diǎn, wǒ qǐchuáng.",
+      meaning: "Sáu giờ sáng, tôi thức dậy.",
+      pinyinCount: 1,
+      meaningCount: 1,
+      firstSeenAt: 100,
+      lastSeenAt: 100,
+      knownAt: null,
+      pinned: false,
+      contexts: [{
+        id: JSON.stringify([baseInput.articleId, baseInput.sentenceId]),
+        articleId: baseInput.articleId,
+        sentenceId: baseInput.sentenceId,
+        sentenceText: baseInput.sentenceText,
+        sentenceTranslation: baseInput.sentenceTranslation,
+        seenCount: 1,
+        lastSeenAt: 100
+      }]
+    };
+
+    expect(validateAssistanceHistorySnapshot({
+      ...current,
+      items: { ...current.items, [sentenceId]: sentenceItem }
+    })).toEqual(current);
+  });
+
   it("migrates v1 review items to word-scoped v2 identifiers", () => {
     const current = recordAssistance(createEmptyAssistanceHistory(), baseInput);
     const currentItem = Object.values(current.items)[0];

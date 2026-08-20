@@ -13,6 +13,11 @@ const MAX_TEXT_LENGTH = 2_000;
 
 export type AssistanceLevel = "pinyin" | "meaning";
 
+export type ReviewableAssistanceScope = Exclude<
+  ReaderAssistanceScope,
+  "sentence"
+>;
+
 export type AssistanceContext = {
   id: string;
   articleId: string;
@@ -37,6 +42,12 @@ export type AssistanceReviewItem = {
   pinned: boolean;
   contexts: AssistanceContext[];
 };
+
+export function isReviewableAssistanceItem(
+  item: AssistanceReviewItem
+): item is AssistanceReviewItem & { scope: ReviewableAssistanceScope } {
+  return item.scope === "character" || item.scope === "word";
+}
 
 export type AssistanceHistoryState = {
   version: 2;
@@ -295,6 +306,9 @@ export function validateAssistanceHistorySnapshot(
   for (const [key, candidate] of Object.entries(value.items)) {
     const item = validateItem(key, candidate, value.version === 1);
     if (!item || Object.hasOwn(items, item.id)) return null;
+    // Sentence assistance remains available while reading, but a whole sentence
+    // is not a useful review unit. Drop records created by earlier releases.
+    if (!isReviewableAssistanceItem(item)) continue;
     items[item.id] = item;
   }
 
@@ -360,6 +374,7 @@ export function recordAssistance(
   input: RecordAssistanceInput
 ): AssistanceHistoryState {
   if (!state.recordingEnabled || !isTimestamp(input.occurredAt)) return state;
+  if (input.scope === "sentence") return state;
   if (
     !isIdentifier(input.articleId) ||
     !isIdentifier(input.sentenceId) ||

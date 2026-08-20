@@ -28,12 +28,15 @@ This list is intentionally release-blocking evidence, not a hidden backlog.
 - Reader customization now provides Paper/Night/OLED themes, text size,
   serif/sans type, line spacing, and content width. Uploaded fonts, per-article
   overrides, and automatic device-specific profiles are not implemented.
-- “Ôn lại” now keeps character/word/sentence scope, assistance contexts,
-  pin/known state, local need/scope filters, offline search, sorting, and an
-  unscored quick-review session. Scores, streaks, daily goals, graded quizzes,
-  and gamification are intentionally excluded. Spaced-repetition scheduling
-  and CSV/Anki export remain outside the current scope. A quick session is
-  capped at twenty active items.
+- “Ôn lại” deliberately keeps only character and word/phrase items. Sentence
+  assistance remains available in Reader, but whole sentences are not stored as
+  review cards; earlier sentence cards are removed during local-data and backup
+  validation. Sentence examples attached to character/word contexts remain.
+  Pin/known state, local need/scope filters, offline search, sorting, and an
+  unscored quick-review session are supported. Scores, streaks, daily goals,
+  graded quizzes, gamification, spaced-repetition scheduling, and CSV/Anki
+  export remain outside the current scope. A quick session is capped at twenty
+  active items.
 - Search and Discover filters cover the authored offline library only. Imported
   books appear in their own Library section and are not mixed into HSK filters. Discover does
   not use personalized recommendations or a remote content feed. A saved

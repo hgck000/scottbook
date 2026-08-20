@@ -1,9 +1,12 @@
 import { normalizeLibrarySearchText } from "../library/libraryDiscovery";
-import type { ReaderAssistanceScope } from "../reader/readerScope";
-import type { AssistanceReviewItem } from "./assistanceHistory";
+import {
+  isReviewableAssistanceItem,
+  type AssistanceReviewItem,
+  type ReviewableAssistanceScope
+} from "./assistanceHistory";
 
 export type AssistanceReviewFilter = "reading" | "meaning" | "known";
-export type AssistanceReviewScopeFilter = "all" | ReaderAssistanceScope;
+export type AssistanceReviewScopeFilter = "all" | ReviewableAssistanceScope;
 export type AssistanceReviewSort = "priority" | "recent" | "alphabetical";
 
 export type AssistanceReviewDiscoveryFilters = {
@@ -73,6 +76,7 @@ export function filterAssistanceReviewItems(
   return items
     .filter(
       (item) =>
+        isReviewableAssistanceItem(item) &&
         matchesNeed(item, filters.filter) &&
         (filters.scope === "all" || item.scope === filters.scope) &&
         matchesQuery(item, filters.query)
@@ -83,9 +87,10 @@ export function filterAssistanceReviewItems(
 export function countAssistanceReviewItems(
   items: readonly AssistanceReviewItem[]
 ): Record<AssistanceReviewFilter, number> {
+  const reviewableItems = items.filter(isReviewableAssistanceItem);
   return {
-    reading: items.filter((item) => matchesNeed(item, "reading")).length,
-    meaning: items.filter((item) => matchesNeed(item, "meaning")).length,
-    known: items.filter((item) => matchesNeed(item, "known")).length
+    reading: reviewableItems.filter((item) => matchesNeed(item, "reading")).length,
+    meaning: reviewableItems.filter((item) => matchesNeed(item, "meaning")).length,
+    known: reviewableItems.filter((item) => matchesNeed(item, "known")).length
   };
 }

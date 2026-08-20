@@ -168,7 +168,7 @@ test("turns assistance into an editable local review list", async ({ page }) => 
   await page.getByRole("button", { name: "Về thư viện" }).click();
   await page.locator('a[href="#/review"]:visible').click();
   await expect(
-    page.getByRole("heading", { name: "Chữ, từ và câu từng cần trợ giúp" })
+    page.getByRole("heading", { name: "Chữ và từ/cụm từng cần trợ giúp" })
   ).toBeVisible();
   await expect(page.getByText("liù diǎn", { exact: true })).toBeVisible();
 
@@ -195,7 +195,7 @@ test("turns assistance into an editable local review list", async ({ page }) => 
   expect(pageErrors).toEqual([]);
 });
 
-test("switches authored assistance between character, word, and sentence", async ({
+test("keeps sentence help in Reader but reviews only lexical items", async ({
   page
 }) => {
   const pageErrors = collectPageErrors(page);
@@ -251,13 +251,11 @@ test("switches authored assistance between character, word, and sentence", async
   );
   await page.getByRole("button", { name: "Về thư viện" }).click();
   await page.locator('a[href="#/review"]:visible').click();
-  await page.getByRole("button", { name: /Chưa hiểu nghĩa 2/ }).click();
+  await page.getByRole("button", { name: /Chưa hiểu nghĩa 1/ }).click();
   await expect(
     page.locator(".review-scope-badge", { hasText: "Chữ" })
   ).toBeVisible();
-  await expect(
-    page.locator(".review-scope-badge", { hasText: "Câu" })
-  ).toBeVisible();
+  await expect(page.getByRole("button", { name: "Câu", exact: true })).toHaveCount(0);
   await expect(
     page.getByRole("heading", { name: "Tiến độ học của bạn" })
   ).toBeVisible();

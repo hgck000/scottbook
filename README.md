@@ -7,7 +7,8 @@ ScottBook is an offline-first Chinese reading app. It reveals help gradually:
    or sentence (`句`).
 3. Tap a character or word/phrase once to reveal its authored pinyin and
    offline Hán-Việt reading; sentence scope reveals pinyin only.
-4. Tap it again to reveal its contextual Vietnamese meaning.
+4. Tap it again to reveal its contextual Vietnamese meaning or sentence
+   translation.
 5. Tap a third time to close the help panel.
 
 ScottBook is intentionally a single-user, local reading tool for improving
@@ -54,8 +55,9 @@ for direct sideloading.
   authored words/phrases, pinyin, Vietnamese meaning, occurrence counts, and a
   context comparison for repeated words plus a jump to any containing sentence.
 - A local reading-history screen with open counts and latest-reading order.
-- Assistance history that distinguishes character, word/phrase, and sentence
-  scope as well as “needed pinyin” from “needed meaning”.
+- Assistance history that keeps practical character and word/phrase review
+  items while retaining their containing sentences as usage context. Whole
+  sentences can receive help in Reader but are not added to Review.
 - Local review filters, search across Hanzi/tone-free pinyin/Vietnamese context,
   scope filtering, sorting, pin, known/relearn, recent contexts, and safe deletion.
 - A device-only quick-review route that reveals Hanzi → pinyin → meaning and
@@ -150,7 +152,7 @@ npm run android:sync
 npm run android:build:debug
 ```
 
-The final command writes `artifacts/ScottBook-v0.32.0-android-debug.apk` and
+The final command writes `artifacts/ScottBook-v0.33.0-android-debug.apk` and
 selects `gradlew.bat` automatically on Windows. `android:sync` proves that the
 native bundle contains local assets, has no browser service worker, and has no
 remote `server.url`; `android:build:debug` additionally runs Gradle. GitHub
@@ -161,7 +163,7 @@ After downloading or building the APK, connect one USB-debugging Android phone
 and run the reusable device check:
 
 ```bash
-npm run android:device:smoke -- /path/to/ScottBook-v0.32.0-android-debug.apk
+npm run android:device:smoke -- /path/to/ScottBook-v0.33.0-android-debug.apk
 ```
 
 On Windows, the APK path may be quoted normally. If more than one device is
@@ -178,7 +180,7 @@ npm run android:build:release
 
 It requires the owner-held keystore environment, verifies the resulting
 certificate with `apksigner`, and writes
-`artifacts/ScottBook-v0.32.0-android-release.apk` plus a checksum/fingerprint
+`artifacts/ScottBook-v0.33.0-android-release.apk` plus a checksum/fingerprint
 report. Create and configure the key only through
 [`docs/qa/ANDROID-RELEASE-SIGNING.md`](docs/qa/ANDROID-RELEASE-SIGNING.md); the
 keystore and passwords must never enter the repository or a patch.
@@ -613,6 +615,13 @@ remain available. Source policy and the release contract are recorded in
 and
 [`docs/release/SCOTTBOOK-v0.32.0.md`](docs/release/SCOTTBOOK-v0.32.0.md).
 
+Version 0.33 keeps whole-sentence assistance in Reader but removes sentences as
+review units. Review counters, filters, quick practice, insights, diagnostics,
+and restored backups now contain only characters and words/phrases. Older
+sentence cards are discarded safely while their lexical cards and useful
+sentence contexts remain. See
+[`docs/release/SCOTTBOOK-v0.33.0.md`](docs/release/SCOTTBOOK-v0.33.0.md).
+
 ## Install ScottBook
 
 Chromium browsers on Android, Windows, macOS, and Linux can expose ScottBook's
@@ -630,7 +639,7 @@ reopen in airplane mode. EPUB remains deferred.
 
 For a direct Android test install, open the successful **ScottBook CI** run for
 the v0.32 commits, download the `ScottBook-Android-debug-…` artifact, extract it,
-and install `ScottBook-v0.32.0-android-debug.apk`. Android may ask permission to
+and install `ScottBook-v0.33.0-android-debug.apk`. Android may ask permission to
 install apps from the browser or file manager used to open it. The debug APK is
 not Play Store signed and its runner-generated debug key is not a durable
 upgrade identity: if a later debug artifact reports a signature conflict,

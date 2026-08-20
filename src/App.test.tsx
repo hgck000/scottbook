@@ -183,7 +183,8 @@ describe("ScottBook routes", () => {
 
     const markup = renderToStaticMarkup(<App />);
 
-    expect(markup).toContain("Chữ, từ và câu từng cần trợ giúp");
+    expect(markup).toContain("Chữ và từ/cụm từng cần trợ giúp");
+    expect(markup).not.toContain('>Câu</button>');
     expect(markup).toContain("Cần cách đọc");
     expect(markup).toContain("Chưa hiểu nghĩa");
     expect(markup).toContain("zǎoshang");

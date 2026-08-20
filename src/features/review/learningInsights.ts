@@ -1,6 +1,7 @@
 import type { BuiltInArticle } from "../../content/types";
 import {
   getAssistanceItemId,
+  isReviewableAssistanceItem,
   type AssistanceHistoryState
 } from "./assistanceHistory";
 
@@ -41,7 +42,9 @@ export function getArticleAssistanceInsights(
   articles: readonly BuiltInArticle[],
   history: AssistanceHistoryState
 ): ArticleAssistanceInsight[] {
-  const historyItems = Object.values(history.items);
+  const historyItems = Object.values(history.items).filter(
+    isReviewableAssistanceItem
+  );
 
   return articles
     .map((article) => {

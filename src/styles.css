@@ -1844,15 +1844,6 @@ svg {
   text-transform: uppercase;
 }
 
-.review-word-card.scope-sentence .review-word-identity {
-  align-items: start;
-}
-
-.review-word-card.scope-sentence .review-word-identity > strong {
-  font-size: 1.15rem;
-  line-height: 1.55;
-}
-
 .review-word-status.known {
   color: var(--jade);
   background: var(--jade-soft);

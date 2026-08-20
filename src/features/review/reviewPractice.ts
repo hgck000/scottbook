@@ -1,4 +1,7 @@
-import type { AssistanceReviewItem } from "./assistanceHistory";
+import {
+  isReviewableAssistanceItem,
+  type AssistanceReviewItem
+} from "./assistanceHistory";
 
 export const MAX_QUICK_REVIEW_ITEMS = 20;
 
@@ -11,7 +14,7 @@ export function createReviewPracticeQueue(
   const safeLimit = Number.isSafeInteger(limit) && limit > 0 ? limit : 0;
 
   return items
-    .filter((item) => item.knownAt === null)
+    .filter((item) => isReviewableAssistanceItem(item) && item.knownAt === null)
     .sort(
       (left, right) =>
         Number(right.pinned) - Number(left.pinned) ||

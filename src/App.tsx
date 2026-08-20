@@ -128,6 +128,7 @@ import {
 } from "./features/preferences/readerPreferences";
 import {
   deleteAssistanceItem,
+  isReviewableAssistanceItem,
   markAssistanceKnown,
   persistAssistanceHistory,
   recordAssistance,
@@ -701,7 +702,10 @@ function App() {
     ]
   );
 
-  const activeReviewCount = Object.values(assistanceHistory.items).filter(
+  const reviewableItems = Object.values(assistanceHistory.items).filter(
+    isReviewableAssistanceItem
+  );
+  const activeReviewCount = reviewableItems.filter(
     (item) => item.knownAt === null
   ).length;
 
@@ -2250,6 +2254,9 @@ function ReviewScreen({
   clearTranslationCache: () => Promise<number>;
 }) {
   const { theme } = preferences;
+  const reviewableItems = Object.values(assistanceHistory.items).filter(
+    isReviewableAssistanceItem
+  );
   const historyItems: Array<{
     article: BuiltInArticle;
     entry: ReadingHistoryEntry;
@@ -2314,7 +2321,7 @@ function ReviewScreen({
           <div className="review-stats" aria-label="Tóm tắt trợ giúp đọc">
             <div>
               <strong>
-                {Object.values(assistanceHistory.items).filter(
+                {reviewableItems.filter(
                   (item) => item.knownAt === null && item.meaningCount === 0
                 ).length}
               </strong>
@@ -2322,7 +2329,7 @@ function ReviewScreen({
             </div>
             <div>
               <strong>
-                {Object.values(assistanceHistory.items).filter(
+                {reviewableItems.filter(
                   (item) => item.knownAt === null && item.meaningCount > 0
                 ).length}
               </strong>
@@ -2681,7 +2688,7 @@ function AssistanceReviewSection({
         <div>
           <p className="eyebrow">Dấu vết học tập</p>
           <h2 id="assistance-review-heading">
-            Chữ, từ và câu từng cần trợ giúp
+            Chữ và từ/cụm từng cần trợ giúp
           </h2>
         </div>
         <div className="assistance-review-actions">
@@ -2775,8 +2782,7 @@ function AssistanceReviewSection({
           [
             ["all", "Tất cả"],
             ["character", "Chữ"],
-            ["word", "Từ/cụm"],
-            ["sentence", "Câu"]
+            ["word", "Từ/cụm"]
           ] as const
         ).map(([candidateScope, label]) => (
           <button

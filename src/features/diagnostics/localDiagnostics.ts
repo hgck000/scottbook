@@ -2,7 +2,10 @@ import { version as appVersion } from "../../../package.json";
 import type { BuiltInArticle } from "../../content/types";
 import type { LibraryState } from "../library/readingState";
 import type { StoragePersistence } from "../pwa/pwaStatus";
-import type { AssistanceHistoryState } from "../review/assistanceHistory";
+import {
+  isReviewableAssistanceItem,
+  type AssistanceHistoryState
+} from "../review/assistanceHistory";
 import type {
   IndexedDbBootstrapResult,
   ScottBookStorageReport
@@ -102,7 +105,9 @@ export function createLocalDiagnosticReport(
       }
     }
   }
-  const reviewItems = Object.values(input.assistanceHistory.items);
+  const reviewItems = Object.values(input.assistanceHistory.items).filter(
+    isReviewableAssistanceItem
+  );
 
   return {
     format: "scottbook-local-diagnostics",
@@ -138,9 +143,8 @@ export function createLocalDiagnosticReport(
         (item) => item.scope === "character"
       ).length,
       wordItemCount: reviewItems.filter((item) => item.scope === "word").length,
-      sentenceItemCount: reviewItems.filter(
-        (item) => item.scope === "sentence"
-      ).length,
+      // Kept in diagnostics format v1 for older support tooling.
+      sentenceItemCount: 0,
       recordingEnabled: input.assistanceHistory.recordingEnabled
     },
     storage: input.storageReport ? { ...input.storageReport } : null,

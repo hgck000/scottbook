@@ -43,18 +43,6 @@ function createItems() {
     level: "meaning",
     occurredAt: 200
   });
-  history = recordAssistance(history, {
-    articleId: "hsk3-understand-first",
-    sentenceId: "s3",
-    sentenceText: "先理解句子的意思。",
-    sentenceTranslation: "Trước hết hãy hiểu nghĩa của câu.",
-    hanzi: "先理解句子的意思。",
-    pinyin: "Xiān lǐjiě jùzi de yìsi.",
-    meaning: "Trước hết hãy hiểu nghĩa của câu.",
-    scope: "sentence",
-    level: "meaning",
-    occurredAt: 300
-  });
   const wordId = Object.values(history.items).find(
     (item) => item.hanzi === "早上"
   )?.id;
@@ -67,7 +55,7 @@ describe("review discovery", () => {
 
     expect(filterAssistanceReviewItems(items, { ...filters, query: "zaosh" })).toHaveLength(1);
     expect(filterAssistanceReviewItems(items, { ...filters, filter: "meaning", query: "công viên" })).toHaveLength(1);
-    expect(filterAssistanceReviewItems(items, { ...filters, filter: "meaning", query: "hieu nghia" })).toHaveLength(1);
+    expect(filterAssistanceReviewItems(items, { ...filters, filter: "meaning", query: "cong cong" })).toHaveLength(1);
   });
 
   it("combines need, scope, and sorting without changing stored items", () => {
@@ -75,18 +63,18 @@ describe("review discovery", () => {
     const result = filterAssistanceReviewItems(items, {
       ...filters,
       filter: "meaning",
-      scope: "sentence",
+      scope: "character",
       sort: "alphabetical"
     });
 
-    expect(result.map((item) => item.scope)).toEqual(["sentence"]);
-    expect(items).toHaveLength(3);
+    expect(result.map((item) => item.scope)).toEqual(["character"]);
+    expect(items).toHaveLength(2);
   });
 
   it("reports the stable counts used by the need filters", () => {
     expect(countAssistanceReviewItems(Object.values(createItems().items))).toEqual({
       reading: 1,
-      meaning: 2,
+      meaning: 1,
       known: 0
     });
   });
