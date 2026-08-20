@@ -98,10 +98,10 @@ describe("offline article vocabulary", () => {
 
     const groups = getLibraryVocabularyContexts(builtInLibrary, entry);
 
-    expect(groups).toHaveLength(26);
+    expect(groups).toHaveLength(28);
     expect(
       groups.reduce((total, group) => total + group.occurrences.length, 0)
-    ).toBe(144);
+    ).toBe(150);
     expect(groups[0]).toMatchObject({
       articleId: "hsk1-my-morning",
       articleTitle: "我的早上",

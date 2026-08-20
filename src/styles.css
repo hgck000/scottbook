@@ -15,6 +15,7 @@
   --amber: #c9933d;
   --coral: #c9654d;
   --violet: #7456a6;
+  --azure: #356ea8;
   --shadow: 0 24px 70px rgb(34 46 42 / 10%);
   --app-safe-top: var(--safe-area-inset-top, env(safe-area-inset-top, 0px));
   --app-safe-right: var(--safe-area-inset-right, env(safe-area-inset-right, 0px));
@@ -34,6 +35,7 @@
   --amber: #d9aa5d;
   --coral: #e08a74;
   --violet: #b39adb;
+  --azure: #80b7e8;
   --shadow: 0 24px 70px rgb(0 0 0 / 30%);
 }
 
@@ -49,6 +51,7 @@
   --amber: #dfad5b;
   --coral: #ed8b73;
   --violet: #bea2ed;
+  --azure: #87c2f5;
   --shadow: 0 24px 70px rgb(0 0 0 / 72%);
 }
 
@@ -2816,6 +2819,10 @@ svg {
   --filter-accent: var(--violet);
 }
 
+.discovery-filter-buttons .level-filter.level-azure {
+  --filter-accent: var(--azure);
+}
+
 .discovery-filter-buttons .level-filter:not(.level-all) {
   border-color: color-mix(in srgb, var(--filter-accent) 34%, var(--line));
   color: color-mix(in srgb, var(--filter-accent) 78%, var(--ink));
@@ -2903,6 +2910,7 @@ svg {
 .accent-amber { --card-accent: var(--amber); }
 .accent-coral { --card-accent: var(--coral); }
 .accent-violet { --card-accent: var(--violet); }
+.accent-azure { --card-accent: var(--azure); }
 
 .card-topline,
 .card-footer {
@@ -3123,6 +3131,7 @@ svg {
 .reader-shell.accent-amber { --reader-accent: var(--amber); }
 .reader-shell.accent-coral { --reader-accent: var(--coral); }
 .reader-shell.accent-violet { --reader-accent: var(--violet); }
+.reader-shell.accent-azure { --reader-accent: var(--azure); }
 
 .reader-toolbar {
   position: sticky;
@@ -3304,6 +3313,7 @@ svg {
 .reader-article.accent-amber { --reader-accent: var(--amber); }
 .reader-article.accent-coral { --reader-accent: var(--coral); }
 .reader-article.accent-violet { --reader-accent: var(--violet); }
+.reader-article.accent-azure { --reader-accent: var(--azure); }
 
 .reader-article[data-reader-font="sans"] {
   --reader-font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", ui-sans-serif, sans-serif;

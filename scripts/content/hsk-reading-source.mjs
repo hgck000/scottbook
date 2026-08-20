@@ -882,5 +882,221 @@ export const hskReadingSource = [
         sentence("活动 结束 后 ， 剩下 的 东西 全部 送给了 需要 帮助 的 家庭 。", "Sau hoạt động, toàn bộ đồ còn lại được tặng cho các gia đình cần giúp đỡ.")
       ])
     ]
+  ),
+  article(
+    "hsk5-overtime-evaluation",
+    "晚下班就更努力吗",
+    "Ở lại muộn có nghĩa là chăm chỉ hơn?",
+    "Một nhóm thay đổi cách đánh giá nhân viên sau khi nhận ra thời gian ở văn phòng không phản ánh đúng hiệu quả.",
+    "HSK 5",
+    "Công sở",
+    [
+      section("看得见的勤奋", "Sự chăm chỉ có thể nhìn thấy", [
+        sentence("公司 过去 有一种 习惯 ， 谁 晚上 留在 办公室 ， 谁 就 容易 被 认为 更 努力 。", "Công ty trước đây có một thói quen: ai ở lại văn phòng buổi tối thì dễ được xem là chăm chỉ hơn."),
+        sentence("新员工 小赵 为了 给 经理 留下 好 印象 ， 即使 工作 完成了 也 不敢 按时 下班 。", "Nhân viên mới Tiểu Triệu dù hoàn thành công việc vẫn không dám tan ca đúng giờ vì muốn tạo ấn tượng tốt với quản lý."),
+        sentence("相反 ， 有位 同事 每天 准时 离开 ， 因此 常 被 怀疑 对 工作 不够 积极 。", "Ngược lại, một đồng nghiệp ngày nào cũng rời đi đúng giờ nên thường bị nghi là chưa đủ tích cực."),
+        sentence("后来 经理 查看 项目 记录 才 发现 ， 那位 同事 不但 任务 完成得 快 ， 质量 也 最 稳定 。", "Sau đó quản lý xem hồ sơ dự án mới phát hiện người ấy không chỉ hoàn thành nhanh mà chất lượng còn ổn định nhất."),
+        sentence("而 一些 经常 加班 的 人 ， 白天 却 花了 不少 时间 等待 指示 或者 重复 修改 。", "Trong khi đó, một số người thường tăng ca lại tốn khá nhiều thời gian ban ngày để chờ chỉ dẫn hoặc sửa đi sửa lại.")
+      ]),
+      section("从时间转向结果", "Chuyển từ thời gian sang kết quả", [
+        sentence("经理 决定 取消 没有 必要 的 晚间 会议 ， 并且 明确 每项 任务 的 目标 和 期限 。", "Quản lý quyết định hủy các cuộc họp tối không cần thiết và xác định rõ mục tiêu, thời hạn từng nhiệm vụ."),
+        sentence("员工 可以 自己 安排 工作 顺序 ， 遇到 阻碍 时 则 要 及时 说明 原因 。", "Nhân viên có thể tự sắp xếp thứ tự công việc, còn khi gặp trở ngại phải giải thích nguyên nhân kịp thời."),
+        sentence("三个月 后 ， 团队 的 加班 时间 减少了 ， 项目 延迟 的 情况 也 变少了 。", "Ba tháng sau, thời gian tăng ca của nhóm giảm và tình trạng dự án chậm cũng ít đi."),
+        sentence("小赵 终于 明白 ， 职业 态度 不是 表演 忙碌 ， 而是 对 承诺 的 结果 负责 。", "Tiểu Triệu cuối cùng hiểu rằng thái độ nghề nghiệp không phải biểu diễn sự bận rộn mà là chịu trách nhiệm với kết quả đã cam kết."),
+        sentence("真正 公平 的 评价 应该 关注 贡献 ， 而不是 谁 最后一个 关掉 办公室 的 灯 。", "Đánh giá thật sự công bằng nên chú ý đóng góp, không phải ai là người cuối cùng tắt đèn văn phòng.")
+      ])
+    ]
+  ),
+  article(
+    "hsk5-repair-clothes",
+    "旧衣服的第二次机会",
+    "Cơ hội thứ hai của quần áo cũ",
+    "Một cửa hàng sửa chữa quần áo giúp khách nhìn lại thói quen mua mới rồi bỏ.",
+    "HSK 5",
+    "May mặc",
+    [
+      section("不是坏了就要扔", "Hỏng không có nghĩa là phải vứt", [
+        sentence("小区 附近 新开了 一家 小店 ， 门口 没有 展示 新 衣服 ， 只 挂着 几件 修补过 的 外套 。", "Gần khu dân cư mở một cửa hàng nhỏ, trước cửa không trưng đồ mới mà chỉ treo vài chiếc áo khoác đã sửa."),
+        sentence("店主 原来 在 服装 工厂 工作 ， 她 发现 很多 衣服 只是 拉链 坏了 或者 袖口 磨破 ， 就 被 扔掉 。", "Chủ tiệm từng làm ở nhà máy may và nhận ra nhiều quần áo chỉ hỏng khóa hoặc sờn cổ tay đã bị vứt đi."),
+        sentence("她 希望 通过 修改 尺寸 、 更换 零件 和 重新 染色 ， 延长 衣服 的 使用 时间 。", "Cô muốn kéo dài thời gian sử dụng quần áo bằng cách sửa kích cỡ, thay phụ kiện và nhuộm lại."),
+        sentence("起初 有些 顾客 觉得 修理 旧衣 不值得 ， 因为 便宜 的 新衣 随时 都 能 买到 。", "Ban đầu một số khách cho rằng sửa đồ cũ không đáng vì quần áo mới giá rẻ có thể mua bất cứ lúc nào."),
+        sentence("但是 当 他们 看到 一件 普通 衬衫 经过 修改 变得 更 合身 时 ， 态度 慢慢 改变了 。", "Nhưng khi thấy một chiếc sơ mi bình thường trở nên vừa vặn hơn sau khi sửa, thái độ của họ dần thay đổi.")
+      ]),
+      section("修补的是物品也是记忆", "Sửa món đồ, giữ ký ức", [
+        sentence("一位 老人 带来 丈夫 年轻 时 穿过 的 大衣 ， 希望 改成 适合 自己 的 长度 。", "Một cụ bà mang chiếc áo khoác chồng từng mặc thời trẻ và muốn sửa thành chiều dài phù hợp với mình."),
+        sentence("大衣 的 布料 已经 有些 旧 ， 可是 保存得 很好 ， 里面 还 留着 丈夫 写的 名字 。", "Vải áo đã hơi cũ nhưng được giữ rất tốt, bên trong còn tên do chồng bà viết."),
+        sentence("店主 花了 两周 调整 肩部 和 衣领 ， 同时 尽量 保留 原来 的 样子 。", "Chủ tiệm dành hai tuần chỉnh vai và cổ áo, đồng thời cố giữ dáng ban đầu."),
+        sentence("老人 试穿 时 眼睛 红了 ， 她 说 这件 衣服 又 能 陪 自己 生活 许多年 。", "Khi thử áo, mắt bà đỏ lên; bà nói chiếc áo lại có thể đồng hành cùng mình nhiều năm."),
+        sentence("修补 并不 只是 节省 钱 ， 它 也 提醒 人们 认真 对待 已经 拥有 的 东西 。", "Sửa chữa không chỉ tiết kiệm tiền mà còn nhắc mọi người trân trọng những gì đã có.")
+      ])
+    ]
+  ),
+  article(
+    "hsk5-inclusive-coat",
+    "为老人设计的一件外套",
+    "Chiếc áo khoác được thiết kế cho người cao tuổi",
+    "Một sinh viên thiết kế thay đổi sản phẩm sau khi thật sự quan sát những khó khăn của người mặc.",
+    "HSK 5",
+    "Thiết kế",
+    [
+      section("漂亮却不好穿", "Đẹp nhưng khó mặc", [
+        sentence("服装 专业 的 学生 林然 参加 比赛 时 ， 决定 为 老年人 设计 一件 冬季 外套 。", "Sinh viên ngành thời trang Lâm Nhiên quyết định thiết kế áo khoác mùa đông cho người cao tuổi khi tham gia cuộc thi."),
+        sentence("她 最初 的 作品 颜色 大方 、 线条 简单 ， 老师 却 没有 马上 表扬 。", "Tác phẩm ban đầu có màu trang nhã và đường nét đơn giản nhưng giáo viên không khen ngay."),
+        sentence("老师 请 她 戴上 厚 手套 ， 再 尝试 扣好 那些 小小的 扣子 。", "Giáo viên yêu cầu cô đeo găng dày rồi thử cài những chiếc cúc nhỏ."),
+        sentence("林然 这才 发现 ， 对 手指 不灵活 的 人 来说 ， 普通 扣子 会 带来 很大 麻烦 。", "Lúc ấy Lâm Nhiên mới nhận ra cúc thường gây nhiều khó khăn cho người có ngón tay kém linh hoạt."),
+        sentence("她 又 去 社区 访问 几位 老人 ， 了解 他们 穿衣 时 真正 遇到 的 困难 。", "Cô còn đến cộng đồng hỏi thăm vài người cao tuổi để hiểu khó khăn thật sự khi mặc đồ.")
+      ]),
+      section("让细节照顾使用者", "Để chi tiết chăm sóc người dùng", [
+        sentence("新的 外套 用 磁铁 代替 部分 扣子 ， 但 外面 仍然 保留 传统 的 外观 。", "Áo mới dùng nam châm thay một phần cúc nhưng bên ngoài vẫn giữ dáng vẻ truyền thống."),
+        sentence("口袋 的 位置 被 提高 ， 老人 不用 弯腰 就 能 拿到 手机 和 钥匙 。", "Vị trí túi được nâng lên để người cao tuổi không cần cúi vẫn lấy được điện thoại và chìa khóa."),
+        sentence("衣服 背后 增加了 一条 反光 材料 ， 晚上 出门 时 更 容易 被 车辆 看见 。", "Phía sau áo thêm một dải phản quang để khi ra ngoài ban đêm dễ được xe cộ nhìn thấy hơn."),
+        sentence("比赛 评委 认为 ， 这件 外套 的 价值 不在于 技术 复杂 ， 而在于 理解 使用者 。", "Ban giám khảo cho rằng giá trị áo không nằm ở kỹ thuật phức tạp mà ở sự thấu hiểu người sử dụng."),
+        sentence("林然 也 明白了 ， 设计 不是 替 别人 决定 什么 好 ， 而是 帮助 他们 更 自由 地 生活 。", "Lâm Nhiên cũng hiểu thiết kế không phải quyết định thay người khác điều gì tốt mà là giúp họ sống tự do hơn.")
+      ])
+    ]
+  ),
+  article(
+    "hsk5-write-first-meeting",
+    "先写再说的会议",
+    "Cuộc họp viết trước rồi mới nói",
+    "Một đội sản phẩm thử phương pháp họp mới để ý tưởng không bị quyết định bởi người nói nhiều nhất.",
+    "HSK 5",
+    "Công sở",
+    [
+      section("声音大不等于想法好", "Nói lớn không có nghĩa ý tưởng hay", [
+        sentence("产品 团队 每次 讨论 新 功能 时 ， 总是 几位 性格 外向 的 同事 说得 最多 。", "Mỗi lần nhóm sản phẩm thảo luận tính năng mới, vài đồng nghiệp hướng ngoại luôn nói nhiều nhất."),
+        sentence("其他 人 即使 有 不同 看法 ， 也 常常 因为 找不到 合适 时机 而 保持 沉默 。", "Những người khác dù có quan điểm khác vẫn thường im lặng vì không tìm được thời điểm thích hợp."),
+        sentence("有一次 大家 很快 同意了 一个 方案 ， 开始 实施 后 才 发现 存在 明显 风险 。", "Một lần mọi người nhanh chóng đồng ý một phương án nhưng khi triển khai mới phát hiện rủi ro rõ ràng."),
+        sentence("一名 平时 很少 发言 的 工程师 说 ， 他 其实 早就 想到 这个 问题 ， 只是 没有 机会 说明 。", "Một kỹ sư ít phát biểu nói rằng anh đã nghĩ đến vấn đề từ sớm nhưng không có cơ hội trình bày."),
+        sentence("负责人 因此 决定 改变 会议 顺序 ， 让 每个人 先 安静 地 写下 判断 。", "Người phụ trách vì thế đổi thứ tự họp, để mọi người trước tiên yên lặng viết nhận định.")
+      ]),
+      section("不同意见终于出现", "Ý kiến khác biệt cuối cùng xuất hiện", [
+        sentence("会议 开始 的 前 十分钟 不许 讲话 ， 所有人 都 阅读 资料 并 写下 支持 或 反对 的 理由 。", "Mười phút đầu cuộc họp không được nói; mọi người đọc tài liệu và viết lý do ủng hộ hoặc phản đối."),
+        sentence("之后 每个人 轮流 分享 一个 重点 ， 不能 重复 已经 提到 的 内容 。", "Sau đó mỗi người lần lượt chia sẻ một trọng điểm và không lặp nội dung đã nêu."),
+        sentence("这样 一来 ， 安静 的 同事 也 能 完整 表达 ， 讨论 中 出现了 更多 角度 。", "Nhờ vậy, đồng nghiệp ít nói cũng trình bày trọn vẹn và cuộc thảo luận có thêm nhiều góc nhìn."),
+        sentence("团队 并没有 因为 意见 增加 而 更难 决定 ， 反而 更快 看清 每个 选择 的 代价 。", "Nhóm không khó quyết định hơn vì nhiều ý kiến mà ngược lại nhìn rõ cái giá của từng lựa chọn nhanh hơn."),
+        sentence("好的 会议 不是 让 所有人 同意 ， 而是 让 重要 的 不同 意见 都 有 机会 被 听见 。", "Cuộc họp tốt không phải khiến tất cả đồng ý mà là cho mọi ý kiến khác biệt quan trọng cơ hội được lắng nghe.")
+      ])
+    ]
+  ),
+  article(
+    "hsk5-old-tree-debate",
+    "老树该不该被搬走",
+    "Có nên di dời cây cổ thụ?",
+    "Một khu phố tìm giải pháp cân bằng giữa an toàn giao thông, ký ức cộng đồng và môi trường.",
+    "HSK 5",
+    "Kế hoạch",
+    [
+      section("一棵树引起的争论", "Cuộc tranh luận từ một cái cây", [
+        sentence("老街 路口 有 一棵 生长了 七十年 的 大树 ， 树下 是 邻居们 常 休息 的 地方 。", "Ở ngã tư phố cũ có cây lớn bảy mươi năm tuổi, dưới gốc là nơi hàng xóm thường nghỉ chân."),
+        sentence("随着 车辆 增加 ， 有人 认为 树干 挡住 视线 ， 建议 把 树 搬到 公园 。", "Khi xe cộ tăng lên, có người cho rằng thân cây che tầm nhìn và đề nghị chuyển cây vào công viên."),
+        sentence("另一些 居民 反对 ， 因为 这棵树 不仅 提供 阴凉 ， 还 保存着 几代人 的 回忆 。", "Những cư dân khác phản đối vì cây không chỉ tạo bóng mát mà còn lưu ký ức nhiều thế hệ."),
+        sentence("双方 在 网上 争论了 很久 ， 却 都 没有 实际 测量 交通 风险 。", "Hai bên tranh luận lâu trên mạng nhưng không ai thực sự đo mức rủi ro giao thông."),
+        sentence("社区 最后 邀请 交通 专家 和 植物 专家 一起 到 现场 调查 。", "Cuối cùng cộng đồng mời chuyên gia giao thông và thực vật cùng khảo sát tại chỗ.")
+      ]),
+      section("不是只有留下或搬走", "Không chỉ có giữ lại hoặc di dời", [
+        sentence("调查 发现 ， 真正 影响 视线 的 主要 是 树旁边 随意 停放 的 车辆 。", "Khảo sát cho thấy thứ thực sự ảnh hưởng tầm nhìn chủ yếu là xe đỗ tùy tiện cạnh cây."),
+        sentence("专家 建议 取消 两个 停车位 ， 修剪 部分 树枝 ， 并且 调整 红绿灯 的 位置 。", "Chuyên gia đề nghị bỏ hai chỗ đỗ xe, tỉa một phần cành và điều chỉnh vị trí đèn giao thông."),
+        sentence("经过 一个月 试验 ， 路口 的 事故 风险 明显 降低 ， 大树 也 被 保留下来 。", "Sau một tháng thử nghiệm, rủi ro tai nạn ở giao lộ giảm rõ rệt và cây lớn cũng được giữ lại."),
+        sentence("居民们 意识到 ， 如果 只 在 两个 极端 答案 中 选择 ， 很多 可能性 就 会 被 忽略 。", "Cư dân nhận ra nếu chỉ chọn giữa hai đáp án cực đoan thì nhiều khả năng sẽ bị bỏ qua."),
+        sentence("面对 公共 问题 ， 先 收集 事实 再 讨论 价值 ， 往往 比 互相 指责 更有用 。", "Đối mặt vấn đề công cộng, thu thập sự thật trước rồi bàn giá trị thường hữu ích hơn chỉ trích nhau.")
+      ])
+    ]
+  ),
+  article(
+    "hsk5-recording-grandfather",
+    "录下爷爷的故事",
+    "Ghi lại câu chuyện của ông",
+    "Một người trẻ học cách lưu giữ ký ức gia đình bằng việc lắng nghe thay vì chỉ thu âm.",
+    "HSK 5",
+    "Đời sống",
+    [
+      section("从一张旧照片问起", "Bắt đầu bằng một bức ảnh cũ", [
+        sentence("整理 房间 时 ， 我 找到 一张 爷爷 年轻 时 在 火车站 工作 的 黑白 照片 。", "Khi dọn phòng, tôi tìm thấy bức ảnh đen trắng ông làm việc ở ga tàu lúc trẻ."),
+        sentence("照片 后面 只 写着 一个 年份 ， 家里 没人 知道 当天 发生过 什么 。", "Sau ảnh chỉ ghi một năm và không ai trong nhà biết hôm đó từng xảy ra chuyện gì."),
+        sentence("我 担心 这些 记忆 将来 消失 ， 于是 决定 用 手机 录下 爷爷 的 回忆 。", "Tôi lo những ký ức ấy mai này biến mất nên quyết định dùng điện thoại ghi lại hồi ức của ông."),
+        sentence("第一次 采访 时 ， 我 准备了 很多 问题 ， 结果 像 完成 任务 一样 问得 太快 。", "Lần phỏng vấn đầu, tôi chuẩn bị nhiều câu hỏi nhưng hỏi quá nhanh như đang hoàn thành nhiệm vụ."),
+        sentence("爷爷 只 简单 回答 几句 ， 录音 里 虽然 没有 空白 ， 却 听不出 生活 的 味道 。", "Ông chỉ trả lời ngắn; bản ghi tuy không có khoảng trống nhưng chẳng nghe ra hương vị cuộc sống.")
+      ]),
+      section("让记忆慢慢打开", "Để ký ức từ từ mở ra", [
+        sentence("第二次 我 没有 带 问题表 ， 只 把 那张 照片 放在 爷爷 面前 。", "Lần thứ hai tôi không mang bảng câu hỏi mà chỉ đặt bức ảnh trước mặt ông."),
+        sentence("爷爷 看了 很久 ， 主动 讲起 第一天 上班 时 如何 因为 紧张 坐错了 火车 。", "Ông nhìn rất lâu rồi chủ động kể ngày đầu đi làm đã lên nhầm tàu vì căng thẳng thế nào."),
+        sentence("他说到 老同事 的 玩笑 、 冬天 的 风 ， 以及 母亲 送给 他 的 午饭 。", "Ông kể chuyện đùa của đồng nghiệp cũ, gió mùa đông và bữa trưa mẹ chuẩn bị cho ông."),
+        sentence("我 终于 明白 ， 记录 家庭 历史 不只是 保存 声音 ， 更重要 的 是 给 对方 时间 。", "Tôi cuối cùng hiểu ghi lại lịch sử gia đình không chỉ là lưu âm thanh mà quan trọng hơn là cho đối phương thời gian."),
+        sentence("后来 我们 每周 聊 一次 ， 那张 沉默 多年 的 照片 逐渐 变成了 一段 完整 的 故事 。", "Sau đó chúng tôi trò chuyện mỗi tuần và bức ảnh im lặng nhiều năm dần trở thành một câu chuyện hoàn chỉnh.")
+      ])
+    ]
+  ),
+  article(
+    "hsk5-listening-volunteer",
+    "少说一点，多听一些",
+    "Nói ít đi, nghe được nhiều hơn",
+    "Một tình nguyện viên nhận ra giúp đỡ không bắt đầu từ lời khuyên mà từ việc hiểu nhu cầu thật.",
+    "HSK 5",
+    "Đời sống",
+    [
+      section("热心的建议没有用", "Lời khuyên nhiệt tình không có tác dụng", [
+        sentence("大学生 阿文 每周 去 社区 陪伴 一位 独居 老人 ， 他 总想 帮 对方 解决 问题 。", "Sinh viên A Văn mỗi tuần đến cộng đồng thăm một cụ già sống một mình và luôn muốn giúp giải quyết vấn đề."),
+        sentence("老人 说 最近 睡不好 ， 阿文 马上 推荐 运动 、 音乐 和 各种 放松 方法 。", "Khi cụ nói gần đây ngủ không ngon, A Văn lập tức khuyên tập thể dục, nghe nhạc và nhiều cách thư giãn."),
+        sentence("老人 每次 都 礼貌 地 点头 ， 可是 下周 见面 时 情况 并没有 改变 。", "Mỗi lần cụ đều lịch sự gật đầu nhưng tuần sau gặp lại tình hình chẳng thay đổi."),
+        sentence("负责 志愿者 培训 的 老师 提醒 阿文 ， 他 说了 很多 ， 却 没 问 老人 为什么 睡不着 。", "Giáo viên phụ trách đào tạo tình nguyện viên nhắc A Văn rằng cậu nói nhiều nhưng chưa hỏi vì sao cụ mất ngủ."),
+        sentence("阿文 才 意识到 ， 自己 把 帮助 理解成 提供 答案 ， 而不是 了解 对方 。", "A Văn mới nhận ra mình hiểu giúp đỡ là đưa đáp án chứ không phải tìm hiểu đối phương.")
+      ]),
+      section("真正的问题终于被听见", "Vấn đề thật cuối cùng được lắng nghe", [
+        sentence("下次 见面 ， 阿文 放下 手机 ， 没有 急着 建议 ， 只 请 老人 慢慢 讲 。", "Lần gặp sau, A Văn đặt điện thoại xuống, không vội khuyên mà chỉ mời cụ từ từ kể."),
+        sentence("老人 终于 说 ， 楼上 半夜 常有 搬动 家具 的 声音 ， 让 他 感到 不安 。", "Cuối cùng cụ nói tầng trên thường có tiếng kéo đồ lúc nửa đêm khiến cụ bất an."),
+        sentence("阿文 陪 他 联系 邻居 后 才 发现 ， 对方 夜里 工作 ， 回家 时 没 注意 声音 。", "Sau khi A Văn cùng cụ liên hệ hàng xóm, họ mới biết người ấy làm đêm và không để ý tiếng động khi về."),
+        sentence("邻居 调整了 生活 习惯 ， 老人 的 睡眠 很快 恢复 ， 双方 关系 也 没有 受到 伤害 。", "Hàng xóm điều chỉnh sinh hoạt, giấc ngủ của cụ nhanh chóng hồi phục và quan hệ hai bên cũng không bị tổn hại."),
+        sentence("阿文 从中 学会 ， 有时候 最有效 的 帮助 不是 多说 ， 而是 让 隐藏 的 问题 被 听见 。", "A Văn học được rằng đôi khi giúp đỡ hiệu quả nhất không phải nói nhiều mà là để vấn đề ẩn giấu được lắng nghe.")
+      ])
+    ]
+  ),
+  article(
+    "hsk5-learning-to-question",
+    "从不会提问到会学习",
+    "Từ không biết hỏi đến biết học",
+    "Một sinh viên cải thiện việc học khi thay câu hỏi chung chung bằng những câu hỏi có bằng chứng và mục tiêu.",
+    "HSK 5",
+    "Học tập",
+    [
+      section("一句我不懂", "Một câu ‘em không hiểu’", [
+        sentence("刚 上大学 时 ， 陈晨 遇到 难题 总 对 老师 说 我 完全 不懂 ， 请 再 讲 一遍 。", "Khi mới vào đại học, gặp bài khó Trần Thần luôn nói với giáo viên rằng em hoàn toàn không hiểu, xin giảng lại."),
+        sentence("老师 即使 重新 解释 ， 他 也 常常 只能 听懂 当时 ， 回去 以后 又 不会 做 。", "Dù giáo viên giải thích lại, cậu thường chỉ hiểu lúc đó rồi về nhà lại không làm được."),
+        sentence("一位 教授 告诉 他 ， 提问 之前 应该 先 说明 自己 已经 尝试了 什么 。", "Một giáo sư bảo cậu trước khi hỏi nên nói rõ bản thân đã thử những gì."),
+        sentence("教授 还 要求 他 指出 从 哪一步 开始 失去 理解 ， 而不是 把 整个 问题 推给 别人 。", "Giáo sư còn yêu cầu chỉ ra từ bước nào bắt đầu không hiểu thay vì đẩy toàn bộ vấn đề cho người khác."),
+        sentence("陈晨 起初 觉得 这样 很 麻烦 ， 后来 却 发现 准备 问题 本身 就是 一次 思考 。", "Ban đầu Trần Thần thấy cách này phiền nhưng sau nhận ra chuẩn bị câu hỏi tự nó đã là một lần suy nghĩ.")
+      ]),
+      section("问题变得越来越具体", "Câu hỏi ngày càng cụ thể", [
+        sentence("他 开始 在 笔记 中 区分 已知 条件 、 自己 的 推断 和 没有 证据 的 猜测 。", "Cậu bắt đầu phân biệt trong ghi chép giữa điều kiện đã biết, suy luận của mình và phỏng đoán chưa có bằng chứng."),
+        sentence("有时 写到 一半 ， 他 就 能 发现 计算 错误 ， 根本 不需要 再 去 问 老师 。", "Đôi khi viết được nửa chừng cậu đã phát hiện lỗi tính toán và hoàn toàn không cần hỏi giáo viên nữa."),
+        sentence("真正 需要 帮助 时 ， 他 的 问题 也 从 为什么 不对 变成了 这个 假设 是否 合理 。", "Khi thật sự cần giúp, câu hỏi của cậu cũng chuyển từ ‘vì sao không đúng’ thành ‘giả thiết này có hợp lý không’."),
+        sentence("老师 能 更快 找到 他 思考 中 的 关键 缺口 ， 回答 也 变得 更有 针对性 。", "Giáo viên có thể nhanh chóng tìm khoảng trống then chốt trong suy nghĩ của cậu và câu trả lời cũng sát vấn đề hơn."),
+        sentence("会 提问 并不 表示 知识 少 ， 它 反而 说明 学习者 知道 自己 正在 寻找 什么 。", "Biết đặt câu hỏi không có nghĩa ít kiến thức mà cho thấy người học biết mình đang tìm điều gì.")
+      ])
+    ]
+  ),
+  article(
+    "hsk5-market-and-supermarket",
+    "菜市场旁边的新超市",
+    "Siêu thị mới bên cạnh chợ thực phẩm",
+    "Người bán hàng trong chợ điều chỉnh cách phục vụ thay vì chỉ cạnh tranh về giá với siêu thị mới.",
+    "HSK 5",
+    "Kế hoạch",
+    [
+      section("大家都担心生意", "Mọi người đều lo việc kinh doanh", [
+        sentence("老 菜市场 旁边 要 开 一家 大型 超市 的 消息 传来 后 ， 摊主们 都 很 担心 。", "Sau khi có tin một siêu thị lớn sẽ mở cạnh chợ cũ, các chủ sạp đều rất lo."),
+        sentence("他们 认为 超市 环境 干净 、 营业 时间 长 ， 还 经常 用 优惠 吸引 顾客 。", "Họ cho rằng siêu thị sạch sẽ, mở cửa lâu và thường dùng khuyến mãi thu hút khách."),
+        sentence("有人 建议 所有 摊位 一起 降价 ， 但 老摊主 刘阿姨 认为 这样 只能 暂时 留住 生意 。", "Có người đề nghị mọi sạp cùng giảm giá, nhưng cô Lưu bán lâu năm cho rằng cách đó chỉ giữ khách tạm thời."),
+        sentence("她 观察 顾客 几天 后 发现 ， 很多人 来 市场 是 为了 买 新鲜 食材 和 询问 做法 。", "Sau vài ngày quan sát, cô phát hiện nhiều người đến chợ để mua thực phẩm tươi và hỏi cách chế biến."),
+        sentence("这些 经验 和 人情 味 正是 大型 超市 不容易 提供 的 优点 。", "Kinh nghiệm và sự gần gũi ấy chính là ưu điểm siêu thị lớn khó cung cấp.")
+      ]),
+      section("找到不能被代替的价值", "Tìm giá trị không thể thay thế", [
+        sentence("摊主们 决定 保持 价格 合理 ， 同时 把 商品 来源 和 到货 时间 写得 更 清楚 。", "Các chủ sạp quyết định giữ giá hợp lý, đồng thời ghi rõ hơn nguồn hàng và thời gian nhập."),
+        sentence("卖菜 的 人 分享 简单 菜谱 ， 卖鱼 的 人 则 免费 帮 顾客 处理 食材 。", "Người bán rau chia sẻ công thức đơn giản, còn người bán cá giúp khách sơ chế miễn phí."),
+        sentence("市场 还 增加了 统一 的 清洁 时间 ， 并且 接受 顾客 对 卫生 问题 的 意见 。", "Chợ còn bổ sung giờ vệ sinh thống nhất và tiếp nhận ý kiến khách về vấn đề vệ sinh."),
+        sentence("超市 开业 后 ， 市场 的 客人 确实 少了 一些 ， 但 熟客 仍然 愿意 回来 。", "Sau khi siêu thị khai trương, khách ở chợ quả thật ít hơn nhưng khách quen vẫn muốn quay lại."),
+        sentence("竞争 不一定 意味着 模仿 对方 ， 有时 更重要 的 是 看清 自己 为什么 值得 被 选择 。", "Cạnh tranh không nhất thiết là bắt chước đối phương; đôi khi quan trọng hơn là thấy rõ vì sao mình đáng được lựa chọn.")
+      ])
+    ]
   )
 ];

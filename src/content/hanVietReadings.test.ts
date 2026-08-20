@@ -6,6 +6,7 @@ describe("offline Hán-Việt readings", () => {
   it("resolves common simplified words through Unicode variants", () => {
     expect(getHanVietReading("学习")?.display).toBe("học tập");
     expect(getHanVietReading("汉字")?.display).toBe("hán tự");
+    expect(getHanVietReading("钥匙", ["yào", "shi"])?.display).toBe("dược thi");
   });
 
   it("preserves possible readings instead of guessing one", () => {

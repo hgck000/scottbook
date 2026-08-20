@@ -74,22 +74,38 @@ const meaningOverrides = new Map([
   ["活动", "hoạt động; sự kiện"],
   ["制服", "đồng phục"],
   ["样衣", "quần áo mẫu; mẫu thử"],
-  ["错题本", "sổ ghi và phân tích câu làm sai"]
+  ["错题本", "sổ ghi và phân tích câu làm sai"],
+  ["只", "chỉ; chỉ có"],
+  ["当", "khi; lúc; vào lúc"],
+  ["表演", "biểu diễn; trình diễn; đóng vai"],
+  ["代价", "cái giá phải trả; chi phí"],
+  ["大树", "cây lớn; cây to"],
+  ["假设", "giả thiết; giả định"],
+  ["针对性", "tính nhắm đúng mục tiêu; tính sát vấn đề"],
+  ["生意", "việc kinh doanh; buôn bán"]
 ]);
 const tokenPinyinOverrides = new Map([
-  ["地", ["de"]]
+  ["地", ["de"]],
+  ["只", ["zhǐ"]],
+  ["完成得", ["wán", "chéng", "de"]],
+  ["保存得", ["bǎo", "cún", "de"]],
+  ["说得", ["shuō", "de"]],
+  ["问得", ["wèn", "de"]],
+  ["写得", ["xiě", "de"]]
 ]);
 const accentByLevel = {
   "HSK 1": "jade",
   "HSK 2": "amber",
   "HSK 3": "coral",
-  "HSK 4": "violet"
+  "HSK 4": "violet",
+  "HSK 5": "azure"
 };
 const minutesByLevel = {
   "HSK 1": 4,
   "HSK 2": 5,
   "HSK 3": 6,
-  "HSK 4": 7
+  "HSK 4": 7,
+  "HSK 5": 8
 };
 
 function cleanDefinition(value) {

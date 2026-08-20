@@ -33,7 +33,7 @@ describe("offline library discovery", () => {
     expect(
       filterLibraryArticles(builtInLibrary, state, {
         ...DEFAULT_FILTERS,
-        query: "Xiān, lǐjiě"
+        query: "Xiān lǐjiě fānyì"
       }).map((article) => article.id)
     ).toEqual(["hsk3-understand-first"]);
     expect(
@@ -45,14 +45,19 @@ describe("offline library discovery", () => {
       "hsk1-my-family",
       "hsk1-rainy-day",
       "hsk2-weekend-plan",
-      "hsk3-fashion-window"
+      "hsk3-fashion-window",
+      "hsk5-old-tree-debate"
     ]);
     expect(
       filterLibraryArticles(builtInLibrary, state, {
         ...DEFAULT_FILTERS,
         query: "dich tung chu"
       }).map((article) => article.id)
-    ).toEqual(["hsk3-understand-first", "hsk4-lost-camera"]);
+    ).toEqual([
+      "hsk3-understand-first",
+      "hsk4-lost-camera",
+      "hsk5-overtime-evaluation"
+    ]);
   });
 
   it("combines level and multi-term search filters", () => {
@@ -122,7 +127,8 @@ describe("offline library discovery", () => {
       "HSK 1": 9,
       "HSK 2": 9,
       "HSK 3": 9,
-      "HSK 4": 9
+      "HSK 4": 9,
+      "HSK 5": 9
     });
   });
 });

@@ -10,6 +10,12 @@ export type HanVietReading = {
   ambiguous: boolean;
 };
 
+// Curated reading for a common simplified form whose `yào` pronunciation is
+// absent from the pinned generic Unihan row and pinyin-specific wordlist.
+const HAN_VIET_PINYIN_OVERRIDES: Readonly<Record<string, string>> = {
+  "钥|yao4": "dược"
+};
+
 function formatCharacterReading(reading: string): {
   display: string;
   ambiguous: boolean;
@@ -57,6 +63,9 @@ function findReading(character: string, pinyin?: string): string | undefined {
       ? genericReading
       : undefined;
   return (
+    (normalizedPinyin
+      ? HAN_VIET_PINYIN_OVERRIDES[`${character}|${normalizedPinyin}`]
+      : undefined) ??
     (normalizedPinyin
       ? HAN_VIET_PINYIN_READINGS[`${character}|${normalizedPinyin}`]
       : undefined) ??

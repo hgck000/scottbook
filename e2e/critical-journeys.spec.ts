@@ -730,7 +730,7 @@ test("searches and filters the authored offline library", async ({ page }) => {
   ).toBeVisible();
   await expect(
     page.locator(".discovery-results [role='status']")
-  ).toContainText("36 bài phù hợp");
+  ).toContainText("45 bài phù hợp");
   expect(pageErrors).toEqual([]);
 });
 

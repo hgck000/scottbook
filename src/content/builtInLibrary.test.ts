@@ -5,14 +5,15 @@ import { formatValidationIssues, validateBuiltInLibrary } from "./validateLibrar
 
 describe("built-in ScottBook library", () => {
   it("ships nine medium-to-long readings for every supported HSK level", () => {
-    expect(builtInLibrary).toHaveLength(36);
+    expect(builtInLibrary).toHaveLength(45);
     const accentByLevel = {
       "HSK 1": "jade",
       "HSK 2": "amber",
       "HSK 3": "coral",
-      "HSK 4": "violet"
+      "HSK 4": "violet",
+      "HSK 5": "azure"
     } as const;
-    for (const level of ["HSK 1", "HSK 2", "HSK 3", "HSK 4"] as const) {
+    for (const level of ["HSK 1", "HSK 2", "HSK 3", "HSK 4", "HSK 5"] as const) {
       const levelArticles = builtInLibrary.filter((article) => article.level === level);
       expect(levelArticles).toHaveLength(9);
       expect(levelArticles.every((article) => article.accent === accentByLevel[level])).toBe(true);
@@ -90,6 +91,23 @@ describe("built-in ScottBook library", () => {
       .toMatchObject({ meaning: "bị; được; giới từ đánh dấu câu bị động" });
     expect(hsk4Tokens.find((token) => token.hanzi === "东西"))
       .toMatchObject({ meaning: "đồ vật; thứ; đồ đạc" });
+
+    const hsk5Tokens = builtInLibrary
+      .filter((article) => article.level === "HSK 5")
+      .flatMap((article) => article.paragraphs)
+      .flatMap((paragraph) => paragraph.sentences)
+      .flatMap((sentence) => sentence.tokens)
+      .filter((token) => token.kind === "word");
+    expect(
+      hsk5Tokens.filter((token) => token.hanzi === "只")
+        .every((token) => token.pinyin === "zhǐ" && token.meaning === "chỉ; chỉ có")
+    ).toBe(true);
+    expect(hsk5Tokens.find((token) => token.hanzi === "完成得"))
+      .toMatchObject({ pinyin: "wán chéng de" });
+    expect(hsk5Tokens.find((token) => token.hanzi === "生意"))
+      .toMatchObject({ meaning: "việc kinh doanh; buôn bán" });
+    expect(hsk5Tokens.find((token) => token.hanzi === "大树"))
+      .toMatchObject({ meaning: "cây lớn; cây to" });
   });
 
   it("rejects a word when even one character annotation is missing", () => {

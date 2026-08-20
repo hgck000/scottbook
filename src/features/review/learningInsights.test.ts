@@ -93,7 +93,7 @@ describe("per-article learning insights", () => {
     );
     const insights = getArticleAssistanceInsights(builtInLibrary, history);
 
-    expect(insights).toHaveLength(36);
+    expect(insights).toHaveLength(45);
     expect(insights[0]?.article.id).toBe(morningAssistance.articleId);
     expect(insights.at(-1)).toMatchObject({
       assistedWordTypes: 0,

@@ -56,7 +56,7 @@ describe("ScottBook routes", () => {
     expect(markup).toContain('aria-label="Tìm trong thư viện offline"');
     expect(markup).toContain('aria-label="Lọc theo cấp độ HSK"');
     expect(markup).toContain('aria-label="Lọc theo trạng thái đọc"');
-    expect(markup).toContain("<strong>36</strong> bài phù hợp");
+    expect(markup).toContain("<strong>45</strong> bài phù hợp");
     expect(markup).toContain("Nhập Paste / TXT / EPUB");
   });
 
@@ -80,7 +80,7 @@ describe("ScottBook routes", () => {
 
     expect(markup).toContain("Khám phá thư viện");
     expect(markup).toContain("Chọn nhịp đọc");
-    expect(markup).toContain("360</strong><span>Câu đã chú giải");
+    expect(markup).toContain("450</strong><span>Câu đã chú giải");
     expect(markup).toContain('aria-label="Lọc Khám phá theo cấp độ HSK"');
     expect(markup).toContain('aria-label="Lọc Khám phá theo chủ đề"');
     expect(markup).toContain('aria-label="Lọc Khám phá theo độ dài bài đọc"');

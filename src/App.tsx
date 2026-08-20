@@ -1381,7 +1381,8 @@ function LibraryScreen({
                   { value: "HSK 1", label: "HSK 1", count: levelCounts["HSK 1"], accent: "jade" },
                   { value: "HSK 2", label: "HSK 2", count: levelCounts["HSK 2"], accent: "amber" },
                   { value: "HSK 3", label: "HSK 3", count: levelCounts["HSK 3"], accent: "coral" },
-                  { value: "HSK 4", label: "HSK 4", count: levelCounts["HSK 4"], accent: "violet" }
+                  { value: "HSK 4", label: "HSK 4", count: levelCounts["HSK 4"], accent: "violet" },
+                  { value: "HSK 5", label: "HSK 5", count: levelCounts["HSK 5"], accent: "azure" }
                 ] as const).map((option) => (
                   <button
                     key={option.value}
@@ -1697,7 +1698,8 @@ function DiscoverScreen({
                   { value: "HSK 1", label: "HSK 1", count: levelCounts["HSK 1"], accent: "jade" },
                   { value: "HSK 2", label: "HSK 2", count: levelCounts["HSK 2"], accent: "amber" },
                   { value: "HSK 3", label: "HSK 3", count: levelCounts["HSK 3"], accent: "coral" },
-                  { value: "HSK 4", label: "HSK 4", count: levelCounts["HSK 4"], accent: "violet" }
+                  { value: "HSK 4", label: "HSK 4", count: levelCounts["HSK 4"], accent: "violet" },
+                  { value: "HSK 5", label: "HSK 5", count: levelCounts["HSK 5"], accent: "azure" }
                 ] as const).map((option) => (
                   <button
                     key={option.value}
