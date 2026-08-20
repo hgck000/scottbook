@@ -20,19 +20,27 @@ export type ArticleMetadata = {
   length: ArticleLength;
 };
 
-export const articleTopics = ["Đời sống", "Kế hoạch", "Học tập"] as const;
+export const articleTopics = [
+  "Đời sống",
+  "Kế hoạch",
+  "Học tập",
+  "May mặc",
+  "Công sở",
+  "Thời trang",
+  "Thiết kế"
+] as const;
 
 export function getArticleLength(estimatedMinutes: number): ArticleLength {
-  if (estimatedMinutes <= 2) return "short";
-  if (estimatedMinutes <= 3) return "medium";
+  if (estimatedMinutes <= 3) return "short";
+  if (estimatedMinutes <= 5) return "medium";
   return "long";
 }
 
 export function getArticleLengthLabel(length: ArticleLength): string {
   return {
-    short: "Ngắn · tối đa 2 phút",
-    medium: "Vừa · khoảng 3 phút",
-    long: "Dài · từ 4 phút"
+    short: "Ngắn · tối đa 3 phút",
+    medium: "Vừa · khoảng 4–5 phút",
+    long: "Dài · từ 6 phút"
   }[length];
 }
 
@@ -83,7 +91,15 @@ export function countArticlesByTopic(
       ...counts,
       [article.topic]: counts[article.topic] + 1
     }),
-    { "Đời sống": 0, "Kế hoạch": 0, "Học tập": 0 }
+    {
+      "Đời sống": 0,
+      "Kế hoạch": 0,
+      "Học tập": 0,
+      "May mặc": 0,
+      "Công sở": 0,
+      "Thời trang": 0,
+      "Thiết kế": 0
+    }
   );
 }
 

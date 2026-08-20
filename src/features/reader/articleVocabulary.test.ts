@@ -16,16 +16,16 @@ describe("offline article vocabulary", () => {
   it("keeps unique authored word types in first-reading order", () => {
     const entries = getArticleVocabulary(morningArticle);
 
-    expect(entries).toHaveLength(16);
+    expect(entries).toHaveLength(50);
     expect(entries.slice(0, 4).map((entry) => entry.hanzi)).toEqual([
       "早上",
       "六点",
       "我",
       "起床"
     ]);
-    expect(entries.find((entry) => entry.hanzi === "高兴")).toMatchObject({
-      pinyin: "gāoxìng",
-      meaning: "vui"
+    expect(entries.find((entry) => entry.hanzi === "喜欢")).toMatchObject({
+      pinyin: "xǐ huan",
+      meaning: expect.stringContaining("thích")
     });
   });
 
@@ -34,12 +34,15 @@ describe("offline article vocabulary", () => {
       (item) => item.hanzi === "我"
     );
 
-    expect(entry?.occurrences).toHaveLength(4);
+    expect(entry?.occurrences).toHaveLength(7);
     expect(entry?.occurrences.map((occurrence) => occurrence.sentenceId)).toEqual([
       "s1",
       "s2",
       "s3",
-      "s4"
+      "s4",
+      "s4",
+      "s5",
+      "s7"
     ]);
   });
 
@@ -55,19 +58,19 @@ describe("offline article vocabulary", () => {
     });
     expect(entry?.occurrences[3]).toEqual({
       sentenceId: "s4",
-      sentenceText: "今天有汉语课，我很高兴。",
-      sentenceTranslation: "Hôm nay có tiết tiếng Trung, tôi rất vui."
+      sentenceText: "我说：有，我很喜欢汉语课。",
+      sentenceTranslation: "Tôi nói: Có, con rất thích tiết tiếng Trung."
     });
   });
 
   it("searches Hanzi, tone-free pinyin, compact pinyin, and Vietnamese", () => {
     const entries = getArticleVocabulary(morningArticle);
 
-    expect(filterArticleVocabulary(entries, "高兴").map((item) => item.hanzi)).toEqual([
-      "高兴"
+    expect(filterArticleVocabulary(entries, "喜欢").map((item) => item.hanzi)).toEqual([
+      "喜欢"
     ]);
-    expect(filterArticleVocabulary(entries, "gao").map((item) => item.hanzi)).toEqual([
-      "高兴"
+    expect(filterArticleVocabulary(entries, "xihuan").map((item) => item.hanzi)).toEqual([
+      "喜欢"
     ]);
     expect(filterArticleVocabulary(entries, "liudian").map((item) => item.hanzi)).toEqual([
       "六点"
@@ -83,7 +86,7 @@ describe("offline article vocabulary", () => {
   it("returns the full list for a blank query and no rows for a miss", () => {
     const entries = getArticleVocabulary(morningArticle);
 
-    expect(filterArticleVocabulary(entries, "   ")).toHaveLength(16);
+    expect(filterArticleVocabulary(entries, "   ")).toHaveLength(50);
     expect(filterArticleVocabulary(entries, "khong-co-tu-nay")).toEqual([]);
   });
 
@@ -95,17 +98,17 @@ describe("offline article vocabulary", () => {
 
     const groups = getLibraryVocabularyContexts(builtInLibrary, entry);
 
-    expect(groups).toHaveLength(9);
+    expect(groups).toHaveLength(24);
     expect(
       groups.reduce((total, group) => total + group.occurrences.length, 0)
-    ).toBe(25);
+    ).toBe(128);
     expect(groups[0]).toMatchObject({
       articleId: "hsk1-my-morning",
       articleTitle: "我的早上",
       articleTitleTranslation: "Buổi sáng của tôi",
       articleLevel: "HSK 1"
     });
-    expect(groups[0]?.occurrences).toHaveLength(4);
+    expect(groups[0]?.occurrences).toHaveLength(7);
   });
 
   it("finds library repetition even when the current article has one occurrence", () => {

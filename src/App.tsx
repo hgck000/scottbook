@@ -1372,15 +1372,17 @@ function LibraryScreen({
                 aria-label="Lọc theo cấp độ HSK"
               >
                 {([
-                  { value: "all", label: "Tất cả", count: builtInLibrary.length },
-                  { value: "HSK 1", label: "HSK 1", count: levelCounts["HSK 1"] },
-                  { value: "HSK 2", label: "HSK 2", count: levelCounts["HSK 2"] },
-                  { value: "HSK 3", label: "HSK 3", count: levelCounts["HSK 3"] }
+                  { value: "all", label: "Tất cả", count: builtInLibrary.length, accent: "all" },
+                  { value: "HSK 1", label: "HSK 1", count: levelCounts["HSK 1"], accent: "jade" },
+                  { value: "HSK 2", label: "HSK 2", count: levelCounts["HSK 2"], accent: "amber" },
+                  { value: "HSK 3", label: "HSK 3", count: levelCounts["HSK 3"], accent: "coral" }
                 ] as const).map((option) => (
                   <button
                     key={option.value}
                     type="button"
-                    className={levelFilter === option.value ? "active" : ""}
+                    className={`level-filter level-${option.accent}${
+                      levelFilter === option.value ? " active" : ""
+                    }`}
                     aria-pressed={levelFilter === option.value}
                     onClick={() => setLevelFilter(option.value)}
                   >
@@ -1679,15 +1681,17 @@ function DiscoverScreen({
                 aria-label="Lọc Khám phá theo cấp độ HSK"
               >
                 {([
-                  { value: "all", label: "Tất cả", count: builtInLibrary.length },
-                  { value: "HSK 1", label: "HSK 1", count: levelCounts["HSK 1"] },
-                  { value: "HSK 2", label: "HSK 2", count: levelCounts["HSK 2"] },
-                  { value: "HSK 3", label: "HSK 3", count: levelCounts["HSK 3"] }
+                  { value: "all", label: "Tất cả", count: builtInLibrary.length, accent: "all" },
+                  { value: "HSK 1", label: "HSK 1", count: levelCounts["HSK 1"], accent: "jade" },
+                  { value: "HSK 2", label: "HSK 2", count: levelCounts["HSK 2"], accent: "amber" },
+                  { value: "HSK 3", label: "HSK 3", count: levelCounts["HSK 3"], accent: "coral" }
                 ] as const).map((option) => (
                   <button
                     key={option.value}
                     type="button"
-                    className={levelFilter === option.value ? "active" : ""}
+                    className={`level-filter level-${option.accent}${
+                      levelFilter === option.value ? " active" : ""
+                    }`}
                     aria-pressed={levelFilter === option.value}
                     onClick={() => setLevelFilter(option.value)}
                   >
@@ -2468,7 +2472,16 @@ function LearningProgressSection({
 
         <div className="learning-level-list" aria-label="Tiến độ theo cấp HSK">
           {overview.byLevel.map((level) => (
-            <div className="learning-level-row" key={level.level}>
+            <div
+              className={`learning-level-row accent-${
+                level.level === "HSK 1"
+                  ? "jade"
+                  : level.level === "HSK 2"
+                    ? "amber"
+                    : "coral"
+              }`}
+              key={level.level}
+            >
               <div>
                 <strong>{level.level}</strong>
                 <span>
@@ -4079,7 +4092,7 @@ function ReaderScreen({
     Math.min(MAX_READER_FONT_SIZE, Math.max(MIN_READER_FONT_SIZE, next));
 
   return (
-    <div className="reader-shell">
+    <div className={`reader-shell accent-${article.accent}`}>
       <header className="reader-toolbar">
         <button
           className="back-button"
@@ -4198,7 +4211,7 @@ function ReaderScreen({
 
       <main id="main-content" className="reader-page" tabIndex={-1}>
         <article
-          className="reader-article"
+          className={`reader-article accent-${article.accent}`}
           data-reader-font={fontFamily}
           data-reader-line-height={lineHeight}
           data-reader-content-width={contentWidth}
@@ -4243,24 +4256,35 @@ function ReaderScreen({
 
           <div className="article-body" ref={articleBodyRef}>
             {article.paragraphs.map((paragraph) => (
-              <p key={paragraph.id}>
-                {paragraph.sentences.map((sentence) => (
-                  <SentenceLine
-                    key={sentence.id}
-                    sentence={sentence}
-                    scope={assistanceScope}
-                    selection={selection}
-                    chooseUnit={chooseUnit}
-                    targetSource={
-                      sentence.id === contextSentenceId
-                        ? contextSource ?? "review"
-                        : sentence.id === vocabularyTargetSentenceId
-                          ? "vocabulary"
-                          : undefined
-                    }
-                  />
-                ))}
-              </p>
+              <section className="reader-section" key={paragraph.id}>
+                {paragraph.sectionTitle ? (
+                  <header className="reader-section-heading">
+                    <h2 lang="zh-Hans">{paragraph.sectionTitle}</h2>
+                    <p className="reader-section-pinyin">{paragraph.sectionTitlePinyin}</p>
+                    <p className="reader-section-translation">
+                      {paragraph.sectionTitleTranslation}
+                    </p>
+                  </header>
+                ) : null}
+                <p>
+                  {paragraph.sentences.map((sentence) => (
+                    <SentenceLine
+                      key={sentence.id}
+                      sentence={sentence}
+                      scope={assistanceScope}
+                      selection={selection}
+                      chooseUnit={chooseUnit}
+                      targetSource={
+                        sentence.id === contextSentenceId
+                          ? contextSource ?? "review"
+                          : sentence.id === vocabularyTargetSentenceId
+                            ? "vocabulary"
+                            : undefined
+                      }
+                    />
+                  ))}
+                </p>
+              </section>
             ))}
           </div>
 

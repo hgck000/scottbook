@@ -64,6 +64,16 @@ export function validateBuiltInLibrary(
       }
       paragraphIds.add(paragraph.id);
 
+      if (!paragraph.sectionTitle?.trim()) {
+        issues.push({ path: paragraphPath, message: "section title is required" });
+      }
+      if (!paragraph.sectionTitlePinyin?.trim()) {
+        issues.push({ path: paragraphPath, message: "section title pinyin is required" });
+      }
+      if (!paragraph.sectionTitleTranslation?.trim()) {
+        issues.push({ path: paragraphPath, message: "section title translation is required" });
+      }
+
       if (paragraph.sentences.length === 0) {
         issues.push({ path: paragraphPath, message: "paragraph must contain a sentence" });
       }

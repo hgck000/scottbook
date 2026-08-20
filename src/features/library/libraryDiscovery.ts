@@ -31,7 +31,7 @@ function getArticleSearchText(article: BuiltInArticle): string {
       sentence.translation,
       ...sentence.tokens.flatMap((token) =>
         token.kind === "word"
-          ? [token.hanzi, token.pinyin, token.meaning]
+          ? [token.hanzi, token.pinyin, token.pinyin.replace(/\s+/gu, ""), token.meaning]
           : [token.hanzi]
       )
     ])
@@ -41,10 +41,17 @@ function getArticleSearchText(article: BuiltInArticle): string {
     [
       article.title,
       article.titlePinyin,
+      article.titlePinyin.replace(/\s+/gu, ""),
       article.titleTranslation,
       article.summary,
       article.level,
       article.topic,
+      ...article.paragraphs.flatMap((paragraph) => [
+        paragraph.sectionTitle ?? "",
+        paragraph.sectionTitlePinyin ?? "",
+        paragraph.sectionTitlePinyin?.replace(/\s+/gu, "") ?? "",
+        paragraph.sectionTitleTranslation ?? ""
+      ]),
       ...authoredContent
     ].join(" ")
   );

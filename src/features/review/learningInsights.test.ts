@@ -13,8 +13,8 @@ const morningAssistance = {
   sentenceText: "早上六点，我起床。",
   sentenceTranslation: "Sáu giờ sáng, tôi thức dậy.",
   hanzi: "早上",
-  pinyin: "zǎoshang",
-  meaning: "buổi sáng",
+  pinyin: "zǎo shang",
+  meaning: "buổi sáng sớm",
   scope: "word" as const,
   level: "pinyin" as const,
   occurredAt: 100
@@ -93,7 +93,7 @@ describe("per-article learning insights", () => {
     );
     const insights = getArticleAssistanceInsights(builtInLibrary, history);
 
-    expect(insights).toHaveLength(9);
+    expect(insights).toHaveLength(27);
     expect(insights[0]?.article.id).toBe(morningAssistance.articleId);
     expect(insights.at(-1)).toMatchObject({
       assistedWordTypes: 0,

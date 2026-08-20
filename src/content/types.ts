@@ -32,6 +32,9 @@ export type AnnotatedSentence = {
 
 export type AnnotatedParagraph = {
   id: string;
+  sectionTitle?: string;
+  sectionTitlePinyin?: string;
+  sectionTitleTranslation?: string;
   sentences: readonly AnnotatedSentence[];
 };
 
@@ -50,5 +53,12 @@ export type ReaderArticle = {
 
 export type BuiltInArticle = ReaderArticle & {
   level: HskLevel;
-  topic: "Đời sống" | "Kế hoạch" | "Học tập";
+  topic:
+    | "Đời sống"
+    | "Kế hoạch"
+    | "Học tập"
+    | "May mặc"
+    | "Công sở"
+    | "Thời trang"
+    | "Thiết kế";
 };

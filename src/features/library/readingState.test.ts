@@ -281,9 +281,11 @@ describe("local library state", () => {
 
     const sentenceIds = getArticleSentenceIds(article);
 
-    expect(sentenceIds).toEqual(["s1", "s2", "s3", "s4"]);
-    expect(getSentenceProgressPercent(sentenceIds, "s1")).toBe(25);
-    expect(getSentenceProgressPercent(sentenceIds, "s3")).toBe(75);
+    expect(sentenceIds).toEqual([
+      "s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10"
+    ]);
+    expect(getSentenceProgressPercent(sentenceIds, "s1")).toBe(10);
+    expect(getSentenceProgressPercent(sentenceIds, "s3")).toBe(30);
     expect(getSentenceProgressPercent(sentenceIds, "missing")).toBe(0);
   });
 });

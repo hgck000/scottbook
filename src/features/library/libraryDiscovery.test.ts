@@ -41,11 +41,16 @@ describe("offline library discovery", () => {
         ...DEFAULT_FILTERS,
         query: "公园"
       }).map((article) => article.id)
-    ).toEqual(["hsk2-weekend-plan"]);
+    ).toEqual([
+      "hsk1-my-family",
+      "hsk1-rainy-day",
+      "hsk2-weekend-plan",
+      "hsk3-fashion-window"
+    ]);
     expect(
       filterLibraryArticles(builtInLibrary, state, {
         ...DEFAULT_FILTERS,
-        query: "khong voi tung chu"
+        query: "dich tung chu"
       }).map((article) => article.id)
     ).toEqual(["hsk3-understand-first"]);
   });
@@ -55,7 +60,7 @@ describe("offline library discovery", () => {
       builtInLibrary,
       createEmptyLibraryState(),
       {
-        query: "cong vien ban",
+        query: "zhōumò jìhuà",
         level: "HSK 2",
         status: "all"
       }
@@ -114,9 +119,9 @@ describe("offline library discovery", () => {
 
   it("reports stable counts for every supported level", () => {
     expect(countArticlesByLevel(builtInLibrary)).toEqual({
-      "HSK 1": 3,
-      "HSK 2": 3,
-      "HSK 3": 3
+      "HSK 1": 9,
+      "HSK 2": 9,
+      "HSK 3": 9
     });
   });
 });

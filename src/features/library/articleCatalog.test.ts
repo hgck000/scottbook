@@ -18,22 +18,22 @@ describe("offline discover catalog", () => {
 
     expect(getArticleMetadata(article)).toEqual({
       paragraphCount: 2,
-      sentenceCount: 4,
-      wordCount: 19,
-      characterCount: 31,
-      length: "short"
+      sentenceCount: 10,
+      wordCount: 63,
+      characterCount: 95,
+      length: "medium"
     });
   });
 
   it("uses a transparent duration grouping for all authored articles", () => {
-    expect(getArticleLength(2)).toBe("short");
-    expect(getArticleLength(3)).toBe("medium");
-    expect(getArticleLength(4)).toBe("long");
-    expect(getArticleLengthLabel("long")).toBe("Dài · từ 4 phút");
+    expect(getArticleLength(3)).toBe("short");
+    expect(getArticleLength(4)).toBe("medium");
+    expect(getArticleLength(6)).toBe("long");
+    expect(getArticleLengthLabel("long")).toBe("Dài · từ 6 phút");
     expect(countArticlesByLength(builtInLibrary)).toEqual({
-      short: 3,
-      medium: 3,
-      long: 3
+      short: 0,
+      medium: 18,
+      long: 9
     });
   });
 
@@ -54,13 +54,21 @@ describe("offline discover catalog", () => {
     ).toEqual([
       "hsk1-my-morning",
       "hsk1-my-family",
-      "hsk2-shopping-with-mom",
-      "hsk3-keep-a-promise"
+      "hsk1-birthday-noodles",
+      "hsk2-lost-umbrella",
+      "hsk2-cook-with-neighbor",
+      "hsk3-keep-a-promise",
+      "hsk3-missed-bus",
+      "hsk3-grandma-smartphone"
     ]);
     expect(countArticlesByTopic(builtInLibrary)).toEqual({
-      "Đời sống": 4,
-      "Kế hoạch": 1,
-      "Học tập": 4
+      "Đời sống": 8,
+      "Kế hoạch": 4,
+      "Học tập": 5,
+      "May mặc": 2,
+      "Công sở": 3,
+      "Thời trang": 3,
+      "Thiết kế": 2
     });
   });
 });

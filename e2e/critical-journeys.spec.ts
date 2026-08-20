@@ -35,10 +35,10 @@ test("reads, reveals assistance, and keeps local preferences", async ({ page }) 
   const firstToken = page.locator("[data-reader-token]").first();
   await expect(firstToken).toHaveAttribute("aria-label", /mở pinyin/);
   await firstToken.click();
-  await expect(page.getByText("zǎoshang", { exact: true })).toBeVisible();
+  await expect(page.getByText("zǎo shang", { exact: true })).toBeVisible();
   await expect(page.getByText("tảo thượng", { exact: true })).toBeVisible();
   await firstToken.click();
-  await expect(page.getByText("buổi sáng", { exact: true })).toBeVisible();
+  await expect(page.getByText("buổi sáng sớm", { exact: true })).toBeVisible();
   await expect(
     page.getByText("Sáu giờ sáng, tôi thức dậy.", { exact: true })
   ).toBeVisible();
@@ -133,7 +133,7 @@ test("imports pasted Chinese and reopens the analyzed book offline", async ({
   ).toBeVisible();
   await page.getByRole("button", { name: "Phân tích và lưu offline" }).click();
 
-  await expect(page.getByRole("heading", { name: "Bài đọc riêng" })).toBeVisible({
+  await expect(page.getByRole("heading", { name: "Bài đọc riêng", exact: true })).toBeVisible({
     timeout: 20_000
   });
   await expect(page.getByText(/Phân tích tự động offline/)).toBeVisible();
@@ -146,7 +146,7 @@ test("imports pasted Chinese and reopens the analyzed book offline", async ({
 
   await context.setOffline(true);
   await page.reload();
-  await expect(page.getByRole("heading", { name: "Bài đọc riêng" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Bài đọc riêng", exact: true })).toBeVisible();
   await expect(page.getByText("朋友每天看书，也用 ScottBook 😊。", { exact: true })).toBeVisible();
   await context.setOffline(false);
   expect(pageErrors).toEqual([]);
@@ -173,24 +173,24 @@ test("turns assistance into an editable local review list", async ({ page }) => 
   await expect(page.getByText("liù diǎn", { exact: true })).toBeVisible();
 
   await page.getByRole("button", { name: /Chưa hiểu nghĩa 1/ }).click();
-  await expect(page.getByText("zǎoshang", { exact: true })).toBeVisible();
+  await expect(page.getByText("zǎo shang", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Ghim 早上", exact: true }).click();
   await page
     .getByRole("button", { name: "Đã biết 早上", exact: true })
     .click();
-  await expect(page.getByText("zǎoshang", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("zǎo shang", { exact: true })).toHaveCount(0);
 
   await page.getByRole("button", { name: /Đã biết 1/ }).click();
-  await expect(page.getByText("zǎoshang", { exact: true })).toBeVisible();
+  await expect(page.getByText("zǎo shang", { exact: true })).toBeVisible();
   page.once("dialog", (dialog) => dialog.accept());
   await page
     .getByRole("button", { name: "Xóa 早上 khỏi lịch sử trợ giúp" })
     .click();
-  await expect(page.getByText("zǎoshang", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("zǎo shang", { exact: true })).toHaveCount(0);
   await expect(
     page
       .getByLabel("Lịch sử đọc gần đây")
-      .getByText("Wǒ de zǎoshang · Buổi sáng của tôi", { exact: true })
+      .getByText("Wǒ de zǎo shang · Buổi sáng của tôi", { exact: true })
   ).toBeVisible();
   expect(pageErrors).toEqual([]);
 });
@@ -237,7 +237,7 @@ test("switches authored assistance between character, word, and sentence", async
   );
   await firstSentence.click();
   await expect(
-    page.getByText("zǎoshang liù diǎn， wǒ qǐchuáng。", { exact: true })
+    page.getByText("zǎo shang liù diǎn， wǒ qǐ chuáng。", { exact: true })
   ).toBeVisible();
   await firstSentence.click();
   await expect(
@@ -304,11 +304,11 @@ test("practices local review evidence from Hanzi to meaning", async ({ page }) =
     page.getByRole("heading", { name: "Luyện nhanh những chỗ từng vấp." })
   ).toBeVisible();
   await expect(page.locator(".practice-card > strong")).toHaveText("早上");
-  await expect(page.getByText("zǎoshang", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("zǎo shang", { exact: true })).toHaveCount(0);
   await page.getByRole("button", { name: "Hiện pinyin" }).click();
-  await expect(page.getByText("zǎoshang", { exact: true })).toBeVisible();
+  await expect(page.getByText("zǎo shang", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Hiện nghĩa" }).click();
-  await expect(page.getByText("buổi sáng", { exact: true })).toBeVisible();
+  await expect(page.getByText("buổi sáng sớm", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Đã nhớ" }).click();
 
   await expect(page.locator(".practice-card > strong")).toHaveText("六点");
@@ -382,14 +382,14 @@ test("returns from Review to the exact saved sentence context", async ({ page })
     .click();
 
   const contextToken = page.locator(
-    '[data-assistance-key="s4:word:s4-t7"]'
+    '[data-assistance-key="s4:word:s4-t8"]'
   );
   await contextToken.click();
   await page.getByRole("button", { name: "Về thư viện" }).click();
   await page.locator('a[href="#/review"]:visible').click();
 
   await page
-    .getByRole("button", { name: "Mở đúng câu có 高兴" })
+    .getByRole("button", { name: "Mở đúng câu có 喜欢" })
     .click();
   await expect(page).toHaveURL(
     /#\/read\/hsk1-my-morning\/context\/s4$/
@@ -405,7 +405,7 @@ test("returns from Review to the exact saved sentence context", async ({ page })
 
   await page.getByRole("button", { name: "Về Ôn lại" }).first().click();
   await expect(page).toHaveURL(/#\/review$/);
-  await expect(page.getByText("gāoxìng", { exact: true })).toBeVisible();
+  await expect(page.getByText("xǐ huan", { exact: true })).toBeVisible();
   expect(pageErrors).toEqual([]);
 });
 
@@ -423,20 +423,20 @@ test("searches the offline article vocabulary and jumps to its sentence", async 
   await expect(
     page.getByRole("heading", { name: "Từ trong bài" })
   ).toBeVisible();
-  await expect(page.getByText("16 từ/cụm duy nhất")).toBeVisible();
+  await expect(page.getByText("50 từ/cụm duy nhất")).toBeVisible();
 
-  await page.getByLabel("Tìm trong bài này").fill("gaoxing");
-  await expect(page.getByText("1/16 từ/cụm", { exact: true })).toBeVisible();
+  await page.getByLabel("Tìm trong bài này").fill("xihuan");
+  await expect(page.getByText("1/50 từ/cụm", { exact: true })).toBeVisible();
   const vocabularyList = page.getByRole("list", {
     name: "Danh sách từ trong bài"
   });
-  await expect(vocabularyList.getByText("高兴", { exact: true })).toBeVisible();
+  await expect(vocabularyList.getByText("喜欢", { exact: true })).toBeVisible();
   await expect(
-    vocabularyList.getByText("gāoxìng", { exact: true })
+    vocabularyList.getByText("xǐ huan", { exact: true })
   ).toBeVisible();
-  await expect(vocabularyList.getByText("vui", { exact: true })).toBeVisible();
+  await expect(vocabularyList.getByText(/thích/)).toBeVisible();
   await vocabularyList
-    .getByRole("button", { name: "Tới câu đầu có 高兴" })
+    .getByRole("button", { name: "Tới câu đầu có 喜欢" })
     .click();
 
   await expect(page).toHaveURL(/#\/read\/hsk1-my-morning$/);
@@ -446,9 +446,9 @@ test("searches the offline article vocabulary and jumps to its sentence", async 
   await expect(targetSentence).toBeVisible();
   await expect(targetSentence).toBeInViewport();
   await targetSentence
-    .locator('[data-assistance-key="s4:word:s4-t7"]')
+    .locator('[data-assistance-key="s4:word:s4-t8"]')
     .click();
-  await expect(page.getByText("gāoxìng", { exact: true })).toBeVisible();
+  await expect(page.getByText("xǐ huan", { exact: true })).toBeVisible();
   expect(pageErrors).toEqual([]);
 });
 
@@ -465,22 +465,22 @@ test("compares every authored context of a repeated article word", async ({
   await page.getByRole("button", { name: "Mở từ trong bài" }).click();
   await page.getByLabel("Tìm trong bài này").fill("wo");
   await page
-    .getByRole("button", { name: "Xem 4 ngữ cảnh của 我" })
+    .getByRole("button", { name: "Xem 7 ngữ cảnh của 我" })
     .click();
 
-  await expect(page.getByText("4 ngữ cảnh trong bài")).toBeVisible();
+  await expect(page.getByText("7 ngữ cảnh trong bài")).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Về danh sách từ" })
   ).toBeFocused();
   const contextList = page.getByRole("list", {
     name: "Các ngữ cảnh của 我"
   });
-  await expect(contextList.getByRole("listitem")).toHaveCount(4);
+  await expect(contextList.getByRole("listitem")).toHaveCount(7);
   await expect(
     contextList.getByText("Sáu giờ sáng, tôi thức dậy.", { exact: true })
   ).toBeVisible();
   await expect(
-    contextList.getByText("Hôm nay có tiết tiếng Trung, tôi rất vui.", {
+    contextList.getByText("Tôi nói: Có, con rất thích tiết tiếng Trung.", {
       exact: true
     })
   ).toBeVisible();
@@ -495,7 +495,7 @@ test("compares every authored context of a repeated article word", async ({
   await expect(targetSentence).toBeVisible();
   await expect(targetSentence).toBeInViewport();
   await targetSentence
-    .locator('[data-assistance-key="s4:word:s4-t5"]')
+    .locator('[data-assistance-key="s4:word:s4-t1"]')
     .click();
   await expect(page.getByText("wǒ", { exact: true })).toBeVisible();
   expect(pageErrors).toEqual([]);
@@ -514,13 +514,13 @@ test("compares a word across the offline library and opens another article", asy
   await page.getByRole("button", { name: "Mở từ trong bài" }).click();
   await page.getByLabel("Tìm trong bài này").fill("wo");
   await page
-    .getByRole("button", { name: "Xem 4 ngữ cảnh của 我" })
+    .getByRole("button", { name: "Xem 7 ngữ cảnh của 我" })
     .click();
   await page
-    .getByRole("button", { name: "Cả thư viện · 25" })
+    .getByRole("button", { name: "Cả thư viện · 128" })
     .click();
 
-  await expect(page.getByText("25 ngữ cảnh · 9 bài")).toBeVisible();
+  await expect(page.getByText("128 ngữ cảnh · 24 bài")).toBeVisible();
   const weekendContexts = page.getByRole("region", {
     name: "Ngữ cảnh trong bài Kế hoạch cuối tuần"
   });
@@ -529,7 +529,7 @@ test("compares a word across the offline library and opens another article", asy
   ).toBeVisible();
   await expect(
     weekendContexts.getByText(
-      "Cuối tuần này thời tiết rất đẹp, tôi muốn cùng bạn đi công viên.",
+      "Cuối tuần này thời tiết khá đẹp, tôi muốn đi công viên cùng bạn.",
       { exact: true }
     )
   ).toBeVisible();
@@ -551,7 +551,7 @@ test("compares a word across the offline library and opens another article", asy
   await expect(targetSentence).toBeVisible();
   await expect(targetSentence).toBeInViewport();
   await targetSentence
-    .locator('[data-assistance-key="s1:word:s1-t5"]')
+    .locator('[data-assistance-key="s1:word:s1-t6"]')
     .click();
   await expect(page.getByText("wǒ", { exact: true })).toBeVisible();
 
@@ -647,7 +647,7 @@ test("searches and filters the authored offline library", async ({ page }) => {
   ).toBeVisible();
   await expect(
     page.locator(".discovery-results [role='status']")
-  ).toContainText("3 bài phù hợp");
+  ).toContainText("9 bài phù hợp");
 
   await page
     .getByRole("button", {
@@ -672,7 +672,7 @@ test("searches and filters the authored offline library", async ({ page }) => {
   ).toBeVisible();
   await expect(
     page.locator(".discovery-results [role='status']")
-  ).toContainText("9 bài phù hợp");
+  ).toContainText("27 bài phù hợp");
   expect(pageErrors).toEqual([]);
 });
 
@@ -696,7 +696,7 @@ test("filters Discover and reviews an article before starting to read", async ({
     .click();
   await page
     .getByRole("group", { name: "Lọc Khám phá theo độ dài bài đọc" })
-    .getByRole("button", { name: /Vừa · 3 phút/ })
+    .getByRole("button", { name: /Vừa · khoảng 4–5 phút/ })
     .click();
   await expect(
     page.locator(".discover-filter-panel [role='status']")
@@ -744,12 +744,12 @@ test("reads a newly authored article from the expanded content pack", async ({
   const firstToken = page.locator("[data-reader-token]").first();
   await expect(firstToken).toHaveAccessibleName(/为了; mở pinyin/);
   await firstToken.click();
-  await expect(page.getByText("wèile", { exact: true })).toBeVisible();
+  await expect(page.getByText("wèi le", { exact: true })).toBeVisible();
   await firstToken.click();
-  await expect(page.getByText("để, nhằm", { exact: true })).toBeVisible();
+  await expect(page.getByText("để; nhằm mục đích; để mà", { exact: true })).toBeVisible();
   await expect(
     page.getByText(
-      "Để nâng cao trình độ tiếng Trung, tôi lập cho mình một kế hoạch học tập đơn giản.",
+      "Để nâng trình độ tiếng Trung, trước đây tôi tự xếp rất nhiều nhiệm vụ.",
       { exact: true }
     )
   ).toBeVisible();

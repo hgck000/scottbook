@@ -1143,6 +1143,7 @@ svg {
 }
 
 .learning-level-row {
+  --card-accent: var(--jade);
   display: grid;
   grid-template-columns: minmax(130px, 0.65fr) minmax(100px, 1fr) 36px;
   align-items: center;
@@ -1160,8 +1161,12 @@ svg {
 }
 
 .learning-level-row strong {
-  color: var(--ink);
+  color: var(--card-accent);
   font-size: 0.76rem;
+}
+
+.learning-level-row .progress-track > span {
+  background: var(--card-accent);
 }
 
 .learning-level-row > div:first-child span,
@@ -2801,6 +2806,29 @@ svg {
   background: rgb(255 255 255 / 15%);
 }
 
+.discovery-filter-buttons .level-filter {
+  --filter-accent: var(--jade);
+}
+
+.discovery-filter-buttons .level-filter.level-amber {
+  --filter-accent: var(--amber);
+}
+
+.discovery-filter-buttons .level-filter.level-coral {
+  --filter-accent: var(--coral);
+}
+
+.discovery-filter-buttons .level-filter:not(.level-all) {
+  border-color: color-mix(in srgb, var(--filter-accent) 34%, var(--line));
+  color: color-mix(in srgb, var(--filter-accent) 78%, var(--ink));
+}
+
+.discovery-filter-buttons .level-filter.active {
+  border-color: var(--filter-accent);
+  color: #f6f1e7;
+  background: color-mix(in srgb, var(--filter-accent) 78%, #193c35);
+}
+
 .discovery-results {
   min-height: 32px;
   display: flex;
@@ -2873,6 +2901,7 @@ svg {
   box-shadow: 0 20px 50px rgb(30 48 42 / 11%);
 }
 
+.accent-jade { --card-accent: var(--jade); }
 .accent-amber { --card-accent: var(--amber); }
 .accent-coral { --card-accent: var(--coral); }
 
@@ -3085,11 +3114,15 @@ svg {
 }
 
 .reader-shell {
+  --reader-accent: var(--jade);
   min-height: 100vh;
   background:
     linear-gradient(90deg, transparent 49.9%, var(--line) 50%, transparent 50.1%) top / 100% 0 no-repeat,
     var(--paper);
 }
+
+.reader-shell.accent-amber { --reader-accent: var(--amber); }
+.reader-shell.accent-coral { --reader-accent: var(--coral); }
 
 .reader-toolbar {
   position: sticky;
@@ -3121,7 +3154,7 @@ svg {
   height: 100%;
   display: block;
   border-radius: 0 999px 999px 0;
-  background: var(--coral);
+  background: var(--reader-accent);
   transition: width 180ms ease;
 }
 
@@ -3195,7 +3228,7 @@ svg {
 }
 
 .reader-title-small span {
-  color: var(--muted);
+  color: var(--reader-accent);
   font-size: 0.65rem;
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -3258,6 +3291,7 @@ svg {
 }
 
 .reader-article {
+  --reader-accent: var(--jade);
   --reader-font-size: 25px;
   --reader-line-height: 2.05;
   --reader-content-width: 760px;
@@ -3266,6 +3300,9 @@ svg {
   margin: 0 auto;
   transition: width 160ms ease;
 }
+
+.reader-article.accent-amber { --reader-accent: var(--amber); }
+.reader-article.accent-coral { --reader-accent: var(--coral); }
 
 .reader-article[data-reader-font="sans"] {
   --reader-font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", ui-sans-serif, sans-serif;
@@ -3281,8 +3318,8 @@ svg {
   display: inline-flex;
   padding: 6px 10px;
   border-radius: 999px;
-  color: var(--jade);
-  background: var(--jade-soft);
+  color: var(--reader-accent);
+  background: color-mix(in srgb, var(--reader-accent) 12%, transparent);
   font-size: 0.67rem;
   font-weight: 850;
   letter-spacing: 0.08em;
@@ -3300,7 +3337,7 @@ svg {
 
 .title-pinyin {
   margin: 0;
-  color: var(--coral);
+  color: var(--reader-accent);
   font-size: 0.92rem;
   font-weight: 750;
 }
@@ -3471,7 +3508,7 @@ svg {
 
 .reader-scope-switch button.active {
   color: #f6f1e7;
-  background: #193c35;
+  background: color-mix(in srgb, var(--reader-accent) 80%, #193c35);
   box-shadow: 0 5px 14px rgb(25 60 53 / 18%);
 }
 
@@ -3485,7 +3522,47 @@ svg {
   transition: font-size 120ms ease, line-height 120ms ease;
 }
 
-.article-body p {
+.reader-section {
+  margin: 0 0 2.2em;
+}
+
+.reader-section-heading {
+  margin: 0 0 0.78em;
+  padding-left: 0.72em;
+  border-left: 3px solid var(--reader-accent);
+}
+
+.reader-section-heading h2 {
+  margin: 0;
+  color: var(--ink);
+  font-family: "Songti SC", "Noto Serif CJK SC", serif;
+  font-size: 1.08em;
+  font-weight: 650;
+  line-height: 1.25;
+  letter-spacing: 0.02em;
+}
+
+.reader-section-heading .reader-section-pinyin {
+  margin: 0.35em 0 0;
+  color: var(--reader-accent);
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.46em;
+  font-weight: 750;
+  line-height: 1.35;
+  letter-spacing: 0;
+}
+
+.reader-section-heading .reader-section-translation {
+  margin: 0.2em 0 0;
+  color: var(--muted);
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.43em;
+  font-weight: 650;
+  line-height: 1.4;
+  letter-spacing: 0;
+}
+
+.reader-section > p {
   margin: 0 0 1.45em;
   content-visibility: auto;
   contain-intrinsic-size: auto 240px;
