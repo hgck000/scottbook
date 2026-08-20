@@ -4,12 +4,12 @@ This list is intentionally release-blocking evidence, not a hidden backlog.
 
 ## Product gaps
 
-- The offline library contains 27 standards-informed readings, balanced at nine
-  each for HSK 1–3. It does not yet cover HSK 4–6. The texts are original
-  adaptations aligned to the official HSK 1–3 resources rather than copied test
+- The offline library contains 36 standards-informed readings, balanced at nine
+  each for HSK 1–4. It does not yet cover HSK 5–6. The texts are original
+  adaptations aligned to the official HSK 1–4 resources rather than copied test
   passages; a small number of topic-specific words go beyond the core level but
   retain complete offline assistance.
-- Character, word/phrase, and sentence assistance is available for all 27
+- Character, word/phrase, and sentence assistance is available for all 36
   built-in readings. Paste/TXT/EPUB imports receive automatic offline pinyin
   and word/character meanings, not authored sentence translations.
 - Character and word/phrase assistance now derives Hán-Việt readings entirely
@@ -20,7 +20,7 @@ This list is intentionally release-blocking evidence, not a hidden backlog.
 - Reader now derives a searchable **Từ trong bài** index from each authored
   article. Identical Hanzi are distinct entries when their contextual pinyin or
   meaning differs. Repeated entries can compare and jump to every exact authored
-  occurrence in the current article or across all 27 offline articles. There
+  occurrence in the current article or across all 36 offline articles. There
   is no custom vocabulary editor, saved personal word list, or fuzzy identity
   merging.
 - The authored translation language is Vietnamese. Choosing another target
@@ -44,7 +44,7 @@ This list is intentionally release-blocking evidence, not a hidden backlog.
   end card now follows fixed authored order, skips completed articles, resumes
   unfinished reading, and only falls back to a reread after the whole catalog
   is complete; it is not a personalized recommendation system.
-- The learning overview derives lifetime progress from the current 27-article
+- The learning overview derives lifetime progress from the current 36-article
   pack. Its per-article assistance insight uses the recent contexts retained by
   each local review record and distinct authored word/phrase coverage; it is not
   a complete lifetime analytics log or a difficulty score. Assistance records
