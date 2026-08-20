@@ -25,7 +25,14 @@ export function normalizeLibrarySearchText(value: string): string {
     .trim();
 }
 
-function getArticleSearchText(article: BuiltInArticle): string {
+type ArticleSearchIndex = {
+  text: string;
+  words: readonly string[];
+};
+
+const articleSearchIndex = new WeakMap<BuiltInArticle, ArticleSearchIndex>();
+
+function createArticleSearchIndex(article: BuiltInArticle): ArticleSearchIndex {
   const authoredContent = article.paragraphs.flatMap((paragraph) =>
     paragraph.sentences.flatMap((sentence) => [
       sentence.translation,
@@ -37,7 +44,7 @@ function getArticleSearchText(article: BuiltInArticle): string {
     ])
   );
 
-  return normalizeLibrarySearchText(
+  const text = normalizeLibrarySearchText(
     [
       article.title,
       article.titlePinyin,
@@ -55,6 +62,18 @@ function getArticleSearchText(article: BuiltInArticle): string {
       ...authoredContent
     ].join(" ")
   );
+  return {
+    text,
+    words: text.split(/[^\p{L}\p{N}]+/u).filter(Boolean)
+  };
+}
+
+function getArticleSearchIndex(article: BuiltInArticle): ArticleSearchIndex {
+  const cached = articleSearchIndex.get(article);
+  if (cached) return cached;
+  const index = createArticleSearchIndex(article);
+  articleSearchIndex.set(article, index);
+  return index;
 }
 
 function matchesStatus(
@@ -90,12 +109,11 @@ export function filterLibraryArticles(
     if (!matchesStatus(article.id, filters.status, state)) return false;
     if (terms.length === 0) return true;
 
-    const searchText = getArticleSearchText(article);
-    const searchWords = searchText.split(/[^\p{L}\p{N}]+/u).filter(Boolean);
+    const searchIndex = getArticleSearchIndex(article);
     return terms.every((term) =>
       /^[a-z0-9]+$/.test(term)
-        ? searchWords.some((word) => word.startsWith(term))
-        : searchText.includes(term)
+        ? searchIndex.words.some((word) => word.startsWith(term))
+        : searchIndex.text.includes(term)
     );
   });
 }
@@ -103,11 +121,13 @@ export function filterLibraryArticles(
 export function countArticlesByLevel(
   articles: readonly BuiltInArticle[]
 ): Record<HskLevel, number> {
-  return articles.reduce<Record<HskLevel, number>>(
-    (counts, article) => ({
-      ...counts,
-      [article.level]: counts[article.level] + 1
-    }),
-    { "HSK 1": 0, "HSK 2": 0, "HSK 3": 0, "HSK 4": 0, "HSK 5": 0 }
-  );
+  const counts: Record<HskLevel, number> = {
+    "HSK 1": 0,
+    "HSK 2": 0,
+    "HSK 3": 0,
+    "HSK 4": 0,
+    "HSK 5": 0
+  };
+  for (const article of articles) counts[article.level] += 1;
+  return counts;
 }

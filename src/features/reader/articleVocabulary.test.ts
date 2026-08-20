@@ -109,6 +109,7 @@ describe("offline article vocabulary", () => {
       articleLevel: "HSK 1"
     });
     expect(groups[0]?.occurrences).toHaveLength(7);
+    expect(getLibraryVocabularyContexts(builtInLibrary, entry)).toBe(groups);
   });
 
   it("finds library repetition even when the current article has one occurrence", () => {

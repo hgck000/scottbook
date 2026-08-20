@@ -20,6 +20,8 @@ export type ArticleMetadata = {
   length: ArticleLength;
 };
 
+const articleMetadataCache = new WeakMap<BuiltInArticle, ArticleMetadata>();
+
 export const articleTopics = [
   "Đời sống",
   "Kế hoạch",
@@ -45,12 +47,15 @@ export function getArticleLengthLabel(length: ArticleLength): string {
 }
 
 export function getArticleMetadata(article: BuiltInArticle): ArticleMetadata {
+  const cached = articleMetadataCache.get(article);
+  if (cached) return cached;
+
   const sentences = article.paragraphs.flatMap((paragraph) => paragraph.sentences);
   const words = sentences.flatMap((sentence) =>
     sentence.tokens.filter((token) => token.kind === "word")
   );
 
-  return {
+  const metadata = {
     paragraphCount: article.paragraphs.length,
     sentenceCount: sentences.length,
     wordCount: words.length,
@@ -60,6 +65,8 @@ export function getArticleMetadata(article: BuiltInArticle): ArticleMetadata {
     ),
     length: getArticleLength(article.estimatedMinutes)
   };
+  articleMetadataCache.set(article, metadata);
+  return metadata;
 }
 
 export function filterDiscoverArticles(
@@ -86,32 +93,29 @@ export function filterDiscoverArticles(
 export function countArticlesByTopic(
   articles: readonly BuiltInArticle[]
 ): Record<ArticleTopic, number> {
-  return articles.reduce<Record<ArticleTopic, number>>(
-    (counts, article) => ({
-      ...counts,
-      [article.topic]: counts[article.topic] + 1
-    }),
-    {
-      "Đời sống": 0,
-      "Kế hoạch": 0,
-      "Học tập": 0,
-      "May mặc": 0,
-      "Công sở": 0,
-      "Thời trang": 0,
-      "Thiết kế": 0
-    }
-  );
+  const counts: Record<ArticleTopic, number> = {
+    "Đời sống": 0,
+    "Kế hoạch": 0,
+    "Học tập": 0,
+    "May mặc": 0,
+    "Công sở": 0,
+    "Thời trang": 0,
+    "Thiết kế": 0
+  };
+  for (const article of articles) counts[article.topic] += 1;
+  return counts;
 }
 
 export function countArticlesByLength(
   articles: readonly BuiltInArticle[]
 ): Record<ArticleLength, number> {
-  return articles.reduce<Record<ArticleLength, number>>(
-    (counts, article) => ({
-      ...counts,
-      [getArticleLength(article.estimatedMinutes)]:
-        counts[getArticleLength(article.estimatedMinutes)] + 1
-    }),
-    { short: 0, medium: 0, long: 0 }
-  );
+  const counts: Record<ArticleLength, number> = {
+    short: 0,
+    medium: 0,
+    long: 0
+  };
+  for (const article of articles) {
+    counts[getArticleLength(article.estimatedMinutes)] += 1;
+  }
+  return counts;
 }

@@ -4511,20 +4511,14 @@ function ArticleVocabularyPanel({
     () => filterArticleVocabulary(entries, query),
     [entries, query]
   );
-  const libraryContextsByEntry = useMemo(
-    () =>
-      new Map(
-        entries.map((entry) => [
-          entry.id,
-          getLibraryVocabularyContexts(builtInLibrary, entry)
-        ])
-      ),
-    [entries]
-  );
   const selectedEntry = entries.find((entry) => entry.id === selectedEntryId);
-  const selectedLibraryGroups = selectedEntry
-    ? libraryContextsByEntry.get(selectedEntry.id) ?? []
-    : [];
+  const selectedLibraryGroups = useMemo(
+    () =>
+      selectedEntry
+        ? getLibraryVocabularyContexts(builtInLibrary, selectedEntry)
+        : [],
+    [selectedEntry]
+  );
   const orderedSelectedLibraryGroups = [
     ...selectedLibraryGroups.filter((group) => group.articleId === article.id),
     ...selectedLibraryGroups.filter((group) => group.articleId !== article.id)
@@ -4708,14 +4702,7 @@ function ArticleVocabularyPanel({
           {filteredEntries.map((entry) => {
             const firstOccurrence = entry.occurrences[0];
             if (!firstOccurrence) return null;
-            const libraryGroups = libraryContextsByEntry.get(entry.id) ?? [];
-            const libraryOccurrenceCount = libraryGroups.reduce(
-              (total, group) => total + group.occurrences.length,
-              0
-            );
             const opensArticleContexts = entry.occurrences.length > 1;
-            const opensLibraryContexts =
-              !opensArticleContexts && libraryOccurrenceCount > 1;
             return (
               <li key={entry.id}>
                 <article>
@@ -4729,15 +4716,24 @@ function ArticleVocabularyPanel({
                     aria-label={
                       opensArticleContexts
                         ? `Xem ${entry.occurrences.length} ngữ cảnh của ${entry.hanzi}`
-                        : opensLibraryContexts
-                          ? `Xem ${libraryOccurrenceCount} ngữ cảnh trong thư viện của ${entry.hanzi}`
-                        : `Tới câu đầu có ${entry.hanzi}`
+                        : `Tìm thêm ngữ cảnh của ${entry.hanzi}`
                     }
                     onClick={() => {
-                      if (opensArticleContexts || opensLibraryContexts) {
-                        setContextScope(
-                          opensLibraryContexts ? "library" : "article"
-                        );
+                      if (opensArticleContexts) {
+                        setContextScope("article");
+                        setSelectedEntryId(entry.id);
+                        return;
+                      }
+                      const libraryGroups = getLibraryVocabularyContexts(
+                        builtInLibrary,
+                        entry
+                      );
+                      const libraryOccurrenceCount = libraryGroups.reduce(
+                        (total, group) => total + group.occurrences.length,
+                        0
+                      );
+                      if (libraryOccurrenceCount > 1) {
+                        setContextScope("library");
                         setSelectedEntryId(entry.id);
                         return;
                       }
@@ -4746,9 +4742,7 @@ function ArticleVocabularyPanel({
                   >
                     {opensArticleContexts
                       ? `${entry.occurrences.length} trong bài`
-                      : opensLibraryContexts
-                        ? `${libraryOccurrenceCount} trong thư viện`
-                      : "Tới câu"}
+                      : "Tìm thêm"}
                     <span aria-hidden="true">→</span>
                   </button>
                 </article>

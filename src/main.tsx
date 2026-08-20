@@ -2,9 +2,9 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { Capacitor } from "@capacitor/core";
 import { registerSW } from "virtual:pwa-register";
-import App from "./App";
 import { pwaStatusStore } from "./features/pwa/pwaStatus";
 import { startBrowserPwaUpdateChecks } from "./features/pwa/pwaUpdateChecks";
+import AppLoader from "./AppLoader";
 import "./styles.css";
 
 pwaStatusStore.initialize();
@@ -31,6 +31,6 @@ if (!root) {
 
 createRoot(root).render(
   <StrictMode>
-    <App />
+    <AppLoader />
   </StrictMode>
 );

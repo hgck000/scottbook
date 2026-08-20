@@ -24,6 +24,28 @@ export type LibraryVocabularyContextGroup = {
   occurrences: readonly ArticleVocabularyOccurrence[];
 };
 
+type MutableArticleVocabularyEntry = Omit<
+  ArticleVocabularyEntry,
+  "occurrences"
+> & {
+  occurrences: ArticleVocabularyOccurrence[];
+};
+
+type VocabularySearchIndex = {
+  text: string;
+  words: readonly string[];
+};
+
+const vocabularySearchIndexes = new WeakMap<
+  ArticleVocabularyEntry,
+  VocabularySearchIndex
+>();
+const libraryVocabularyContextIndexes = new WeakMap<
+  readonly BuiltInArticle[],
+  ReadonlyMap<string, readonly LibraryVocabularyContextGroup[]>
+>();
+const emptyLibraryVocabularyContexts: readonly LibraryVocabularyContextGroup[] = [];
+
 function getVocabularyId(
   hanzi: string,
   pinyin: string,
@@ -35,7 +57,7 @@ function getVocabularyId(
 export function getArticleVocabulary(
   article: ReaderArticle
 ): ArticleVocabularyEntry[] {
-  const entries = new Map<string, ArticleVocabularyEntry>();
+  const entries = new Map<string, MutableArticleVocabularyEntry>();
 
   for (const paragraph of article.paragraphs) {
     for (const sentence of paragraph.sentences) {
@@ -50,10 +72,7 @@ export function getArticleVocabulary(
         const id = getVocabularyId(token.hanzi, token.pinyin, token.meaning);
         const existing = entries.get(id);
         if (existing) {
-          entries.set(id, {
-            ...existing,
-            occurrences: [...existing.occurrences, occurrence]
-          });
+          existing.occurrences.push(occurrence);
           continue;
         }
 
@@ -78,20 +97,27 @@ function matchesVocabularyQuery(
   const terms = normalizeLibrarySearchText(query).match(/[\p{L}\p{N}]+/gu) ?? [];
   if (terms.length === 0) return true;
 
-  const searchText = normalizeLibrarySearchText(
-    [
-      entry.hanzi,
-      entry.pinyin,
-      entry.pinyin.replace(/\s+/g, ""),
-      entry.meaning
-    ].join(" ")
-  );
-  const words = searchText.split(/[^\p{L}\p{N}]+/u).filter(Boolean);
+  let searchIndex = vocabularySearchIndexes.get(entry);
+  if (!searchIndex) {
+    const text = normalizeLibrarySearchText(
+      [
+        entry.hanzi,
+        entry.pinyin,
+        entry.pinyin.replace(/\s+/g, ""),
+        entry.meaning
+      ].join(" ")
+    );
+    searchIndex = {
+      text,
+      words: text.split(/[^\p{L}\p{N}]+/u).filter(Boolean)
+    };
+    vocabularySearchIndexes.set(entry, searchIndex);
+  }
 
   return terms.every((term) =>
     /^[a-z0-9]+$/.test(term)
-      ? words.some((word) => word.startsWith(term))
-      : searchText.includes(term)
+      ? searchIndex.words.some((word) => word.startsWith(term))
+      : searchIndex.text.includes(term)
   );
 }
 
@@ -105,21 +131,27 @@ export function filterArticleVocabulary(
 export function getLibraryVocabularyContexts(
   articles: readonly BuiltInArticle[],
   entry: ArticleVocabularyEntry
-): LibraryVocabularyContextGroup[] {
-  return articles.flatMap((article) => {
-    const matchingEntry = getArticleVocabulary(article).find(
-      (candidate) => candidate.id === entry.id
-    );
-    if (!matchingEntry) return [];
-
-    return [
-      {
-        articleId: article.id,
-        articleTitle: article.title,
-        articleTitleTranslation: article.titleTranslation,
-        articleLevel: article.level,
-        occurrences: matchingEntry.occurrences
+): readonly LibraryVocabularyContextGroup[] {
+  let index = libraryVocabularyContextIndexes.get(articles);
+  if (!index) {
+    const mutableIndex = new Map<string, LibraryVocabularyContextGroup[]>();
+    for (const article of articles) {
+      for (const articleEntry of getArticleVocabulary(article)) {
+        const group = {
+          articleId: article.id,
+          articleTitle: article.title,
+          articleTitleTranslation: article.titleTranslation,
+          articleLevel: article.level,
+          occurrences: articleEntry.occurrences
+        };
+        const existing = mutableIndex.get(articleEntry.id);
+        if (existing) existing.push(group);
+        else mutableIndex.set(articleEntry.id, [group]);
       }
-    ];
-  });
+    }
+    index = mutableIndex;
+    libraryVocabularyContextIndexes.set(articles, index);
+  }
+
+  return index.get(entry.id) ?? emptyLibraryVocabularyContexts;
 }

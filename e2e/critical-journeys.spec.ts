@@ -494,7 +494,7 @@ test("searches the offline article vocabulary and jumps to its sentence", async 
   ).toBeVisible();
   await expect(vocabularyList.getByText(/thích/)).toBeVisible();
   await vocabularyList
-    .getByRole("button", { name: "Tới câu đầu có 喜欢" })
+    .getByRole("button", { name: "Tìm thêm ngữ cảnh của 喜欢" })
     .click();
 
   await expect(page).toHaveURL(/#\/read\/hsk1-my-morning$/);
@@ -575,10 +575,10 @@ test("compares a word across the offline library and opens another article", asy
     .getByRole("button", { name: "Xem 7 ngữ cảnh của 我" })
     .click();
   await page
-    .getByRole("button", { name: "Cả thư viện · 128" })
+    .getByRole("button", { name: "Cả thư viện · 158" })
     .click();
 
-  await expect(page.getByText("128 ngữ cảnh · 24 bài")).toBeVisible();
+  await expect(page.getByText("158 ngữ cảnh · 31 bài")).toBeVisible();
   const weekendContexts = page.getByRole("region", {
     name: "Ngữ cảnh trong bài Kế hoạch cuối tuần"
   });

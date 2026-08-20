@@ -16,13 +16,15 @@ describe("offline discover catalog", () => {
     );
     if (!article) throw new Error("Expected the HSK 1 morning article");
 
-    expect(getArticleMetadata(article)).toEqual({
+    const metadata = getArticleMetadata(article);
+    expect(metadata).toEqual({
       paragraphCount: 2,
       sentenceCount: 10,
       wordCount: 63,
       characterCount: 95,
       length: "medium"
     });
+    expect(getArticleMetadata(article)).toBe(metadata);
   });
 
   it("uses a transparent duration grouping for all authored articles", () => {
