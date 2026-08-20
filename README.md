@@ -95,13 +95,14 @@ for direct sideloading.
 - A redacted local diagnostic download with counts and capability flags only.
 - A restrictive content-security policy plus automated API, license, and dependency audits.
 - A 20,000-Hanzi reader fixture that guards the long-document render budget.
-- Thirty-six production-browser journeys across desktop and mobile Chrome profiles.
+- Forty production-browser journeys across desktop and mobile Chrome profiles.
 - Root and configurable subpath PWA builds with an artifact contract check.
 - GitHub Actions builds on Ubuntu, Windows, and macOS, builds the Android debug
   APK, and retains QA evidence.
 - Generated service worker precaches the complete prototype.
-- Offline Paste/TXT import with preview, cancellable worker analysis, pinyin,
-  Hán-Việt readings, CVDICT meanings, and explicit automatic-quality labels.
+- Offline Paste/TXT/EPUB import with preview, EPUB spine and chapter navigation,
+  cancellable worker analysis, pinyin, Hán-Việt readings, CVDICT meanings, and
+  explicit automatic-quality labels.
 
 ## Run locally
 
@@ -152,7 +153,7 @@ npm run android:sync
 npm run android:build:debug
 ```
 
-The final command writes `artifacts/ScottBook-v0.33.0-android-debug.apk` and
+The final command writes `artifacts/ScottBook-v0.34.0-android-debug.apk` and
 selects `gradlew.bat` automatically on Windows. `android:sync` proves that the
 native bundle contains local assets, has no browser service worker, and has no
 remote `server.url`; `android:build:debug` additionally runs Gradle. GitHub
@@ -163,7 +164,7 @@ After downloading or building the APK, connect one USB-debugging Android phone
 and run the reusable device check:
 
 ```bash
-npm run android:device:smoke -- /path/to/ScottBook-v0.33.0-android-debug.apk
+npm run android:device:smoke -- /path/to/ScottBook-v0.34.0-android-debug.apk
 ```
 
 On Windows, the APK path may be quoted normally. If more than one device is
@@ -180,7 +181,7 @@ npm run android:build:release
 
 It requires the owner-held keystore environment, verifies the resulting
 certificate with `apksigner`, and writes
-`artifacts/ScottBook-v0.33.0-android-release.apk` plus a checksum/fingerprint
+`artifacts/ScottBook-v0.34.0-android-release.apk` plus a checksum/fingerprint
 report. Create and configure the key only through
 [`docs/qa/ANDROID-RELEASE-SIGNING.md`](docs/qa/ANDROID-RELEASE-SIGNING.md); the
 keystore and passwords must never enter the repository or a patch.
@@ -255,7 +256,7 @@ theme, and font size as one guarded transaction; a failed write rolls every
 touched key back to its exact prior value. A successful restore keeps one local
 undo record so the previous state can be restored after a refresh as well.
 
-Backup restore is distinct from content import. Paste/TXT starts from the
+Backup restore is distinct from content import. Paste/TXT/EPUB starts from the
 Library import flow; backup JSON restores ScottBook state and saved imported books.
 
 Version 0.6 migrates a complete valid v0.5 local snapshot into IndexedDB on the
@@ -364,7 +365,7 @@ The app shell now declares a restrictive content-security policy. CI rejects
 production use of dynamic code evaluation, direct HTML injection, high-severity
 runtime dependency advisories, or runtime packages outside the audited
 permissive-license set. Development websocket access remains limited to local
-Vite hosts. Paste/TXT analysis remains on-device and does not add a remote
+Vite hosts. Paste/TXT/EPUB analysis remains on-device and does not add a remote
 content endpoint.
 
 ## Release qualification
@@ -622,6 +623,16 @@ sentence cards are discarded safely while their lexical cards and useful
 sentence contexts remain. See
 [`docs/release/SCOTTBOOK-v0.33.0.md`](docs/release/SCOTTBOOK-v0.33.0.md).
 
+Version 0.34 adds text-first EPUB import. ScottBook follows `container.xml`, the
+package manifest and spine, then EPUB 3 navigation or EPUB 2 NCX labels to keep
+chapter order and build an in-reader table of contents. XHTML is reduced to
+plain reading text; scripts, CSS, SVG, MathML, ruby annotations, images, audio,
+video, encryption, and DRM are never executed or imported. Archive, entry,
+expanded-size, chapter, document, and normalized-text limits are enforced before
+the normal offline analysis and transactional save. Existing Paste/TXT books
+migrate without losing annotations. See
+[`docs/release/SCOTTBOOK-v0.34.0.md`](docs/release/SCOTTBOOK-v0.34.0.md).
+
 ## Install ScottBook
 
 Chromium browsers on Android, Windows, macOS, and Linux can expose ScottBook's
@@ -634,12 +645,12 @@ their install action in the address bar. The manifest includes 192 px, 512 px,
 maskable, and Apple touch icons.
 
 All twenty-seven built-in reference articles and the pinned import dictionary are
-pre-cached. Paste/TXT books are analyzed once and stored in IndexedDB, so they
-reopen in airplane mode. EPUB remains deferred.
+pre-cached. Paste/TXT/EPUB books are analyzed once and stored in IndexedDB, so
+they reopen in airplane mode with EPUB chapter navigation intact.
 
 For a direct Android test install, open the successful **ScottBook CI** run for
-the v0.32 commits, download the `ScottBook-Android-debug-…` artifact, extract it,
-and install `ScottBook-v0.33.0-android-debug.apk`. Android may ask permission to
+the v0.34 commit, download the `ScottBook-Android-debug-…` artifact, extract it,
+and install `ScottBook-v0.34.0-android-debug.apk`. Android may ask permission to
 install apps from the browser or file manager used to open it. The debug APK is
 not Play Store signed and its runner-generated debug key is not a durable
 upgrade identity: if a later debug artifact reports a signature conflict,

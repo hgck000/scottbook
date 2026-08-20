@@ -10,7 +10,7 @@ This list is intentionally release-blocking evidence, not a hidden backlog.
   passages; a small number of topic-specific words go beyond the core level but
   retain complete offline assistance.
 - Character, word/phrase, and sentence assistance is available for all 27
-  built-in readings. Paste/TXT imports receive automatic offline pinyin
+  built-in readings. Paste/TXT/EPUB imports receive automatic offline pinyin
   and word/character meanings, not authored sentence translations.
 - Character and word/phrase assistance now derives Hán-Việt readings entirely
   offline from pinned Unicode Unihan and MIT-licensed pinyin-specific data.
@@ -80,11 +80,16 @@ This list is intentionally release-blocking evidence, not a hidden backlog.
 
 ## Deferred or intentionally excluded
 
-- EPUB and external machine translation remain deferred. PDF and OCR import are
+- External machine translation remains deferred. PDF and OCR import are
   intentionally excluded.
 - Paste/TXT accepts UTF-8 Chinese text up to 120,000 normalized characters per
-  book. Automatic CVDICT definitions may contain errors, sentence translation
-  is unavailable offline, and imported metadata cannot yet be edited after save.
+  book. EPUB accepts archives up to 20 MB and keeps text, package metadata,
+  spine order, and EPUB 3 navigation or EPUB 2 NCX chapter labels. Expanded
+  archives are capped at 40 MB, with additional entry/chapter/document limits.
+  Images, CSS, SVG, MathML, audio, video, encrypted content, and DRM are not
+  imported. Automatic CVDICT definitions may contain errors, sentence
+  translation is unavailable offline, and imported metadata cannot yet be
+  edited after save.
 - Accounts, cloud sync, telemetry, scoring, streaks, goals, gamification, and
   commercial services are intentionally outside the product scope.
 - Audio, SRS, and a native iOS app are not part of the current reader baseline.
