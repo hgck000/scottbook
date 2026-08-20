@@ -185,6 +185,50 @@ describe("built-in ScottBook library", () => {
     }
   });
 
+  it("filters dictionary noise and locks reviewed contextual readings", () => {
+    const wordTokens = builtInLibrary
+      .flatMap((article) => article.paragraphs)
+      .flatMap((paragraph) => paragraph.sentences)
+      .flatMap((sentence) => sentence.tokens)
+      .filter((token) => token.kind === "word");
+    const forbiddenMeaningNoise =
+      /biến thể|họ \[|Đài Loan|nghĩa bóng|phương ngữ|tiếng lóng|Hồng Kông|phản động|chống cộng sản|khiêu dâm|cần sa|vết cắn|~|cũng đọc là/iu;
+
+    expect(
+      wordTokens.filter((token) => forbiddenMeaningNoise.test(token.meaning))
+    ).toEqual([]);
+
+    for (const [hanzi, pinyin, meaning] of [
+      ["故事", "gù shi", "câu chuyện; truyện"],
+      ["告诉", "gào su", "nói cho biết; thông báo"],
+      ["知道", "zhī dao", "biết; hiểu rõ"],
+      ["一个", "yí gè", "một cái; lượng từ phổ thông"],
+      ["一起", "yì qǐ", "cùng nhau"],
+      ["东西", "dōng xi", "đồ vật; thứ; đồ đạc"],
+      ["调查", "diào chá", undefined],
+      ["认为", "rèn wéi", undefined],
+      ["三种", "sān zhǒng", undefined],
+      ["林阿姨", "lín ā yí", "cô Lâm"],
+      ["陈老师", "chén lǎo shī", "giáo viên Trần"]
+    ] as const) {
+      const matches = wordTokens.filter((token) => token.hanzi === hanzi);
+      expect(matches.length).toBeGreaterThan(0);
+      expect(matches.every((token) => token.pinyin === pinyin)).toBe(true);
+      if (meaning) {
+        expect(matches.every((token) => token.meaning === meaning)).toBe(true);
+      }
+    }
+
+    const longStorySentences = builtInLibrary
+      .filter((article) => article.id.startsWith("hsk1-story-"))
+      .flatMap((article) => article.paragraphs)
+      .flatMap((paragraph) => paragraph.sentences)
+      .map((sentence) => sentence.tokens.map((token) => token.hanzi).join(""));
+    expect(longStorySentences.join("\n")).not.toMatch(
+      /一起一起|站边|服务桌上|越来越小|没有右边的手/u
+    );
+  });
+
   it("rejects a word when even one character annotation is missing", () => {
     const incompleteArticle = structuredClone(
       builtInLibrary[0]

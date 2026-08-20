@@ -11,6 +11,63 @@ const checkOnly = process.argv.includes("--check");
 
 const NO_MEANING = "Chưa có nghĩa tiếng Việt trong từ điển offline.";
 const meaningOverrides = new Map([
+  ["的", "trợ từ sở hữu hoặc nối định ngữ với danh từ"],
+  ["在", "ở; tại; đang"],
+  ["他", "anh ấy; ông ấy"],
+  ["她", "cô ấy; bà ấy"],
+  ["也", "cũng"],
+  ["很", "rất; khá"],
+  ["都", "đều; tất cả"],
+  ["有", "có"],
+  ["是", "là; đúng"],
+  ["工作", "công việc; làm việc"],
+  ["很多", "nhiều; rất nhiều"],
+  ["中间", "ở giữa; chính giữa"],
+  ["原来", "hóa ra; ban đầu; trước đây"],
+  ["一点", "một chút; một ít"],
+  ["故事", "câu chuyện; truyện"],
+  ["告诉", "nói cho biết; thông báo"],
+  ["知道", "biết; hiểu rõ"],
+  ["看起来", "trông có vẻ; nhìn có vẻ"],
+  ["后面", "phía sau; đằng sau"],
+  ["奶奶", "bà nội; bà"],
+  ["妹妹", "em gái"],
+  ["爸爸", "bố; ba"],
+  ["办公室", "văn phòng"],
+  ["白色", "màu trắng"],
+  ["画了", "đã vẽ"],
+  ["第一个", "đầu tiên; thứ nhất"],
+  ["第二个", "thứ hai"],
+  ["第三个", "thứ ba"],
+  ["每个", "mỗi; từng"],
+  ["做的", "do ... làm; được làm"],
+  ["新的", "mới"],
+  ["林阿姨", "cô Lâm"],
+  ["阿文", "A Văn"],
+  ["黄色", "màu vàng"],
+  ["水里", "trong nước"],
+  ["村口", "đầu làng; lối vào làng"],
+  ["家门口", "trước cửa nhà"],
+  ["白纸", "giấy trắng"],
+  ["彩纸", "giấy màu"],
+  ["大纸", "tờ giấy lớn"],
+  ["纸桥", "cầu giấy"],
+  ["纸衣服", "quần áo bằng giấy"],
+  ["蓝纸", "giấy màu xanh"],
+  ["红纸", "giấy màu đỏ"],
+  ["黄纸", "giấy màu vàng"],
+  ["大白纸", "tờ giấy trắng lớn"],
+  ["白纸星星", "ngôi sao bằng giấy trắng"],
+  ["拿纸", "cầm giấy; lấy giấy"],
+  ["新纸", "giấy mới"],
+  ["纸架", "giá đựng giấy"],
+  ["欢迎纸", "tờ giấy chào mừng"],
+  ["小纸房子", "ngôi nhà nhỏ bằng giấy"],
+  ["乱纸", "giấy để lộn xộn"],
+  ["纸的", "bằng giấy"],
+  ["这颗", "viên này; hạt này"],
+  ["那颗", "viên đó; hạt đó"],
+  ["每颗", "mỗi viên; mỗi hạt"],
   ["了", "trợ từ chỉ hành động đã hoàn thành hoặc tình trạng đã thay đổi"],
   ["吗", "trợ từ nghi vấn đặt ở cuối câu"],
   ["和", "và; cùng với"],
@@ -30,6 +87,9 @@ const meaningOverrides = new Map([
   ["汉语课", "tiết học tiếng Trung"],
   ["汉语书", "sách tiếng Trung"],
   ["衣服店", "cửa hàng quần áo"],
+  ["咖啡店", "quán cà phê"],
+  ["咖", "âm tiết dùng trong từ cà phê"],
+  ["啡", "âm tiết dùng trong từ cà phê"],
   ["一个字", "một chữ"],
   ["一大碗", "một bát lớn"],
   ["一猜", "đoán thử"],
@@ -58,7 +118,7 @@ const meaningOverrides = new Map([
   ["写上", "viết lên"],
   ["我家", "nhà tôi"],
   ["我的", "của tôi"],
-  ["王老师", "anh Vương; người hướng dẫn họ Vương"],
+  ["王老师", "giáo viên Vương"],
   ["王先生", "anh Vương; ông Vương"],
   ["小明", "Tiểu Minh"],
   ["小李", "Tiểu Lý"],
@@ -86,6 +146,29 @@ const meaningOverrides = new Map([
   ["小安", "Tiểu An"],
   ["李月", "Lý Nguyệt"],
   ["张阿姨", "cô Trương"],
+  ["陈老师", "giáo viên Trần"],
+  ["李爷爷", "ông Lý"],
+  ["李叔叔", "chú Lý"],
+  ["王阿姨", "cô Vương"],
+  ["周姐姐", "chị Châu"],
+  ["李姐", "chị Lý"],
+  ["陈叔叔", "chú Trần"],
+  ["王叔叔", "chú Vương"],
+  ["张经理", "quản lý Trương"],
+  ["李阿姨", "cô Lý"],
+  ["王经理", "quản lý Vương"],
+  ["刘阿姨", "cô Lưu"],
+  ["老爷爷", "cụ ông"],
+  ["林然", "Lâm Nhiên"],
+  ["陈晨", "Trần Thần"],
+  ["一起", "cùng nhau"],
+  ["喝水", "uống nước"],
+  ["准备了", "đã chuẩn bị"],
+  ["看着", "đang nhìn; nhìn"],
+  ["到了", "đã đến; khi đến"],
+  ["来了", "đã đến"],
+  ["还是", "vẫn; hay là; hoặc"],
+  ["阿姨", "cô; dì"],
   ["地", "trợ từ nối trạng từ với động từ"],
   ["被", "bị; được; giới từ đánh dấu câu bị động"],
   ["东西", "đồ vật; thứ; đồ đạc"],
@@ -135,6 +218,31 @@ const meaningOverrides = new Map([
   ["生意", "việc kinh doanh; buôn bán"]
 ]);
 const tokenPinyinOverrides = new Map([
+  ["一个", ["yí", "gè"]],
+  ["一起", ["yì", "qǐ"]],
+  ["看", ["kàn"]],
+  ["上", ["shàng"]],
+  ["是", ["shì"]],
+  ["东西", ["dōng", "xi"]],
+  ["开始", ["kāi", "shǐ"]],
+  ["一边", ["yì", "biān"]],
+  ["一站", ["yí", "zhàn"]],
+  ["发现", ["fā", "xiàn"]],
+  ["第二个", ["dì", "èr", "gè"]],
+  ["来到", ["lái", "dào"]],
+  ["第一次", ["dì", "yī", "cì"]],
+  ["不是", ["bú", "shì"]],
+  ["不能", ["bù", "néng"]],
+  ["星期一", ["xīng", "qī", "yī"]],
+  ["不要", ["bú", "yào"]],
+  ["一步", ["yí", "bù"]],
+  ["一层", ["yì", "céng"]],
+  ["认为", ["rèn", "wéi"]],
+  ["三种", ["sān", "zhǒng"]],
+  ["调查", ["diào", "chá"]],
+  ["故事", ["gù", "shi"]],
+  ["告诉", ["gào", "su"]],
+  ["知道", ["zhī", "dao"]],
   ["地", ["de"]],
   ["只", ["zhǐ"]],
   ["得", ["de"]],
@@ -166,10 +274,23 @@ const minutesByLevel = {
 };
 
 function cleanDefinition(value) {
+  if (
+    /^\s*(?:\((?:nghĩa bóng|phương ngữ|tiếng lóng|Đài Loan|Hồng Kông)[^)]*\)|(?:nghĩa bóng|phương ngữ|tiếng lóng|Đài Loan|Hồng Kông)\s*:)/iu.test(value) ||
+    /^\s*(?:thị trấn|trấn|huyện)[^;]*(?:Đài Loan|Đài Nam|Bình Đông|Nam Đầu)/iu.test(value) ||
+    /^(?:phản động|chống cộng sản|khiêu dâm|cần sa|vết cắn yêu|trốn)$/iu.test(value.trim())
+  ) {
+    return "";
+  }
+
   return value
+    .replace(/\([^()]*\)/gu, "")
+    .replace(/\[[^\]]*\]/gu, "")
     .replace(/\s+/gu, " ")
     .replace(/^\s+|\s+$/gu, "")
     .replace(/^(?:LT|CL|Lượng từ):.*$/iu, "")
+    .replace(/;?\s*cũng đọc là.*$/iu, "")
+    .replace(/;\s*~[^;]*/gu, "")
+    .replace(/\s*[;,]\s*(?:v\.v\.|vv\.)$/iu, "")
     .slice(0, 240);
 }
 
@@ -327,7 +448,7 @@ function getStructuredQuantityMeaning(hanzi) {
   }
 
   const unitMatch = hanzi.match(
-    /^([一二两三四五六七八九十]+)(分钟|个月|个人|本书|天|个|件|位|双|张|本|把|杯|份|段|篇|部|种|次|号)$/u
+    /^([一二两三四五六七八九十]+)(分钟|个月|个人|本书|天|个|件|位|双|张|本|把|杯|份|段|篇|部|种|次|号|颗|棵|辆|块|岁|圈|条|层|根|盆|箱|片)$/u
   );
   if (unitMatch) {
     const number = getVietnameseNumber(unitMatch[1]);
@@ -351,13 +472,25 @@ function getStructuredQuantityMeaning(hanzi) {
       "部": "bộ; chiếc máy",
       "种": "loại",
       "次": "lần",
-      "号": "số; cỡ"
+      "号": "số; cỡ",
+      "颗": "viên; hạt",
+      "棵": "cây",
+      "辆": "chiếc xe",
+      "块": "miếng",
+      "岁": "tuổi",
+      "圈": "vòng",
+      "条": "chiếc; dải; vật dài",
+      "层": "tầng; lớp",
+      "根": "thanh; sợi",
+      "盆": "chậu",
+      "箱": "thùng",
+      "片": "mảnh; chiếc"
     }[unitMatch[2]];
     if (number && unit) return `${number} ${unit}`;
   }
 
   const ordinalMatch = hanzi.match(
-    /^第([一二两三四五六七八九十]+)(天|页|件|张|周|星期|次)$/u
+    /^第([一二两三四五六七八九十]+)(天|页|件|张|周|星期|次|颗|个)$/u
   );
   if (ordinalMatch) {
     const number = getVietnameseNumber(ordinalMatch[1]);
@@ -368,7 +501,9 @@ function getStructuredQuantityMeaning(hanzi) {
       "张": "tờ",
       "周": "tuần",
       "星期": "tuần",
-      "次": "lần"
+      "次": "lần",
+      "颗": "viên",
+      "个": "mục"
     }[ordinalMatch[2]];
     if (number && unit) {
       if (number === "một") return `${unit} đầu tiên`;

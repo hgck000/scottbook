@@ -62,6 +62,7 @@ describe("offline library discovery", () => {
       "hsk1-story-seaside-rain",
       "hsk1-story-old-street",
       "hsk3-understand-first",
+      "hsk4-sustainable-uniform",
       "hsk4-lost-camera",
       "hsk5-overtime-evaluation"
     ]);
