@@ -5,13 +5,14 @@ import { formatValidationIssues, validateBuiltInLibrary } from "./validateLibrar
 
 describe("built-in ScottBook library", () => {
   it("ships nine medium-to-long readings for every supported HSK level", () => {
-    expect(builtInLibrary).toHaveLength(27);
+    expect(builtInLibrary).toHaveLength(36);
     const accentByLevel = {
       "HSK 1": "jade",
       "HSK 2": "amber",
-      "HSK 3": "coral"
+      "HSK 3": "coral",
+      "HSK 4": "violet"
     } as const;
-    for (const level of ["HSK 1", "HSK 2", "HSK 3"] as const) {
+    for (const level of ["HSK 1", "HSK 2", "HSK 3", "HSK 4"] as const) {
       const levelArticles = builtInLibrary.filter((article) => article.level === level);
       expect(levelArticles).toHaveLength(9);
       expect(levelArticles.every((article) => article.accent === accentByLevel[level])).toBe(true);
@@ -72,6 +73,23 @@ describe("built-in ScottBook library", () => {
       wordTokens.find((token) => token.hanzi === "汉语课")
     ).toMatchObject({ pinyin: "hàn yǔ kè", meaning: "tiết học tiếng Trung" });
     expect(builtInLibrary[0]?.titlePinyin).toBe("Wǒ de zǎo shang");
+
+    const hsk4Tokens = builtInLibrary
+      .filter((article) => article.level === "HSK 4")
+      .flatMap((article) => article.paragraphs)
+      .flatMap((paragraph) => paragraph.sentences)
+      .flatMap((sentence) => sentence.tokens)
+      .filter((token) => token.kind === "word");
+    expect(
+      hsk4Tokens.filter((token) => token.hanzi === "地")
+        .every((token) => token.pinyin === "de")
+    ).toBe(true);
+    expect(hsk4Tokens.find((token) => token.hanzi === "制服"))
+      .toMatchObject({ meaning: "đồng phục" });
+    expect(hsk4Tokens.find((token) => token.hanzi === "被"))
+      .toMatchObject({ meaning: "bị; được; giới từ đánh dấu câu bị động" });
+    expect(hsk4Tokens.find((token) => token.hanzi === "东西"))
+      .toMatchObject({ meaning: "đồ vật; thứ; đồ đạc" });
   });
 
   it("rejects a word when even one character annotation is missing", () => {

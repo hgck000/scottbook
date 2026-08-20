@@ -67,17 +67,29 @@ const meaningOverrides = new Map([
   ["小陈", "Tiểu Trần"],
   ["小周", "Tiểu Chu"],
   ["李月", "Lý Nguyệt"],
-  ["张阿姨", "cô Trương"]
+  ["张阿姨", "cô Trương"],
+  ["地", "trợ từ nối trạng từ với động từ"],
+  ["被", "bị; được; giới từ đánh dấu câu bị động"],
+  ["东西", "đồ vật; thứ; đồ đạc"],
+  ["活动", "hoạt động; sự kiện"],
+  ["制服", "đồng phục"],
+  ["样衣", "quần áo mẫu; mẫu thử"],
+  ["错题本", "sổ ghi và phân tích câu làm sai"]
+]);
+const tokenPinyinOverrides = new Map([
+  ["地", ["de"]]
 ]);
 const accentByLevel = {
   "HSK 1": "jade",
   "HSK 2": "amber",
-  "HSK 3": "coral"
+  "HSK 3": "coral",
+  "HSK 4": "violet"
 };
 const minutesByLevel = {
   "HSK 1": 4,
   "HSK 2": 5,
-  "HSK 3": 6
+  "HSK 3": 6,
+  "HSK 4": 7
 };
 
 function cleanDefinition(value) {
@@ -336,7 +348,7 @@ function createToken(dictionary, origin, id, pinyinData) {
   if (!/\p{Script=Han}/u.test(origin)) {
     return { id, kind: "punctuation", hanzi: origin };
   }
-  const pinyinByCharacter = pinyinData.symbols;
+  const pinyinByCharacter = tokenPinyinOverrides.get(origin) ?? pinyinData.symbols;
   return {
     id,
     kind: "word",

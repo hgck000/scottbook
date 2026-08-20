@@ -108,6 +108,6 @@ export function countArticlesByLevel(
       ...counts,
       [article.level]: counts[article.level] + 1
     }),
-    { "HSK 1": 0, "HSK 2": 0, "HSK 3": 0 }
+    { "HSK 1": 0, "HSK 2": 0, "HSK 3": 0, "HSK 4": 0 }
   );
 }

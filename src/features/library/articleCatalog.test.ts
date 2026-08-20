@@ -33,7 +33,7 @@ describe("offline discover catalog", () => {
     expect(countArticlesByLength(builtInLibrary)).toEqual({
       short: 0,
       medium: 18,
-      long: 9
+      long: 18
     });
   });
 
@@ -59,16 +59,18 @@ describe("offline discover catalog", () => {
       "hsk2-cook-with-neighbor",
       "hsk3-keep-a-promise",
       "hsk3-missed-bus",
-      "hsk3-grandma-smartphone"
+      "hsk3-grandma-smartphone",
+      "hsk4-lost-camera",
+      "hsk4-family-trip-change"
     ]);
     expect(countArticlesByTopic(builtInLibrary)).toEqual({
-      "Đời sống": 8,
-      "Kế hoạch": 4,
-      "Học tập": 5,
+      "Đời sống": 10,
+      "Kế hoạch": 6,
+      "Học tập": 6,
       "May mặc": 2,
-      "Công sở": 3,
-      "Thời trang": 3,
-      "Thiết kế": 2
+      "Công sở": 5,
+      "Thời trang": 4,
+      "Thiết kế": 3
     });
   });
 });

@@ -1,6 +1,5 @@
 /// <reference lib="webworker" />
 
-import { gunzipSync, strFromU8 } from "fflate";
 import { OutputFormat, pinyin, segment } from "pinyin-pro";
 import type {
   AnnotatedParagraph,
@@ -16,6 +15,7 @@ import {
   type ImportDraft,
   type ImportedBook
 } from "./importedBook";
+import { decodeDictionaryPayload } from "./dictionaryPayload";
 
 type AnalyzeMessage = {
   type: "analyze";
@@ -77,7 +77,7 @@ async function loadDictionary(url: string, requestId: string): Promise<Map<strin
   if (!response.ok) throw new Error("Không mở được dữ liệu CVDICT đã đóng gói trong app.");
   const compressed = new Uint8Array(await response.arrayBuffer());
   report(requestId, 16, "Đang giải nén từ điển trên thiết bị…");
-  const serialized = strFromU8(gunzipSync(compressed));
+  const serialized = decodeDictionaryPayload(compressed);
   report(requestId, 25, "Đang lập chỉ mục nghĩa Việt offline…");
   return parseDictionary(serialized, requestId);
 }

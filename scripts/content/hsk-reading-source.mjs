@@ -666,5 +666,221 @@ export const hskReadingSource = [
         sentence("晚上 大家 常 在 这里 聊天 ， 邻居们 也 越来越 熟悉 了 。", "Buổi tối mọi người thường trò chuyện ở đây và hàng xóm ngày càng thân nhau hơn.")
       ])
     ]
+  ),
+  article(
+    "hsk4-first-project-report",
+    "第一次独立汇报",
+    "Lần đầu tự báo cáo công việc",
+    "Một nhân viên trẻ chuẩn bị bản báo cáo đầu tiên và học cách trình bày vấn đề rõ ràng.",
+    "HSK 4",
+    "Công sở",
+    [
+      section("准备资料", "Chuẩn bị tài liệu", [
+        sentence("工作 三个月 后 ， 经理 让我 独立 介绍 最近 的 项目 进度 。", "Sau ba tháng làm việc, quản lý yêu cầu tôi tự trình bày tiến độ dự án gần đây."),
+        sentence("虽然 我 很 熟悉 工作 内容 ， 但是 一想到 要 在 大家 面前 讲话 就 紧张 。", "Dù rất quen nội dung công việc, tôi vẫn căng thẳng khi nghĩ đến việc nói trước mọi người."),
+        sentence("同事 建议 我 先 把 最重要 的 结果 放在 前面 ， 再 解释 遇到 的 问题 。", "Đồng nghiệp khuyên tôi đưa kết quả quan trọng nhất lên trước rồi mới giải thích vấn đề đã gặp."),
+        sentence("我 根据 数据 做了 几张 简单 的 图表 ， 并且 删除了 重复 的 内容 。", "Tôi làm vài biểu đồ đơn giản dựa trên dữ liệu và xóa nội dung trùng lặp."),
+        sentence("汇报 前一天 ， 我 对着 空 椅子 练习了 三遍 ， 时间 终于 控制 在 十分钟 以内 。", "Một ngày trước buổi báo cáo, tôi luyện ba lần trước ghế trống và cuối cùng kiểm soát thời gian dưới mười phút.")
+      ]),
+      section("说清楚比说得多重要", "Nói rõ quan trọng hơn nói nhiều", [
+        sentence("会议 开始 后 ， 我 先 说明 项目 已经 完成 百分之八十 。", "Sau khi cuộc họp bắt đầu, tôi nói trước rằng dự án đã hoàn thành tám mươi phần trăm."),
+        sentence("当 经理 问到 延迟 的 原因 时 ， 我 没有 找 借口 ， 而是 提出了 两个 解决 办法 。", "Khi quản lý hỏi nguyên nhân chậm trễ, tôi không viện cớ mà đưa ra hai cách giải quyết."),
+        sentence("大家 对 第二个 办法 很 感兴趣 ， 还 补充了 一些 具体 建议 。", "Mọi người rất quan tâm cách thứ hai và còn bổ sung vài đề xuất cụ thể."),
+        sentence("汇报 结束 时 ， 我 才 发现 自己 已经 不那么 紧张 了 。", "Khi báo cáo kết thúc, tôi mới nhận ra mình không còn căng thẳng như trước."),
+        sentence("这次 经历 让我 明白 ， 清楚 地 说明 事实 比 使用 复杂 的 词 更 重要 。", "Trải nghiệm này giúp tôi hiểu rằng trình bày sự thật rõ ràng quan trọng hơn dùng từ phức tạp.")
+      ])
+    ]
+  ),
+  article(
+    "hsk4-sustainable-uniform",
+    "一套可以穿更久的制服",
+    "Bộ đồng phục có thể mặc lâu hơn",
+    "Một nhóm thiết kế cải tiến đồng phục bằng cách quan sát người dùng và giảm lãng phí.",
+    "HSK 4",
+    "Thiết kế",
+    [
+      section("先了解真正的需要", "Trước tiên hiểu nhu cầu thật", [
+        sentence("一家 咖啡店 请 我们 设计 新 制服 ， 希望 看起来 专业 又 容易 清洗 。", "Một quán cà phê nhờ chúng tôi thiết kế đồng phục mới, mong vừa chuyên nghiệp vừa dễ giặt."),
+        sentence("设计师 没有 马上 画图 ， 而是 去 店里 观察 员工 一天 的 工作 。", "Nhà thiết kế không vẽ ngay mà đến cửa hàng quan sát một ngày làm việc của nhân viên."),
+        sentence("他们 发现 员工 经常 弯腰 拿 东西 ， 普通 衬衫 的 后面 很容易 跑出来 。", "Họ phát hiện nhân viên thường cúi lấy đồ nên phần sau của áo sơ mi thông thường dễ tuột ra."),
+        sentence("另外 ， 深色 围裙 虽然 不容易 显脏 ， 夏天 穿着 却 比较 热 。", "Ngoài ra, tạp dề tối màu tuy khó lộ vết bẩn nhưng mặc mùa hè khá nóng."),
+        sentence("团队 记录了 这些 细节 ， 决定 先 做 两种 不同 的 样衣 。", "Nhóm ghi lại các chi tiết đó và quyết định làm trước hai mẫu thử khác nhau.")
+      ]),
+      section("减少浪费的修改", "Điều chỉnh để giảm lãng phí", [
+        sentence("第一次 试穿 后 ， 大家 选择了 更 轻 的 布料 和 可以 调整 的 袖口 。", "Sau lần mặc thử đầu tiên, mọi người chọn loại vải nhẹ hơn và cổ tay áo có thể điều chỉnh."),
+        sentence("围裙 的 口袋 被 分成 三个 部分 ， 工具 不会 再 混在 一起 。", "Túi tạp dề được chia thành ba phần để dụng cụ không còn lẫn vào nhau."),
+        sentence("为了 让 制服 穿得 更久 ， 容易 坏 的 地方 还 增加了 一层 布 。", "Để đồng phục mặc được lâu hơn, những chỗ dễ hỏng còn được thêm một lớp vải."),
+        sentence("咖啡店 先 让 五名 员工 试用 一个月 ， 然后 才 决定 生产 数量 。", "Quán cho năm nhân viên dùng thử một tháng rồi mới quyết định số lượng sản xuất."),
+        sentence("好的 设计 不一定 使用 更多 材料 ， 关键 是 每个 细节 都 有 实际 作用 。", "Thiết kế tốt không nhất thiết dùng nhiều vật liệu hơn; điều quan trọng là mỗi chi tiết đều có tác dụng thực tế.")
+      ])
+    ]
+  ),
+  article(
+    "hsk4-returned-dress",
+    "被退回来的连衣裙",
+    "Chiếc váy bị trả lại",
+    "Một cửa hàng biến lời phàn nàn của khách thành cơ hội cải thiện sản phẩm và dịch vụ.",
+    "HSK 4",
+    "Thời trang",
+    [
+      section("不是尺寸的问题", "Không phải vấn đề kích cỡ", [
+        sentence("周末 下午 ， 一位 客人 拿着 上周 买的 连衣裙 回到 店里 。", "Chiều cuối tuần, một khách hàng mang chiếc váy mua tuần trước quay lại cửa hàng."),
+        sentence("店员 以为 尺寸 不合适 ， 客人 却 说 试穿 时 感觉 很舒服 。", "Nhân viên tưởng kích cỡ không phù hợp, nhưng khách nói lúc thử mặc rất thoải mái."),
+        sentence("她 第一次 洗完 后 才 发现 ， 裙子 的 颜色 比 原来 浅了 很多 。", "Chỉ sau lần giặt đầu, cô mới phát hiện màu váy nhạt đi nhiều so với ban đầu."),
+        sentence("店长 仔细 看了 洗衣 说明 ， 发现 标签 上 少写了 一个 重要 条件 。", "Quản lý xem kỹ hướng dẫn giặt và phát hiện nhãn thiếu một điều kiện quan trọng."),
+        sentence("他 向 客人 道歉 ， 立刻 同意 退货 ， 还 记下了 商品 的 号码 。", "Anh xin lỗi khách, lập tức đồng ý trả hàng và ghi lại mã sản phẩm.")
+      ]),
+      section("把抱怨变成改进", "Biến phàn nàn thành cải tiến", [
+        sentence("店长 检查了 同一批 裙子 ， 结果 又 找到 两件 有 相同 问题 的 商品 。", "Quản lý kiểm tra cùng lô váy và tìm thêm hai sản phẩm có vấn đề giống nhau."),
+        sentence("他 联系 生产 工厂 ， 要求 重新 测试 布料 的 颜色 是否 稳定 。", "Anh liên hệ nhà máy, yêu cầu kiểm tra lại độ bền màu của vải."),
+        sentence("新的 洗衣 标签 写得 更 清楚 ， 店员 也 会 主动 提醒 客人 。", "Nhãn giặt mới được viết rõ hơn và nhân viên cũng chủ động nhắc khách."),
+        sentence("一个月 后 ， 那位 客人 再次 来到 店里 ， 选择了 另一条 裙子 。", "Một tháng sau, vị khách quay lại cửa hàng và chọn một chiếc váy khác."),
+        sentence("她 说 ， 产品 出现 问题 并不可怕 ， 认真 处理 才 能 得到 信任 。", "Cô nói sản phẩm gặp vấn đề không đáng sợ; xử lý nghiêm túc mới giành được niềm tin.")
+      ])
+    ]
+  ),
+  article(
+    "hsk4-lost-camera",
+    "回到手里的相机",
+    "Chiếc máy ảnh trở về tay chủ",
+    "Một chiếc máy ảnh thất lạc được tìm lại nhờ những manh mối nhỏ và sự giúp đỡ của người lạ.",
+    "HSK 4",
+    "Đời sống",
+    [
+      section("旅行后的发现", "Phát hiện sau chuyến đi", [
+        sentence("从 海边 回家 的 晚上 ， 我 整理 行李 时 发现 相机 不见了 。", "Tối trở về từ bờ biển, khi dọn hành lý tôi phát hiện máy ảnh biến mất."),
+        sentence("相机 里 有 很多 家庭 照片 ， 所以 我 比 丢了 钱 更 难过 。", "Trong máy có nhiều ảnh gia đình nên tôi buồn hơn cả mất tiền."),
+        sentence("我 先 给 酒店 打电话 ， 又 联系了 坐过 的 出租车 ， 都 没有 消息 。", "Tôi gọi khách sạn rồi liên hệ chiếc taxi đã đi nhưng đều không có tin tức."),
+        sentence("姐姐 提醒 我 回忆 最后一次 使用 相机 的 地点 和 时间 。", "Chị nhắc tôi nhớ lại địa điểm và thời gian cuối cùng dùng máy ảnh."),
+        sentence("我 想起 离开 海滩 前 ， 曾经 在 一家 小店 门口 拍过 照 。", "Tôi nhớ trước khi rời bãi biển từng chụp ảnh trước một cửa hàng nhỏ.")
+      ]),
+      section("照片里的线索", "Manh mối trong bức ảnh", [
+        sentence("我 在 网上 找到 那家 店 的 电话 ， 老板 果然 捡到了一部 相机 。", "Tôi tìm được số điện thoại cửa hàng trên mạng và quả nhiên chủ quán đã nhặt được một máy ảnh."),
+        sentence("为了 确认 我 是 主人 ， 他 请 我 说出 相机 的 颜色 和 第一张 照片 的 内容 。", "Để xác nhận tôi là chủ, ông yêu cầu nói màu máy và nội dung tấm ảnh đầu tiên."),
+        sentence("第一张 是 父母 站在 蓝色 雨伞 旁边 的 合照 ， 老板 听完 就 放心了 。", "Tấm đầu là ảnh bố mẹ đứng cạnh chiếc ô xanh; nghe xong chủ quán yên tâm."),
+        sentence("几天 后 ， 我 收到 他 寄来 的 相机 ， 里面 的 照片 一张 都 没 少 。", "Vài ngày sau tôi nhận lại máy ảnh ông gửi, không thiếu tấm nào."),
+        sentence("这次 事情 让我 相信 ， 陌生人 之间 的 认真 和 善意 也 值得 珍惜 。", "Sự việc khiến tôi tin rằng sự tử tế và nghiêm túc giữa người xa lạ cũng đáng trân trọng.")
+      ])
+    ]
+  ),
+  article(
+    "hsk4-community-bookcase",
+    "小区门口的共享书柜",
+    "Tủ sách dùng chung trước khu dân cư",
+    "Cư dân cùng xây một tủ sách nhỏ và đặt ra quy tắc để nó hoạt động lâu dài.",
+    "HSK 4",
+    "Kế hoạch",
+    [
+      section("从旧书开始", "Bắt đầu từ sách cũ", [
+        sentence("搬家 时 ， 陈老师 发现 家里 有 两箱 已经 看完 的 书 。", "Khi chuyển nhà, thầy Trần phát hiện hai thùng sách đã đọc xong."),
+        sentence("直接 扔掉 太 可惜 ， 全部 送到 很远 的 图书馆 又 不方便 。", "Vứt đi thì quá tiếc, còn mang hết đến thư viện xa lại bất tiện."),
+        sentence("他 建议 在 小区 门口 放 一个 书柜 ， 邻居 可以 自由 交换 。", "Ông đề nghị đặt một tủ sách trước khu dân cư để hàng xóm tự do trao đổi."),
+        sentence("有人 担心 下雨 会 弄湿 书 ， 也有人 担心 书柜 很快 变乱 。", "Có người lo mưa làm ướt sách, người khác lo tủ nhanh chóng bừa bộn."),
+        sentence("大家 讨论 后 ， 决定 使用 带门 的 旧柜子 ， 并且 安排 人 轮流 检查 。", "Sau khi thảo luận, mọi người quyết định dùng tủ cũ có cửa và phân công người kiểm tra luân phiên.")
+      ]),
+      section("规则让分享更长久", "Quy tắc giúp chia sẻ bền lâu", [
+        sentence("书柜 上 写着 三条 规则 ： 保持 干净 、 看完 放回 、 不放 广告 。", "Trên tủ có ba quy tắc: giữ sạch, đọc xong đặt lại và không để quảng cáo."),
+        sentence("孩子们 负责 给 图画书 分类 ， 老人们 则 常常 推荐 历史 故事 。", "Trẻ em phụ trách phân loại sách tranh, còn người lớn tuổi thường giới thiệu truyện lịch sử."),
+        sentence("第一个月 ， 书柜 里的 书 不但 没有 减少 ， 反而 增加了 一倍 。", "Tháng đầu, sách trong tủ không giảm mà còn tăng gấp đôi."),
+        sentence("邻居 以前 见面 只 点头 ， 现在 会 停下来 交流 阅读 感受 。", "Trước kia hàng xóm gặp nhau chỉ gật đầu, nay dừng lại trao đổi cảm nhận đọc sách."),
+        sentence("一个 小小 的 书柜 不仅 节省了 资源 ， 还 让 小区 变得 更有 温度 。", "Một tủ sách nhỏ không chỉ tiết kiệm tài nguyên mà còn khiến khu dân cư ấm áp hơn.")
+      ])
+    ]
+  ),
+  article(
+    "hsk4-learning-from-mistakes",
+    "写错以后别急着擦",
+    "Viết sai rồi đừng vội xóa",
+    "Một lớp học biến lỗi sai thành tài liệu giúp học sinh hiểu cách suy nghĩ của mình.",
+    "HSK 4",
+    "Học tập",
+    [
+      section("同一个错误又出现了", "Cùng một lỗi lại xuất hiện", [
+        sentence("每次 作业 发下来 ， 小林 都 会 立刻 把 错字 擦掉 ， 再 写上 正确 答案 。", "Mỗi lần nhận lại bài, Tiểu Lâm lập tức xóa chữ sai rồi viết đáp án đúng."),
+        sentence("可是 下次 考试 遇到 相似 的 句子 ， 他 还是 会 犯 同样 的 错误 。", "Nhưng kỳ thi sau gặp câu tương tự, cậu vẫn mắc lỗi giống vậy."),
+        sentence("老师 发现 后 ， 请 他 暂时 不要 擦 ， 先 在 旁边 写下 当时 的 想法 。", "Giáo viên phát hiện và bảo cậu tạm đừng xóa, trước hết viết suy nghĩ lúc đó bên cạnh."),
+        sentence("小林 这才 注意到 ， 自己 常常 只 记住 一个 词 的 意思 ， 却 忽略了 使用 条件 。", "Lúc ấy Tiểu Lâm mới chú ý mình thường chỉ nhớ nghĩa từ mà bỏ qua điều kiện sử dụng."),
+        sentence("老师 让 全班 准备 一本 错题本 ， 但是 不要求 抄写 所有 错误 。", "Giáo viên cho cả lớp chuẩn bị sổ lỗi sai nhưng không yêu cầu chép mọi lỗi.")
+      ]),
+      section("找到错误背后的原因", "Tìm nguyên nhân phía sau lỗi sai", [
+        sentence("学生 只 记录 经常 出现 或者 自己 解释 不清楚 的 问题 。", "Học sinh chỉ ghi những vấn đề thường xuất hiện hoặc bản thân chưa giải thích rõ."),
+        sentence("每条 记录 除了 正确 答案 ， 还要 写出 错误 原因 和 一个 新 例子 。", "Mỗi ghi chép ngoài đáp án đúng còn phải nêu nguyên nhân sai và một ví dụ mới."),
+        sentence("两个 星期 后 ， 小林 发现 自己 的 大部分 问题 都 和 词语 顺序 有关 。", "Hai tuần sau, Tiểu Lâm phát hiện phần lớn vấn đề liên quan đến trật tự từ."),
+        sentence("复习 时 ， 他 不再 从头 重看 课本 ， 而是 先 练习 这些 薄弱 的 地方 。", "Khi ôn, cậu không đọc lại sách từ đầu mà luyện trước những chỗ còn yếu."),
+        sentence("错误 没有 让 他 更没 信心 ， 反而 成了 了解 自己 学习 方法 的 线索 。", "Lỗi sai không khiến cậu mất tự tin hơn mà trở thành manh mối hiểu cách học của chính mình.")
+      ])
+    ]
+  ),
+  article(
+    "hsk4-meeting-with-distance",
+    "隔着屏幕也能开好会",
+    "Cách màn hình vẫn có thể họp tốt",
+    "Một nhóm làm việc từ xa thay đổi cách họp để mọi thành viên đều theo kịp.",
+    "HSK 4",
+    "Công sở",
+    [
+      section("越来越长的会议", "Cuộc họp ngày càng dài", [
+        sentence("我们 的 团队 在 三个 城市 工作 ， 每周 都要 通过 视频 讨论 项目 。", "Nhóm chúng tôi làm việc ở ba thành phố và mỗi tuần đều thảo luận dự án qua video."),
+        sentence("开始 时 大家 没有 明确 计划 ， 想到 什么 就 说 什么 。", "Ban đầu mọi người không có kế hoạch rõ ràng, nghĩ gì nói nấy."),
+        sentence("会议 常常 超过 一个 小时 ， 结束 后 却 没人 确定 下一步 做什么 。", "Cuộc họp thường quá một giờ nhưng kết thúc chẳng ai chắc bước tiếp theo là gì."),
+        sentence("有一次 网络 不稳定 ， 一位 同事 错过了 重要 决定 ， 结果 做了 重复 工作 。", "Một lần mạng không ổn định, một đồng nghiệp bỏ lỡ quyết định quan trọng và làm việc trùng lặp."),
+        sentence("负责人 意识到 ， 距离 不是 最大 问题 ， 没有 清楚 的 交流 方法 才是 。", "Người phụ trách nhận ra khoảng cách không phải vấn đề lớn nhất, mà là thiếu cách giao tiếp rõ ràng.")
+      ]),
+      section("让每个人都跟得上", "Để mọi người đều theo kịp", [
+        sentence("从 那以后 ， 开会 前一天 每个人 都会 收到 讨论 内容 和 相关 文件 。", "Từ đó, một ngày trước họp mọi người đều nhận nội dung thảo luận và tài liệu liên quan."),
+        sentence("会上 每个 问题 最多 讨论 十分钟 ， 没有 结果 就 安排 专人 继续 研究 。", "Trong họp mỗi vấn đề thảo luận tối đa mười phút; chưa có kết quả thì giao người nghiên cứu tiếp."),
+        sentence("做出 决定 后 ， 记录 的 同事 会 马上 确认 谁 负责 以及 完成 时间 。", "Sau quyết định, người ghi biên bản lập tức xác nhận ai phụ trách và thời hạn hoàn thành."),
+        sentence("不能 参加 的 人 可以 看 简短 记录 ， 不必 重听 整个 会议 。", "Người không thể tham gia có thể xem ghi chép ngắn, không cần nghe lại toàn bộ cuộc họp."),
+        sentence("新的 方法 让 会议 缩短了 一半 ， 团队 的 合作 反而 更 顺利 。", "Cách mới rút ngắn cuộc họp một nửa và sự hợp tác của nhóm lại thuận lợi hơn.")
+      ])
+    ]
+  ),
+  article(
+    "hsk4-family-trip-change",
+    "没有看到日出的旅行",
+    "Chuyến đi không ngắm được bình minh",
+    "Thời tiết làm hỏng kế hoạch ngắm bình minh nhưng gia đình tìm được trải nghiệm đáng nhớ khác.",
+    "HSK 4",
+    "Đời sống",
+    [
+      section("天气改变了计划", "Thời tiết thay đổi kế hoạch", [
+        sentence("为了 看 海上 日出 ， 我们 全家 提前 一个月 计划了 这次 旅行 。", "Để ngắm bình minh trên biển, cả nhà lên kế hoạch chuyến đi trước một tháng."),
+        sentence("到达 小城 的 第一晚 ， 天气 预报 却 说明天 早上 会有 大雨 。", "Tối đầu tiên đến thị trấn, dự báo lại nói sáng hôm sau sẽ mưa lớn."),
+        sentence("弟弟 很 失望 ， 因为 看 日出 是 他 最 期待 的 活动 。", "Em trai rất thất vọng vì ngắm bình minh là hoạt động em mong nhất."),
+        sentence("父亲 说 天气 无法 控制 ， 但 我们 可以 决定 怎样 使用 时间 。", "Bố nói thời tiết không thể kiểm soát nhưng ta có thể quyết định sử dụng thời gian thế nào."),
+        sentence("旅馆 老板 建议 我们 去 附近 的 渔村 ， 那里 雨天 也 很 有意思 。", "Chủ nhà nghỉ gợi ý chúng tôi đến làng chài gần đó, nơi ngày mưa cũng rất thú vị.")
+      ]),
+      section("意外的收获", "Thu hoạch bất ngờ", [
+        sentence("第二天 ， 我们 穿着 雨衣 参观了 一个 制作 渔网 的 家庭 作坊 。", "Ngày hôm sau, chúng tôi mặc áo mưa thăm một xưởng gia đình làm lưới đánh cá."),
+        sentence("一位 老人 教 弟弟 打了 一个 简单 的 结 ， 还 讲了 年轻 时 出海 的 故事 。", "Một cụ già dạy em trai thắt nút đơn giản và kể chuyện ra biển thời trẻ."),
+        sentence("中午 雨 小了 ， 海面 上 出现 一层 白色 的 雾 ， 景色 非常 安静 。", "Buổi trưa mưa nhỏ, trên mặt biển xuất hiện lớp sương trắng, cảnh vật vô cùng yên tĩnh."),
+        sentence("弟弟 拍了 很多 照片 ， 说 这 比 原来 的 计划 更 特别 。", "Em trai chụp nhiều ảnh và nói trải nghiệm này đặc biệt hơn kế hoạch ban đầu."),
+        sentence("旅行 的 意义 也许 不是 完成 所有 安排 ， 而是 发现 没想到 的 风景 。", "Ý nghĩa chuyến đi có lẽ không phải hoàn thành mọi sắp xếp mà là phát hiện cảnh sắc không ngờ tới.")
+      ])
+    ]
+  ),
+  article(
+    "hsk4-volunteer-market",
+    "周末的旧物交换会",
+    "Ngày hội đổi đồ cũ cuối tuần",
+    "Một nhóm tình nguyện tổ chức phiên đổi đồ và điều chỉnh kế hoạch sau sự cố bất ngờ.",
+    "HSK 4",
+    "Kế hoạch",
+    [
+      section("让旧物找到新主人", "Để đồ cũ tìm được chủ mới", [
+        sentence("大学 志愿者 计划 举办 一次 旧物 交换会 ， 鼓励 大家 减少 浪费 。", "Nhóm tình nguyện đại học dự định tổ chức ngày hội đổi đồ cũ để khuyến khích giảm lãng phí."),
+        sentence("参加者 可以 带来 干净 的 书 、 衣服 或者 小型 生活用品 。", "Người tham gia có thể mang sách, quần áo hoặc đồ dùng nhỏ đã làm sạch."),
+        sentence("每件 物品 会 得到 相应 的 点数 ， 人们 再 用 点数 选择 需要 的 东西 。", "Mỗi món nhận số điểm tương ứng rồi mọi người dùng điểm chọn thứ cần."),
+        sentence("为了 避免 现场 混乱 ， 志愿者 提前 按照 种类 安排了 不同 区域 。", "Để tránh hỗn loạn tại chỗ, tình nguyện viên sắp xếp khu vực theo loại từ trước."),
+        sentence("他们 还 提醒 大家 ， 交换 的 目的 不是 得到 最贵 的 商品 。", "Họ còn nhắc rằng mục đích trao đổi không phải lấy món đắt nhất.")
+      ]),
+      section("一场大雨的考验", "Thử thách từ một trận mưa lớn", [
+        sentence("活动 开始 不久 突然 下起 大雨 ， 原来 的 室外 场地 不能 继续 使用 。", "Không lâu sau khi hoạt động bắt đầu, mưa lớn bất ngờ khiến địa điểm ngoài trời không thể dùng tiếp."),
+        sentence("负责人 立刻 联系 学校 ， 把 活动 搬到 附近 的 体育馆 里面 。", "Người phụ trách lập tức liên hệ trường và chuyển hoạt động vào nhà thi đấu gần đó."),
+        sentence("志愿者 一边 保护 物品 ， 一边 引导 参加者 安全 地 移动 。", "Tình nguyện viên vừa bảo vệ đồ vừa hướng dẫn người tham gia di chuyển an toàn."),
+        sentence("虽然 浪费了 一些 时间 ， 但是 没有 一件 物品 被 雨 淋坏 。", "Dù mất chút thời gian nhưng không món đồ nào bị mưa làm hỏng."),
+        sentence("活动 结束 后 ， 剩下 的 东西 全部 送给了 需要 帮助 的 家庭 。", "Sau hoạt động, toàn bộ đồ còn lại được tặng cho các gia đình cần giúp đỡ.")
+      ])
+    ]
   )
 ];

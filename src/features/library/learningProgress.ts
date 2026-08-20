@@ -1,7 +1,7 @@
 import type { BuiltInArticle, HskLevel } from "../../content/types";
 import type { LibraryState } from "./readingState";
 
-export const LEARNING_PROGRESS_LEVELS = ["HSK 1", "HSK 2", "HSK 3"] as const;
+export const LEARNING_PROGRESS_LEVELS = ["HSK 1", "HSK 2", "HSK 3", "HSK 4"] as const;
 
 export type LevelLearningProgress = {
   level: HskLevel;

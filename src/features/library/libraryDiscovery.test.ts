@@ -52,7 +52,7 @@ describe("offline library discovery", () => {
         ...DEFAULT_FILTERS,
         query: "dich tung chu"
       }).map((article) => article.id)
-    ).toEqual(["hsk3-understand-first"]);
+    ).toEqual(["hsk3-understand-first", "hsk4-lost-camera"]);
   });
 
   it("combines level and multi-term search filters", () => {
@@ -121,7 +121,8 @@ describe("offline library discovery", () => {
     expect(countArticlesByLevel(builtInLibrary)).toEqual({
       "HSK 1": 9,
       "HSK 2": 9,
-      "HSK 3": 9
+      "HSK 3": 9,
+      "HSK 4": 9
     });
   });
 });

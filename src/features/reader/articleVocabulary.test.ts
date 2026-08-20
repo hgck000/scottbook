@@ -98,10 +98,10 @@ describe("offline article vocabulary", () => {
 
     const groups = getLibraryVocabularyContexts(builtInLibrary, entry);
 
-    expect(groups).toHaveLength(24);
+    expect(groups).toHaveLength(26);
     expect(
       groups.reduce((total, group) => total + group.occurrences.length, 0)
-    ).toBe(128);
+    ).toBe(144);
     expect(groups[0]).toMatchObject({
       articleId: "hsk1-my-morning",
       articleTitle: "我的早上",
@@ -120,10 +120,10 @@ describe("offline article vocabulary", () => {
     const groups = getLibraryVocabularyContexts(builtInLibrary, entry);
 
     expect(entry.occurrences).toHaveLength(1);
-    expect(groups).toHaveLength(3);
+    expect(groups).toHaveLength(4);
     expect(
       groups.reduce((total, group) => total + group.occurrences.length, 0)
-    ).toBe(3);
+    ).toBe(4);
   });
 
   it("does not merge the same Hanzi with a different authored reading or meaning", () => {

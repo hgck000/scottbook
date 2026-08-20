@@ -1,4 +1,4 @@
-export type HskLevel = "HSK 1" | "HSK 2" | "HSK 3";
+export type HskLevel = "HSK 1" | "HSK 2" | "HSK 3" | "HSK 4";
 
 export type CharacterAnnotation = {
   hanzi: string;
@@ -47,7 +47,7 @@ export type ReaderArticle = {
   level: string;
   topic: string;
   estimatedMinutes: number;
-  accent: "jade" | "amber" | "coral";
+  accent: "jade" | "amber" | "coral" | "violet";
   paragraphs: readonly AnnotatedParagraph[];
 };
 
