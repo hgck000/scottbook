@@ -4,8 +4,8 @@ import type { BuiltInArticle } from "./types";
 import { formatValidationIssues, validateBuiltInLibrary } from "./validateLibrary";
 
 describe("built-in ScottBook library", () => {
-  it("ships nine medium-to-long readings for every supported HSK level", () => {
-    expect(builtInLibrary).toHaveLength(45);
+  it("ships the graded library and thirty long HSK 1 stories", () => {
+    expect(builtInLibrary).toHaveLength(75);
     const accentByLevel = {
       "HSK 1": "jade",
       "HSK 2": "amber",
@@ -13,9 +13,16 @@ describe("built-in ScottBook library", () => {
       "HSK 4": "violet",
       "HSK 5": "azure"
     } as const;
+    const expectedCounts = {
+      "HSK 1": 39,
+      "HSK 2": 9,
+      "HSK 3": 9,
+      "HSK 4": 9,
+      "HSK 5": 9
+    } as const;
     for (const level of ["HSK 1", "HSK 2", "HSK 3", "HSK 4", "HSK 5"] as const) {
       const levelArticles = builtInLibrary.filter((article) => article.level === level);
-      expect(levelArticles).toHaveLength(9);
+      expect(levelArticles).toHaveLength(expectedCounts[level]);
       expect(levelArticles.every((article) => article.accent === accentByLevel[level])).toBe(true);
       expect(
         levelArticles.filter((article) =>
@@ -23,7 +30,31 @@ describe("built-in ScottBook library", () => {
         ).length
       ).toBeGreaterThanOrEqual(3);
     }
-    for (const article of builtInLibrary) {
+    const longStories = builtInLibrary.filter((article) =>
+      article.id.startsWith("hsk1-story-")
+    );
+    expect(longStories).toHaveLength(30);
+    expect(
+      longStories.filter((article) =>
+        ["May mặc", "Công sở", "Thời trang", "Thiết kế"].includes(article.topic)
+      )
+    ).toHaveLength(15);
+    for (const article of longStories) {
+      expect(article.level).toBe("HSK 1");
+      expect(article.accent).toBe("jade");
+      expect(article.estimatedMinutes).toBe(20);
+      expect(article.paragraphs).toHaveLength(5);
+      expect(article.paragraphs.every((paragraph) => paragraph.sentences.length === 14)).toBe(true);
+      expect(article.paragraphs.flatMap((paragraph) => paragraph.sentences)).toHaveLength(70);
+      const sentenceTexts = article.paragraphs
+        .flatMap((paragraph) => paragraph.sentences)
+        .map((sentence) => sentence.tokens.map((token) => token.hanzi).join(""));
+      expect(new Set(sentenceTexts).size).toBe(70);
+    }
+
+    for (const article of builtInLibrary.filter(
+      (candidate) => !candidate.id.startsWith("hsk1-story-")
+    )) {
       expect(article.paragraphs).toHaveLength(2);
       const sentenceCount = article.paragraphs.reduce(
         (count, paragraph) => count + paragraph.sentences.length,
@@ -40,6 +71,17 @@ describe("built-in ScottBook library", () => {
         )
       ).toBe(true);
     }
+    expect(
+      longStories.every((article) =>
+        article.paragraphs.every((paragraph) =>
+          Boolean(
+            paragraph.sectionTitle &&
+              paragraph.sectionTitlePinyin &&
+              paragraph.sectionTitleTranslation
+          )
+        )
+      )
+    ).toBe(true);
   });
 
   it("contains no missing character, word, or sentence annotations", () => {
@@ -108,6 +150,39 @@ describe("built-in ScottBook library", () => {
       .toMatchObject({ meaning: "việc kinh doanh; buôn bán" });
     expect(hsk5Tokens.find((token) => token.hanzi === "大树"))
       .toMatchObject({ meaning: "cây lớn; cây to" });
+
+    const longStoryTokens = builtInLibrary
+      .filter((article) => article.id.startsWith("hsk1-story-"))
+      .flatMap((article) => article.paragraphs)
+      .flatMap((paragraph) => paragraph.sentences)
+      .flatMap((sentence) => sentence.tokens)
+      .filter((token) => token.kind === "word");
+    for (const [hanzi, expectedPinyin] of [
+      ["得", "de"],
+      ["做得", "zuò de"],
+      ["画得", "huà de"],
+      ["放得", "fàng de"],
+      ["过得", "guò de"],
+      ["画着", "huà zhe"],
+      ["数了", "shǔ le"]
+    ] as const) {
+      const matches = longStoryTokens.filter((token) => token.hanzi === hanzi);
+      expect(matches.length).toBeGreaterThan(0);
+      expect(matches.every((token) => token.pinyin === expectedPinyin)).toBe(true);
+    }
+    for (const [hanzi, meaning] of [
+      ["一只", "một con; lượng từ cho động vật"],
+      ["带着", "mang theo; cầm theo; đang mang"],
+      ["穿着", "đang mặc; mặc trên người"],
+      ["工作本", "sổ công việc"],
+      ["第一行", "dòng đầu tiên"],
+      ["地方", "nơi; chỗ; khu vực"],
+      ["有了", "đã có; có thêm"],
+      ["小云", "Tiểu Vân"]
+    ] as const) {
+      expect(longStoryTokens.find((token) => token.hanzi === hanzi))
+        .toMatchObject({ meaning });
+    }
   });
 
   it("rejects a word when even one character annotation is missing", () => {

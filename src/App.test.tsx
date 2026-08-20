@@ -47,7 +47,7 @@ describe("ScottBook routes", () => {
     const markup = renderToStaticMarkup(<App />);
 
     expect(markup).toContain("Thư viện tham khảo");
-    expect(markup).toContain("Bắt đầu với một đoạn ngắn");
+    expect(markup).toContain("Chọn một câu chuyện để bắt đầu");
     expect(markup).toContain('href="#/review"');
     expect(markup).toContain('href="#/discover"');
     expect(markup).toContain("Bỏ qua đến nội dung chính");
@@ -56,7 +56,7 @@ describe("ScottBook routes", () => {
     expect(markup).toContain('aria-label="Tìm trong thư viện offline"');
     expect(markup).toContain('aria-label="Lọc theo cấp độ HSK"');
     expect(markup).toContain('aria-label="Lọc theo trạng thái đọc"');
-    expect(markup).toContain("<strong>45</strong> bài phù hợp");
+    expect(markup).toContain("<strong>75</strong> bài phù hợp");
     expect(markup).toContain("Nhập Paste / TXT / EPUB");
   });
 
@@ -80,7 +80,7 @@ describe("ScottBook routes", () => {
 
     expect(markup).toContain("Khám phá thư viện");
     expect(markup).toContain("Chọn nhịp đọc");
-    expect(markup).toContain("450</strong><span>Câu đã chú giải");
+    expect(markup).toContain("2550</strong><span>Câu đã chú giải");
     expect(markup).toContain('aria-label="Lọc Khám phá theo cấp độ HSK"');
     expect(markup).toContain('aria-label="Lọc Khám phá theo chủ đề"');
     expect(markup).toContain('aria-label="Lọc Khám phá theo độ dài bài đọc"');

@@ -1,3 +1,5 @@
+import { hsk1LongStories } from "./hsk1-long-stories.mjs";
+
 const sentence = (zh, vi) => ({ zh, vi });
 
 const section = (title, titleTranslation, sentences) => ({
@@ -233,6 +235,7 @@ export const hskReadingSource = [
       ])
     ]
   ),
+  ...hsk1LongStories,
 
   article(
     "hsk2-weekend-plan",

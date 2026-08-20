@@ -1342,7 +1342,7 @@ function LibraryScreen({
           <div className="section-heading">
             <div>
               <p className="eyebrow">Nội dung dựng sẵn</p>
-              <h2 id="reference-heading">Bắt đầu với một đoạn ngắn</h2>
+              <h2 id="reference-heading">Chọn một câu chuyện để bắt đầu</h2>
             </div>
             <span className="offline-pill">Không cần mạng</span>
           </div>
@@ -1945,7 +1945,7 @@ function ArticleDetailScreen({
             <div>
               <dt>Câu</dt>
               <dd>{metadata.sentenceCount}</dd>
-              <small>{metadata.paragraphCount} đoạn ngắn</small>
+              <small>{metadata.paragraphCount} phần nội dung</small>
             </div>
             <div>
               <dt>Cụm đã chú giải</dt>
@@ -3692,7 +3692,7 @@ function ArticleCard({
   return (
     <article
       className={`article-card accent-${article.accent}`}
-      style={{ "--delay": `${index * 70}ms` } as React.CSSProperties}
+      style={{ "--delay": `${Math.min(index, 8) * 70}ms` } as React.CSSProperties}
     >
       <button
         className="article-card-open"

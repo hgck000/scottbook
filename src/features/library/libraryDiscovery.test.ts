@@ -44,6 +44,9 @@ describe("offline library discovery", () => {
     ).toEqual([
       "hsk1-my-family",
       "hsk1-rainy-day",
+      "hsk1-story-grandma-blue-coat",
+      "hsk1-story-rainy-picnic",
+      "hsk1-story-grandfather-glasses",
       "hsk2-weekend-plan",
       "hsk3-fashion-window",
       "hsk5-old-tree-debate"
@@ -54,6 +57,10 @@ describe("offline library discovery", () => {
         query: "dich tung chu"
       }).map((article) => article.id)
     ).toEqual([
+      "hsk1-story-red-umbrella",
+      "hsk1-story-office-key",
+      "hsk1-story-seaside-rain",
+      "hsk1-story-old-street",
       "hsk3-understand-first",
       "hsk4-lost-camera",
       "hsk5-overtime-evaluation"
@@ -124,7 +131,7 @@ describe("offline library discovery", () => {
 
   it("reports stable counts for every supported level", () => {
     expect(countArticlesByLevel(builtInLibrary)).toEqual({
-      "HSK 1": 9,
+      "HSK 1": 39,
       "HSK 2": 9,
       "HSK 3": 9,
       "HSK 4": 9,
