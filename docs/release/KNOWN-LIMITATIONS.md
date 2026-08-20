@@ -9,8 +9,10 @@ This list is intentionally release-blocking evidence, not a hidden backlog.
   adaptations aligned to the official HSK 1–5 resources rather than copied test
   passages; a small number of topic-specific words go beyond the core level but
   retain complete offline assistance. The v0.41 audit removes known irrelevant
-  dictionary senses and fixes reviewed pinyin/phrasing, but concise automatic
-  dictionary assistance is still not a replacement for a full edited lexicon.
+  dictionary senses and fixes reviewed pinyin/phrasing; v0.42 packs the same
+  annotations more compactly and caches derived indexes without changing their
+  content. Concise automatic dictionary assistance is still not a replacement
+  for a full edited lexicon.
 - Character, word/phrase, and sentence assistance is available for all 75
   built-in readings. Paste/TXT/EPUB imports receive automatic offline pinyin
   and word/character meanings, not authored sentence translations.
