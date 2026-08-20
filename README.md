@@ -24,10 +24,11 @@ for direct sideloading.
 ## Current status
 
 - Responsive reference library and reader.
-- Forty-five medium-to-long articles: nine each for HSK 1 through HSK 5.
-  Every article contains ten sentences under two connected section
-  headings; every level includes at least three readings about clothing,
-  office work, fashion, or design.
+- Seventy-five built-in readings: thirty-nine at HSK 1 and nine each at HSK
+  2 through HSK 5. The thirty new HSK 1 short stories each contain seventy
+  sentences under five connected sections; the earlier forty-five readings
+  retain ten sentences under two sections. Every level includes at least three
+  readings about clothing, office work, fashion, or design.
 - Every built-in character and word already contains contextual pinyin and a
   Vietnamese meaning; every sentence contains a Vietnamese translation.
 - An offline Hán-Việt lookup combines Unicode Unihan 17.0.0 with a pinned
@@ -153,7 +154,7 @@ npm run android:sync
 npm run android:build:debug
 ```
 
-The final command writes `artifacts/ScottBook-v0.36.0-android-debug.apk` and
+The final command writes `artifacts/ScottBook-v0.37.0-android-debug.apk` and
 selects `gradlew.bat` automatically on Windows. `android:sync` proves that the
 native bundle contains local assets, has no browser service worker, and has no
 remote `server.url`; `android:build:debug` additionally runs Gradle. GitHub
@@ -164,7 +165,7 @@ After downloading or building the APK, connect one USB-debugging Android phone
 and run the reusable device check:
 
 ```bash
-npm run android:device:smoke -- /path/to/ScottBook-v0.36.0-android-debug.apk
+npm run android:device:smoke -- /path/to/ScottBook-v0.37.0-android-debug.apk
 ```
 
 On Windows, the APK path may be quoted normally. If more than one device is
@@ -181,7 +182,7 @@ npm run android:build:release
 
 It requires the owner-held keystore environment, verifies the resulting
 certificate with `apksigner`, and writes
-`artifacts/ScottBook-v0.36.0-android-release.apk` plus a checksum/fingerprint
+`artifacts/ScottBook-v0.37.0-android-release.apk` plus a checksum/fingerprint
 report. Create and configure the key only through
 [`docs/qa/ANDROID-RELEASE-SIGNING.md`](docs/qa/ANDROID-RELEASE-SIGNING.md); the
 keystore and passwords must never enter the repository or a patch.
@@ -647,6 +648,15 @@ The readings remain original adaptations checked against the official HSK 5
 exam and vocabulary resources, with complete authored offline assistance. See
 [`docs/release/SCOTTBOOK-v0.36.0.md`](docs/release/SCOTTBOOK-v0.36.0.md).
 
+Version 0.37 adds thirty long HSK 1 short stories, each with seventy sentences
+across five connected sections. Fifteen stories focus on clothing, office work,
+fashion, or design. All word/phrase pinyin and Vietnamese meanings, sentence
+translations, and offline Hán-Việt assistance remain available. The generated
+library is gzip-compressed inside the local JavaScript bundle before PWA and APK
+packaging, so search remains synchronous without multiplying the shipped bundle
+by the raw annotation size. See
+[`docs/release/SCOTTBOOK-v0.37.0.md`](docs/release/SCOTTBOOK-v0.37.0.md).
+
 ## Install ScottBook
 
 Chromium browsers on Android, Windows, macOS, and Linux can expose ScottBook's
@@ -658,13 +668,13 @@ Screen**. On macOS Safari, choose **Share → Add to Dock**; Chrome and Edge use
 their install action in the address bar. The manifest includes 192 px, 512 px,
 maskable, and Apple touch icons.
 
-All forty-five built-in reference articles and the pinned import dictionary are
+All seventy-five built-in reference articles and the pinned import dictionary are
 pre-cached. Paste/TXT/EPUB books are analyzed once and stored in IndexedDB, so
 they reopen in airplane mode with EPUB chapter navigation intact.
 
 For a direct Android test install, open the successful **ScottBook CI** run for
-the v0.36 commit, download the `ScottBook-Android-debug-…` artifact, extract it,
-and install `ScottBook-v0.36.0-android-debug.apk`. Android may ask permission to
+the v0.37 commit, download the `ScottBook-Android-debug-…` artifact, extract it,
+and install `ScottBook-v0.37.0-android-debug.apk`. Android may ask permission to
 install apps from the browser or file manager used to open it. The debug APK is
 not Play Store signed and its runner-generated debug key is not a durable
 upgrade identity: if a later debug artifact reports a signature conflict,

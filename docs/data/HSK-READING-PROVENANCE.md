@@ -1,9 +1,10 @@
 # HSK 1–5 reading pack provenance
 
-ScottBook v0.36 contains 45 built-in readings: nine each for HSK 1 through
-HSK 5. Every reading contains ten sentences grouped under two connected section
-headings. Each level includes at least three readings about clothing, office
-work, fashion, or design.
+ScottBook v0.37 contains 75 built-in readings and 2,550 sentences. HSK 1 has
+the original nine readings plus thirty long short stories; HSK 2 through HSK 5
+retain nine readings each. Every new HSK 1 story contains seventy sentences
+grouped under five connected sections. Fifteen of the thirty long stories cover
+clothing, office work, fashion, or design.
 
 ## Level standard
 
@@ -33,18 +34,21 @@ translation, and offline Hán-Việt assistance.
 
 | Level | Articles | Sentences per article | Sections per article | Required-topic articles | Accent |
 |---|---:|---:|---:|---:|---|
-| HSK 1 | 9 | 10 | 2 | 3 | Jade |
+| HSK 1 (original) | 9 | 10 | 2 | 3 | Jade |
+| HSK 1 (long stories) | 30 | 70 | 5 | 15 | Jade |
 | HSK 2 | 9 | 10 | 2 | 4 | Amber |
 | HSK 3 | 9 | 10 | 2 | 3 | Coral |
 | HSK 4 | 9 | 10 | 2 | 4 | Violet |
 | HSK 5 | 9 | 10 | 2 | 4 | Azure |
 
-The source text is maintained in
-[`scripts/content/hsk-reading-source.mjs`](../../scripts/content/hsk-reading-source.mjs).
+The original source text is maintained in
+[`scripts/content/hsk-reading-source.mjs`](../../scripts/content/hsk-reading-source.mjs),
+with the long HSK 1 collection in
+[`scripts/content/hsk1-long-stories.mjs`](../../scripts/content/hsk1-long-stories.mjs).
 The generated library is committed so a release never depends on a network call
 at reading time. CI rejects stale generation, missing annotations, the wrong
-article/section/sentence counts, an incorrect HSK accent, or fewer than three
-required-topic articles at any level.
+article/section/sentence counts, repeated sentences inside one long story, an
+incorrect HSK accent, or fewer than the required number of topic articles.
 
 ## Offline annotations
 
