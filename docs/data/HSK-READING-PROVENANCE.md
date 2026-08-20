@@ -1,13 +1,13 @@
-# HSK 1–4 reading pack provenance
+# HSK 1–5 reading pack provenance
 
-ScottBook v0.35 contains 36 built-in readings: nine each for HSK 1, HSK 2,
-HSK 3, and HSK 4. Every reading contains ten sentences grouped under two connected
-section headings. Each level includes at least three readings about clothing,
-office work, fashion, or design.
+ScottBook v0.36 contains 45 built-in readings: nine each for HSK 1 through
+HSK 5. Every reading contains ten sentences grouped under two connected section
+headings. Each level includes at least three readings about clothing, office
+work, fashion, or design.
 
 ## Level standard
 
-The pack uses the current HSK 1–4 structure established in ScottBook.
+The pack uses the current HSK 1–5 structure established in ScottBook.
 Grammar, sentence length, and core vocabulary were checked against the official
 Chinese Test Service exam and vocabulary resources:
 
@@ -19,6 +19,8 @@ Chinese Test Service exam and vocabulary resources:
 - [HSK 3 vocabulary resource](https://www.chinesetest.cn/HSK/3?type=2)
 - [HSK 4 exam overview](https://www.chinesetest.cn/HSK/4)
 - [HSK 4 vocabulary resource](https://www.chinesetest.cn/HSK/4?type=2)
+- [HSK 5 exam overview](https://www.chinesetest.cn/HSK/5)
+- [HSK 5 vocabulary resource](https://www.chinesetest.cn/HSK/5?type=2)
 
 No official test passage is copied into ScottBook. The readings are original,
 standards-informed adaptations designed for continuous reading rather than
@@ -35,6 +37,7 @@ translation, and offline Hán-Việt assistance.
 | HSK 2 | 9 | 10 | 2 | 4 | Amber |
 | HSK 3 | 9 | 10 | 2 | 3 | Coral |
 | HSK 4 | 9 | 10 | 2 | 4 | Violet |
+| HSK 5 | 9 | 10 | 2 | 4 | Azure |
 
 The source text is maintained in
 [`scripts/content/hsk-reading-source.mjs`](../../scripts/content/hsk-reading-source.mjs).
