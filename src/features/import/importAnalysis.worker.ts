@@ -195,6 +195,10 @@ function annotateSentence(
 
 function buildBook(draft: ImportDraft, dictionary: Map<string, DictionaryEntry>, requestId: string): ImportedBook {
   const paragraphs: AnnotatedParagraph[] = [];
+  const tableOfContents: ImportedBook["tableOfContents"] = [];
+  const chaptersByParagraph = new Map(
+    draft.normalized.chapters.map((chapter) => [chapter.paragraphIndex, chapter])
+  );
   const total = draft.normalized.paragraphs.length;
   for (let paragraphIndex = 0; paragraphIndex < total; paragraphIndex += 1) {
     const paragraph = draft.normalized.paragraphs[paragraphIndex] ?? "";
@@ -202,7 +206,27 @@ function buildBook(draft: ImportDraft, dictionary: Map<string, DictionaryEntry>,
       annotateSentence(sentence, `${draft.id}-p${paragraphIndex}-s${sentenceIndex}`, dictionary)
     );
     if (sentences.length > 0) {
-      paragraphs.push({ id: `${draft.id}-p${paragraphIndex}`, sentences });
+      const paragraphId = `${draft.id}-p${paragraphIndex}`;
+      const chapter = chaptersByParagraph.get(paragraphIndex);
+      const sectionTitlePinyin = chapter && /\p{Script=Han}/u.test(chapter.title)
+        ? getPinyinByCharacter(chapter.title).join(" ")
+        : "";
+      paragraphs.push(chapter
+        ? {
+            id: paragraphId,
+            sectionTitle: chapter.title,
+            sectionTitlePinyin,
+            sectionTitleTranslation: "",
+            sentences
+          }
+        : { id: paragraphId, sentences });
+      if (chapter) {
+        tableOfContents.push({
+          id: `${draft.id}-toc-${tableOfContents.length}`,
+          title: chapter.title,
+          paragraphId
+        });
+      }
     }
     report(
       requestId,
@@ -223,11 +247,17 @@ function buildBook(draft: ImportDraft, dictionary: Map<string, DictionaryEntry>,
     createdAt: draft.createdAt,
     updatedAt: draft.createdAt,
     characterCount: draft.normalized.characterCount,
+    chapterCount: draft.sourceType === "epub" ? tableOfContents.length : 1,
+    tableOfContents,
     annotationSource: "automatic-offline",
     analysisEngineVersion: IMPORT_ANALYSIS_ENGINE_VERSION,
     title: draft.title,
     titlePinyin,
-    titleTranslation: draft.author ? `Tác giả: ${draft.author}` : "Văn bản tự nhập",
+    titleTranslation: draft.author
+      ? `Tác giả: ${draft.author}`
+      : draft.sourceType === "epub"
+        ? "EPUB tự nhập"
+        : "Văn bản tự nhập",
     summary: "Pinyin và nghĩa từ/cụm được phân tích tự động bằng dữ liệu offline.",
     level: "Tự nhập",
     topic: "Phân tích tự động",

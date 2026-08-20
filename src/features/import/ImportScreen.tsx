@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReaderTheme } from "../preferences/readerPreferences";
 import { NATIVE_BACK_EVENT } from "../native/androidBackNavigation";
 import { analyzeImportedBook } from "./importAnalysis";
+import { MAX_EPUB_FILE_BYTES, parseEpubFile } from "./epubParser";
 import {
   createImportedBookId,
   decodeUtf8TxtFile,
@@ -10,7 +11,8 @@ import {
   normalizeImportedText,
   type ImportAnalysisProgress,
   type ImportedBook,
-  type ImportSourceType
+  type ImportSourceType,
+  type NormalizedImport
 } from "./importedBook";
 
 type ImportStage = "source" | "preview" | "analyzing" | "saving" | "error";
@@ -31,18 +33,25 @@ export function ImportScreen({
   const [sourceType, setSourceType] = useState<ImportSourceType>("paste");
   const [sourceName, setSourceName] = useState<string | null>(null);
   const [sourceText, setSourceText] = useState("");
+  const [epubNormalized, setEpubNormalized] = useState<NormalizedImport | null>(null);
   const [title, setTitle] = useState("");
   const [author, setAuthor] = useState("");
   const [stage, setStage] = useState<ImportStage>("source");
   const [message, setMessage] = useState(
-    "Dán văn bản hoặc chọn TXT UTF-8. Chưa có gì được lưu trước bước xác nhận."
+    "Dán văn bản, chọn TXT hoặc EPUB. Chưa có gì được lưu trước bước xác nhận."
   );
   const [progress, setProgress] = useState<ImportAnalysisProgress>({
     percent: 0,
     message: "Chưa bắt đầu"
   });
   const abortRef = useRef<AbortController | null>(null);
-  const normalized = useMemo(() => normalizeImportedText(sourceText), [sourceText]);
+  const fileRequestRef = useRef(0);
+  const normalized = useMemo(
+    () => sourceType === "epub"
+      ? epubNormalized ?? normalizeImportedText("")
+      : normalizeImportedText(sourceText),
+    [epubNormalized, sourceText, sourceType]
+  );
   const validationError = getImportValidationError(normalized);
 
   useEffect(() => () => abortRef.current?.abort(), []);
@@ -61,31 +70,65 @@ export function ImportScreen({
 
   const chooseSource = (next: ImportSourceType) => {
     if (stage === "analyzing" || stage === "saving") return;
+    fileRequestRef.current += 1;
     setSourceType(next);
     setSourceName(null);
     setSourceText("");
+    setEpubNormalized(null);
     setStage("source");
     setMessage(
       next === "txt"
         ? "Chọn TXT UTF-8 tối đa 512 KB. BOM UTF-8 được chấp nhận."
-        : "Dán văn bản tiếng Trung; xuống dòng trống sẽ được giữ thành đoạn."
+        : next === "epub"
+          ? "Chọn EPUB tối đa 20 MB; ScottBook sẽ giữ thứ tự chương và mục lục."
+          : "Dán văn bản tiếng Trung; xuống dòng trống sẽ được giữ thành đoạn."
     );
   };
 
   const selectTxt = async (file: File | undefined) => {
     if (!file) return;
+    const request = ++fileRequestRef.current;
     try {
       const decoded = await decodeUtf8TxtFile(file);
+      if (request !== fileRequestRef.current) return;
+      setEpubNormalized(null);
       setSourceText(decoded);
       setSourceName(file.name);
       if (!title.trim()) setTitle(file.name.replace(/\.txt$/iu, ""));
       setStage("source");
       setMessage(`Đã đọc ${file.name}. Hãy kiểm tra tiêu đề rồi xem trước.`);
     } catch (error) {
+      if (request !== fileRequestRef.current) return;
       setSourceText("");
       setSourceName(null);
       setStage("error");
       setMessage(error instanceof Error ? error.message : "Không đọc được file TXT.");
+    }
+  };
+
+  const selectEpub = async (file: File | undefined) => {
+    if (!file) return;
+    const request = ++fileRequestRef.current;
+    setStage("source");
+    setMessage(`Đang đọc cấu trúc ${file.name}…`);
+    try {
+      const parsed = await parseEpubFile(file);
+      if (request !== fileRequestRef.current) return;
+      setSourceText(parsed.normalized.text);
+      setEpubNormalized(parsed.normalized);
+      setSourceName(file.name);
+      setTitle(parsed.title);
+      setAuthor(parsed.author ?? "");
+      setMessage(
+        `Đã đọc ${parsed.normalized.chapters.length} chương từ ${file.name}. Hãy xem trước trước khi phân tích.`
+      );
+    } catch (error) {
+      if (request !== fileRequestRef.current) return;
+      setSourceText("");
+      setEpubNormalized(null);
+      setSourceName(null);
+      setStage("error");
+      setMessage(error instanceof Error ? error.message : "Không đọc được file EPUB.");
     }
   };
 
@@ -159,7 +202,7 @@ export function ImportScreen({
         <button type="button" className="back-button" onClick={close} disabled={stage === "saving"}>
           <span aria-hidden="true">←</span><span>Thư viện</span>
         </button>
-        <strong>Nhập văn bản offline</strong>
+        <strong>Nhập sách offline</strong>
         <button
           className="icon-button"
           type="button"
@@ -172,7 +215,7 @@ export function ImportScreen({
 
       <main id="main-content" className="import-page" tabIndex={-1}>
         <header className="import-heading">
-          <p className="eyebrow">Paste / TXT · không gửi dữ liệu</p>
+          <p className="eyebrow">Paste / TXT / EPUB · không gửi dữ liệu</p>
           <h1>Đưa bài đọc riêng vào ScottBook</h1>
           <p>
             Pinyin và nghĩa từ/cụm được tạo tự động trên thiết bị. Kết quả có thể sai;
@@ -190,6 +233,7 @@ export function ImportScreen({
           <div className="import-source-tabs" role="group" aria-label="Chọn nguồn văn bản">
             <button type="button" className={sourceType === "paste" ? "active" : ""} onClick={() => chooseSource("paste")} disabled={busy}>Dán văn bản</button>
             <button type="button" className={sourceType === "txt" ? "active" : ""} onClick={() => chooseSource("txt")} disabled={busy}>Chọn TXT</button>
+            <button type="button" className={sourceType === "epub" ? "active" : ""} onClick={() => chooseSource("epub")} disabled={busy}>Chọn EPUB</button>
           </div>
 
           <div className="import-metadata-grid">
@@ -208,18 +252,26 @@ export function ImportScreen({
               <span id="import-source-heading">Nội dung tiếng Trung</span>
               <textarea value={sourceText} onChange={(event) => { setSourceText(event.target.value); if (stage === "error") setStage("source"); }} disabled={busy} rows={14} placeholder="Dán nội dung vào đây…" />
             </label>
-          ) : (
+          ) : sourceType === "txt" ? (
             <label className="import-file-drop" id="import-source-heading">
               <input type="file" accept="text/plain,.txt" disabled={busy} onChange={(event) => void selectTxt(event.target.files?.[0])} />
               <span aria-hidden="true">TXT</span>
               <strong>{sourceName ?? "Chọn file TXT UTF-8"}</strong>
               <small>Tối đa 512 KB · không nhận UTF-16 hoặc file nhị phân</small>
             </label>
+          ) : (
+            <label className="import-file-drop" id="import-source-heading">
+              <input type="file" accept="application/epub+zip,.epub" disabled={busy} onChange={(event) => void selectEpub(event.target.files?.[0])} />
+              <span aria-hidden="true">EPUB</span>
+              <strong>{sourceName ?? "Chọn file EPUB"}</strong>
+              <small>Tối đa {MAX_EPUB_FILE_BYTES / 1024 / 1024} MB · giữ chương/mục lục · không nhận DRM</small>
+            </label>
           )}
 
           <div className="import-source-summary">
             <span>{normalized.characterCount.toLocaleString("vi-VN")} / {MAX_IMPORT_CHARACTERS.toLocaleString("vi-VN")} ký tự</span>
             <span>{normalized.paragraphs.length} đoạn sau chuẩn hóa</span>
+            {sourceType === "epub" ? <span>{normalized.chapters.length} chương có chữ Hán</span> : null}
           </div>
 
           {stage === "preview" || busy ? (
@@ -230,7 +282,10 @@ export function ImportScreen({
                 {author.trim() ? <p>Tác giả: {author.trim()}</p> : null}
               </div>
               <div className="import-preview-body" lang="zh-Hans">
-                {normalized.paragraphs.slice(0, 6).map((paragraph, index) => <p key={index}>{paragraph}</p>)}
+                {normalized.paragraphs.slice(0, 6).map((paragraph, index) => {
+                  const chapter = normalized.chapters.find((item) => item.paragraphIndex === index);
+                  return <div key={index}>{chapter ? <h3>{chapter.title}</h3> : null}<p>{paragraph}</p></div>;
+                })}
                 {normalized.paragraphs.length > 6 ? <small>… và {normalized.paragraphs.length - 6} đoạn khác</small> : null}
               </div>
             </section>

@@ -157,6 +157,7 @@ import {
 import { ScottBookLocalDataCoordinator } from "./features/storage/localDataCoordinator";
 import { ImportScreen } from "./features/import/ImportScreen";
 import {
+  isImportedBook,
   removeImportedBookReferences,
   type ImportedBook
 } from "./features/import/importedBook";
@@ -1508,7 +1509,7 @@ function ImportedBooksSection({
           <h2 id="imported-library-heading">Sách tự nhập trên thiết bị</h2>
         </div>
         <button type="button" className="import-library-button" onClick={openImport}>
-          <span aria-hidden="true">＋</span> Nhập Paste / TXT
+          <span aria-hidden="true">＋</span> Nhập Paste / TXT / EPUB
         </button>
       </div>
       <p className="automatic-analysis-note">
@@ -1521,10 +1522,16 @@ function ImportedBooksSection({
             return (
               <article className={`imported-book-card accent-${book.accent}`} key={book.id}>
                 <button type="button" className="imported-book-open" onClick={() => openArticle(book.id)}>
-                  <span className="automatic-badge">Tự nhập · tự động</span>
+                  <span className="automatic-badge">
+                    {book.sourceType === "epub" ? "EPUB" : "Tự nhập"} · tự động
+                  </span>
                   <h3>{book.title}</h3>
                   <p>{book.author ? `Tác giả: ${book.author}` : book.sourceName ?? "Văn bản đã dán"}</p>
-                  <span>{book.characterCount.toLocaleString("vi-VN")} ký tự · khoảng {book.estimatedMinutes} phút</span>
+                  <span>
+                    {book.characterCount.toLocaleString("vi-VN")} ký tự
+                    {book.sourceType === "epub" ? ` · ${book.chapterCount} chương` : ""}
+                    {` · khoảng ${book.estimatedMinutes} phút`}
+                  </span>
                   {progress > 0 ? (
                     <span className="progress-track" aria-label={`Đã đọc ${progress}%`}>
                       <span style={{ width: `${progress}%` }} />
@@ -1548,7 +1555,7 @@ function ImportedBooksSection({
         <button type="button" className="empty-imported-library" onClick={openImport}>
           <span aria-hidden="true">文</span>
           <strong>Chưa có sách tự nhập.</strong>
-          <p>Dán một đoạn hoặc chọn TXT UTF-8; kết quả sẽ mở lại được khi mất mạng.</p>
+          <p>Dán văn bản, chọn TXT hoặc EPUB; kết quả sẽ mở lại được khi mất mạng.</p>
         </button>
       )}
       <p className="imported-library-feedback" aria-live="polite">{feedback}</p>
@@ -2986,7 +2993,7 @@ function DataProtectionCard({
     "idle" | "checking" | "applying" | "success" | "undone" | "error"
   >("idle");
   const [restoreMessage, setRestoreMessage] = useState(
-    "Chỉ nhận bản sao ScottBook JSON tối đa 32 MB; TXT được nhập ở Thư viện."
+    "Chỉ nhận bản sao ScottBook JSON tối đa 32 MB; TXT và EPUB được nhập ở Thư viện."
   );
   const [pendingRestore, setPendingRestore] = useState<{
     fileName: string;
@@ -3860,6 +3867,7 @@ function ReaderScreen({
     () => getArticleVocabulary(article),
     [article]
   );
+  const importedArticle = isImportedBook(article) ? article : null;
 
   const selectedContext = findSelectedContext(
     article,
@@ -3996,6 +4004,24 @@ function ReaderScreen({
           : "smooth"
       });
       sentence?.focus({ preventScroll: true });
+    });
+  };
+
+  const jumpToImportedChapter = (paragraphId: string) => {
+    setSelection(null);
+    window.requestAnimationFrame(() => {
+      const section = Array.from(
+        articleBodyRef.current?.querySelectorAll<HTMLElement>(
+          "[data-paragraph-id]"
+        ) ?? []
+      ).find((candidate) => candidate.dataset.paragraphId === paragraphId);
+      section?.scrollIntoView({
+        block: "start",
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? "auto"
+          : "smooth"
+      });
+      section?.focus({ preventScroll: true });
     });
   };
 
@@ -4260,16 +4286,50 @@ function ReaderScreen({
             }}
           />
 
+          {importedArticle?.sourceType === "epub" &&
+          importedArticle.tableOfContents.length > 0 ? (
+            <nav className="reader-epub-toc" aria-label="Mục lục EPUB">
+              <details>
+                <summary>
+                  Mục lục · {importedArticle.chapterCount} chương
+                </summary>
+                <ol>
+                  {importedArticle.tableOfContents.map((entry) => (
+                    <li key={entry.id}>
+                      <button
+                        type="button"
+                        onClick={() => jumpToImportedChapter(entry.paragraphId)}
+                      >
+                        {entry.title}
+                      </button>
+                    </li>
+                  ))}
+                </ol>
+              </details>
+            </nav>
+          ) : null}
+
           <div className="article-body" ref={articleBodyRef}>
             {article.paragraphs.map((paragraph) => (
-              <section className="reader-section" key={paragraph.id}>
+              <section
+                className="reader-section"
+                key={paragraph.id}
+                data-paragraph-id={paragraph.id}
+                tabIndex={paragraph.sectionTitle ? -1 : undefined}
+              >
                 {paragraph.sectionTitle ? (
                   <header className="reader-section-heading">
                     <h2 lang="zh-Hans">{paragraph.sectionTitle}</h2>
-                    <p className="reader-section-pinyin">{paragraph.sectionTitlePinyin}</p>
-                    <p className="reader-section-translation">
-                      {paragraph.sectionTitleTranslation}
-                    </p>
+                    {paragraph.sectionTitlePinyin ? (
+                      <p className="reader-section-pinyin">
+                        {paragraph.sectionTitlePinyin}
+                      </p>
+                    ) : null}
+                    {paragraph.sectionTitleTranslation ? (
+                      <p className="reader-section-translation">
+                        {paragraph.sectionTitleTranslation}
+                      </p>
+                    ) : null}
                   </header>
                 ) : null}
                 <p>

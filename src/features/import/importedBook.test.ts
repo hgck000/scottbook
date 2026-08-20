@@ -15,13 +15,15 @@ export function createImportedBookFixture(id = "imported:fixture"): ImportedBook
   return {
     id,
     kind: "imported",
-    schemaVersion: 1,
+    schemaVersion: 2,
     sourceType: "paste",
     sourceName: null,
     author: null,
     createdAt: 1,
     updatedAt: 1,
     characterCount: 4,
+    chapterCount: 1,
+    tableOfContents: [],
     annotationSource: "automatic-offline",
     analysisEngineVersion: IMPORT_ANALYSIS_ENGINE_VERSION,
     title: "Bài riêng",
@@ -94,6 +96,47 @@ describe("local text import", () => {
     expect(validateImportedBook({ ...book, unexpected: true })).toMatchObject({
       ok: false
     });
+  });
+
+  it("migrates schema v1 text books without losing annotations", () => {
+    const current = createImportedBookFixture();
+    const { chapterCount, tableOfContents, ...legacy } = current;
+    expect(chapterCount).toBe(1);
+    expect(tableOfContents).toEqual([]);
+
+    expect(validateImportedBook({ ...legacy, schemaVersion: 1 })).toMatchObject({
+      ok: true,
+      book: { schemaVersion: 2, chapterCount: 1, tableOfContents: [] }
+    });
+  });
+
+  it("validates EPUB chapter navigation against stored paragraphs", () => {
+    const current = createImportedBookFixture();
+    const paragraph = current.paragraphs[0];
+    if (!paragraph) throw new Error("imported fixture paragraph expected");
+    const epub = {
+      ...current,
+      sourceType: "epub",
+      sourceName: "lesson.epub",
+      chapterCount: 1,
+      tableOfContents: [{
+        id: `${current.id}-toc-0`,
+        title: "第一课",
+        paragraphId: paragraph.id
+      }],
+      paragraphs: [{
+        ...paragraph,
+        sectionTitle: "第一课",
+        sectionTitlePinyin: "dì yī kè",
+        sectionTitleTranslation: ""
+      }]
+    };
+
+    expect(validateImportedBook(epub)).toMatchObject({ ok: true });
+    expect(validateImportedBook({
+      ...epub,
+      tableOfContents: [{ ...epub.tableOfContents[0], paragraphId: "missing" }]
+    })).toMatchObject({ ok: false });
   });
 
   it("removes only deleted-book progress and assistance contexts", () => {

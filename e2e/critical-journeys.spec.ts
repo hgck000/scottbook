@@ -1,10 +1,29 @@
 import { expect, test, type Page } from "@playwright/test";
+import { strToU8, zipSync } from "fflate";
 import legacyLibraryState from "./fixtures/anonymized-v1-state.json" with {
   type: "json"
 };
 
 const LEGACY_LIBRARY_STATE_STORAGE_KEY = "scottbook.libraryState.v1";
 const LIBRARY_STATE_STORAGE_KEY = "scottbook.libraryState.v2";
+
+function createEpubBuffer(): Buffer {
+  const archive = zipSync({
+    mimetype: strToU8("application/epub+zip"),
+    "META-INF/container.xml": strToU8(
+      '<container version="1.0"><rootfiles><rootfile full-path="EPUB/book.opf"/></rootfiles></container>'
+    ),
+    "EPUB/book.opf": strToU8(`<package version="3.0">
+      <metadata><dc:title xmlns:dc="http://purl.org/dc/elements/1.1/">办公室故事</dc:title><dc:creator xmlns:dc="http://purl.org/dc/elements/1.1/">林老师</dc:creator></metadata>
+      <manifest><item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/><item id="one" href="one.xhtml" media-type="application/xhtml+xml"/><item id="two" href="two.xhtml" media-type="application/xhtml+xml"/></manifest>
+      <spine><itemref idref="one"/><itemref idref="two"/></spine>
+    </package>`),
+    "EPUB/nav.xhtml": strToU8('<nav epub:type="toc"><a href="one.xhtml">第一天</a><a href="two.xhtml">第二天</a></nav>'),
+    "EPUB/one.xhtml": strToU8("<html><body><p>我今天来到新办公室。</p></body></html>"),
+    "EPUB/two.xhtml": strToU8("<html><body><p>我们一起看新的设计图。</p></body></html>")
+  });
+  return Buffer.from(archive);
+}
 
 async function dismissInstallNotice(page: Page): Promise<void> {
   const dismiss = page.getByRole("button", { name: "Để sau", exact: true });
@@ -148,6 +167,47 @@ test("imports pasted Chinese and reopens the analyzed book offline", async ({
   await page.reload();
   await expect(page.getByRole("heading", { name: "Bài đọc riêng", exact: true })).toBeVisible();
   await expect(page.getByText("朋友每天看书，也用 ScottBook 😊。", { exact: true })).toBeVisible();
+  await context.setOffline(false);
+  expect(pageErrors).toEqual([]);
+});
+
+test("imports EPUB spine and reopens its chapter navigation offline", async ({
+  page,
+  context
+}) => {
+  const pageErrors = collectPageErrors(page);
+  await page.goto("/#/import");
+  await dismissInstallNotice(page);
+  await page.getByRole("button", { name: "Chọn EPUB" }).click();
+  await page.locator('input[accept*=".epub"]').setInputFiles({
+    name: "office-story.epub",
+    mimeType: "application/epub+zip",
+    buffer: createEpubBuffer()
+  });
+
+  await expect(
+    page.getByPlaceholder("Ví dụ: Một ngày ở Bắc Kinh")
+  ).toHaveValue("办公室故事");
+  await expect(
+    page.getByPlaceholder("Tên tác giả hoặc nguồn")
+  ).toHaveValue("林老师");
+  await expect(page.getByText("2 chương có chữ Hán")).toBeVisible();
+  await page.getByRole("button", { name: "Xem trước" }).click();
+  await expect(page.getByRole("heading", { name: "第一天" })).toBeVisible();
+  await page.getByRole("button", { name: "Phân tích và lưu offline" }).click();
+
+  await expect(
+    page.getByRole("heading", { name: "办公室故事", exact: true })
+  ).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByText("Mục lục · 2 chương")).toBeVisible();
+  await page.getByText("Mục lục · 2 chương").click();
+  await page.getByRole("button", { name: "第二天", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "第二天" })).toBeInViewport();
+
+  await context.setOffline(true);
+  await page.reload();
+  await expect(page.getByText("Mục lục · 2 chương")).toBeVisible();
+  await expect(page.getByText("我们一起看新的设计图。")).toBeVisible();
   await context.setOffline(false);
   expect(pageErrors).toEqual([]);
 });

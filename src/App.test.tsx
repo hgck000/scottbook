@@ -57,10 +57,10 @@ describe("ScottBook routes", () => {
     expect(markup).toContain('aria-label="Lọc theo cấp độ HSK"');
     expect(markup).toContain('aria-label="Lọc theo trạng thái đọc"');
     expect(markup).toContain("<strong>27</strong> bài phù hợp");
-    expect(markup).toContain("Nhập Paste / TXT");
+    expect(markup).toContain("Nhập Paste / TXT / EPUB");
   });
 
-  it("renders the guarded Paste/TXT import wizard", () => {
+  it("renders the guarded Paste/TXT/EPUB import wizard", () => {
     installWindow("#/import");
 
     const markup = renderToStaticMarkup(<App />);
@@ -68,6 +68,7 @@ describe("ScottBook routes", () => {
     expect(markup).toContain("Đưa bài đọc riêng vào ScottBook");
     expect(markup).toContain("Dán văn bản");
     expect(markup).toContain("Chọn TXT");
+    expect(markup).toContain("Chọn EPUB");
     expect(markup).toContain("Chưa có gì được lưu trước bước xác nhận");
     expect(markup).toContain("CVDICT (CC BY-SA 4.0)");
   });
@@ -133,7 +134,7 @@ describe("ScottBook routes", () => {
     expect(markup).toContain("Đã hoàn thành");
     expect(markup).toContain("Đặt lại");
     expect(markup).toContain("Chọn bản sao JSON");
-    expect(markup).toContain("TXT được nhập ở Thư viện");
+    expect(markup).toContain("TXT và EPUB được nhập ở Thư viện");
     expect(markup).toContain("tối đa 32 MB");
     expect(markup).toContain('accept="application/json,.json"');
     expect(markup).toContain("Dung lượng và vùng cache tách biệt");

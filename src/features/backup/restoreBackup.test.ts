@@ -37,13 +37,15 @@ function importedBookFixture(): ImportedBook {
   return {
     id: "imported:backup-fixture",
     kind: "imported",
-    schemaVersion: 1,
+    schemaVersion: 2,
     sourceType: "paste",
     sourceName: null,
     author: null,
     createdAt: 10,
     updatedAt: 10,
     characterCount: 3,
+    chapterCount: 1,
+    tableOfContents: [],
     annotationSource: "automatic-offline",
     analysisEngineVersion: "pinyin-pro-3.28.0+cvdict-c379d90",
     title: "Bài riêng",
@@ -262,6 +264,26 @@ describe("ScottBook backup restore", () => {
       backup: {
         formatVersion: 2,
         data: { importedBooks: [{ id: "imported:backup-fixture" }] }
+      }
+    });
+  });
+
+  it("migrates schema v1 imported books while parsing a signed backup", async () => {
+    const current = importedBookFixture();
+    const { chapterCount, tableOfContents, ...legacy } = current;
+    expect(chapterCount).toBe(1);
+    expect(tableOfContents).toEqual([]);
+    const backup = await createScottBookBackup({
+      ...createRestoredData(),
+      importedBooks: [{ ...legacy, schemaVersion: 1 } as unknown as ImportedBook]
+    });
+
+    await expect(parseScottBookBackupText(JSON.stringify(backup))).resolves.toMatchObject({
+      ok: true,
+      backup: {
+        data: {
+          importedBooks: [{ schemaVersion: 2, chapterCount: 1, tableOfContents: [] }]
+        }
       }
     });
   });

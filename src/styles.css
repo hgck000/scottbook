@@ -3503,6 +3503,46 @@ svg {
   box-shadow: 0 5px 14px rgb(25 60 53 / 18%);
 }
 
+.reader-epub-toc {
+  margin-top: 18px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--paper-raised) 88%, transparent);
+}
+
+.reader-epub-toc summary {
+  padding: 13px 16px;
+  color: var(--ink);
+  font-size: 0.76rem;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.reader-epub-toc ol {
+  max-height: 280px;
+  margin: 0;
+  padding: 0 16px 14px 42px;
+  overflow: auto;
+}
+
+.reader-epub-toc li {
+  color: var(--muted);
+}
+
+.reader-epub-toc button {
+  width: 100%;
+  padding: 8px 4px;
+  border: 0;
+  color: var(--ink);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.reader-epub-toc button:hover {
+  color: var(--reader-accent);
+}
+
 .article-body {
   padding-top: 36px;
   color: var(--ink);
@@ -5850,12 +5890,13 @@ svg {
 .import-file-drop > span { color: var(--jade); font-weight: 950; font-size: 1.4rem; }
 .import-file-drop small { color: var(--muted); }
 
-.import-source-summary { justify-content: space-between; color: var(--muted); font-size: 0.78rem; }
+.import-source-summary { flex-wrap: wrap; justify-content: space-between; color: var(--muted); font-size: 0.78rem; }
 .import-preview { display: grid; gap: 14px; padding: 18px; border-radius: 17px; background: var(--paper); }
 .import-preview h2 { margin: 4px 0; font-family: Georgia, "Times New Roman", serif; }
 .import-preview > div > p { margin: 0; color: var(--muted); }
 .import-preview-body { max-height: 340px; overflow: auto; padding-right: 6px; font: 1.08rem/1.95 Georgia, "Times New Roman", serif; }
 .import-preview-body p { margin: 0 0 1em; }
+.import-preview-body h3 { margin: 0 0 0.35em; color: var(--jade); font-size: 1rem; }
 
 .import-progress { display: grid; grid-template-columns: 1fr auto; gap: 7px 12px; align-items: center; }
 .import-progress > div { overflow: hidden; height: 8px; border-radius: 999px; background: var(--line); }

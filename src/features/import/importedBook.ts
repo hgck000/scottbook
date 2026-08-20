@@ -9,13 +9,19 @@ import type {
 import type { LibraryState } from "../library/readingState";
 import type { AssistanceHistoryState } from "../review/assistanceHistory";
 
-export const IMPORTED_BOOK_SCHEMA_VERSION = 1;
+export const IMPORTED_BOOK_SCHEMA_VERSION = 2;
 export const IMPORT_ANALYSIS_ENGINE_VERSION = "pinyin-pro-3.28.0+cvdict-c379d90";
 export const MAX_IMPORT_FILE_BYTES = 512 * 1024;
 export const MAX_IMPORT_CHARACTERS = 120_000;
 export const MAX_IMPORTED_BOOKS_IN_BACKUP = 100;
 
-export type ImportSourceType = "paste" | "txt";
+export type ImportSourceType = "paste" | "txt" | "epub";
+
+export type ImportedBookTocEntry = {
+  id: string;
+  title: string;
+  paragraphId: string;
+};
 
 export type ImportedBook = ReaderArticle & {
   kind: "imported";
@@ -26,6 +32,8 @@ export type ImportedBook = ReaderArticle & {
   createdAt: number;
   updatedAt: number;
   characterCount: number;
+  chapterCount: number;
+  tableOfContents: ImportedBookTocEntry[];
   annotationSource: "automatic-offline";
   analysisEngineVersion: typeof IMPORT_ANALYSIS_ENGINE_VERSION;
   level: "Tự nhập";
@@ -36,6 +44,12 @@ export type NormalizedImport = {
   text: string;
   paragraphs: string[];
   characterCount: number;
+  chapters: NormalizedImportChapter[];
+};
+
+export type NormalizedImportChapter = {
+  title: string;
+  paragraphIndex: number;
 };
 
 export type ImportDraft = {
@@ -56,6 +70,10 @@ export type ImportAnalysisProgress = {
 export type ImportedBookValidationResult =
   | { ok: true; book: ImportedBook }
   | { ok: false; message: string };
+
+export function isImportedBook(article: ReaderArticle): article is ImportedBook {
+  return "kind" in article && article.kind === "imported";
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -150,9 +168,17 @@ function validateSentence(value: unknown): AnnotatedSentence | null {
 }
 
 function validateParagraph(value: unknown): AnnotatedParagraph | null {
+  const plainKeys = ["id", "sentences"] as const;
+  const sectionKeys = [
+    "id",
+    "sectionTitle",
+    "sectionTitlePinyin",
+    "sectionTitleTranslation",
+    "sentences"
+  ] as const;
   if (
     !isRecord(value) ||
-    !hasOnlyKeys(value, ["id", "sentences"]) ||
+    (!hasOnlyKeys(value, plainKeys) && !hasOnlyKeys(value, sectionKeys)) ||
     !isSafeText(value.id, 200) ||
     !Array.isArray(value.sentences) ||
     value.sentences.length === 0 ||
@@ -162,24 +188,65 @@ function validateParagraph(value: unknown): AnnotatedParagraph | null {
   }
   const sentences = value.sentences.map(validateSentence);
   if (sentences.some((sentence) => sentence === null)) return null;
+  if (Object.hasOwn(value, "sectionTitle")) {
+    if (
+      !isSafeText(value.sectionTitle, 200) ||
+      !isSafeText(value.sectionTitlePinyin, 1_000, true) ||
+      !isSafeText(value.sectionTitleTranslation, 300, true)
+    ) {
+      return null;
+    }
+    return {
+      id: value.id,
+      sectionTitle: value.sectionTitle,
+      sectionTitlePinyin: value.sectionTitlePinyin,
+      sectionTitleTranslation: value.sectionTitleTranslation,
+      sentences: sentences as AnnotatedSentence[]
+    };
+  }
   return { id: value.id, sentences: sentences as AnnotatedSentence[] };
+}
+
+function validateTocEntry(value: unknown): ImportedBookTocEntry | null {
+  if (
+    !isRecord(value) ||
+    !hasOnlyKeys(value, ["id", "title", "paragraphId"]) ||
+    !isSafeText(value.id, 200) ||
+    !isSafeText(value.title, 200) ||
+    !isSafeText(value.paragraphId, 200)
+  ) {
+    return null;
+  }
+  return { id: value.id, title: value.title, paragraphId: value.paragraphId };
 }
 
 export function validateImportedBook(value: unknown): ImportedBookValidationResult {
   if (!isRecord(value)) return { ok: false, message: "Record sách không phải object." };
-  const keys = [
+  const legacyKeys = [
     "id", "kind", "schemaVersion", "sourceType", "sourceName", "author",
     "createdAt", "updatedAt", "characterCount", "annotationSource",
     "analysisEngineVersion", "title", "titlePinyin", "titleTranslation",
     "summary", "level", "topic", "estimatedMinutes", "accent", "paragraphs"
   ] as const;
-  if (!hasOnlyKeys(value, keys)) {
+  const currentKeys = [
+    ...legacyKeys,
+    "chapterCount",
+    "tableOfContents"
+  ] as const;
+  const legacy = value.schemaVersion === 1;
+  if (
+    (legacy && !hasOnlyKeys(value, legacyKeys)) ||
+    (!legacy && !hasOnlyKeys(value, currentKeys))
+  ) {
     return { ok: false, message: "Record sách có trường lạ hoặc thiếu trường." };
   }
   if (
     !isSafeText(value.id, 200) || !value.id.startsWith("imported:") ||
-    value.kind !== "imported" || value.schemaVersion !== IMPORTED_BOOK_SCHEMA_VERSION ||
-    (value.sourceType !== "paste" && value.sourceType !== "txt") ||
+    value.kind !== "imported" || (!legacy && value.schemaVersion !== IMPORTED_BOOK_SCHEMA_VERSION) ||
+    (legacy
+      ? value.sourceType !== "paste" && value.sourceType !== "txt"
+      : value.sourceType !== "paste" && value.sourceType !== "txt" &&
+        value.sourceType !== "epub") ||
     !(value.sourceName === null || isSafeText(value.sourceName, 255)) ||
     !(value.author === null || isSafeText(value.author, 200)) ||
     !isTimestamp(value.createdAt) || !isTimestamp(value.updatedAt) ||
@@ -202,9 +269,59 @@ export function validateImportedBook(value: unknown): ImportedBookValidationResu
   if (paragraphs.some((paragraph) => paragraph === null)) {
     return { ok: false, message: "Nội dung chú thích của sách tự nhập bị hỏng." };
   }
+  if (legacy) {
+    return {
+      ok: true,
+      book: {
+        ...value,
+        schemaVersion: IMPORTED_BOOK_SCHEMA_VERSION,
+        chapterCount: 1,
+        tableOfContents: [],
+        paragraphs
+      } as unknown as ImportedBook
+    };
+  }
+  if (
+    typeof value.chapterCount !== "number" ||
+    !Number.isSafeInteger(value.chapterCount) ||
+    value.chapterCount < 1 ||
+    value.chapterCount > 500 ||
+    !Array.isArray(value.tableOfContents) ||
+    value.tableOfContents.length > 500
+  ) {
+    return { ok: false, message: "Thông tin chương của sách tự nhập không hợp lệ." };
+  }
+  const tableOfContents = value.tableOfContents.map(validateTocEntry);
+  const paragraphIds = new Set((paragraphs as AnnotatedParagraph[]).map((item) => item.id));
+  const tocIds = new Set<string>();
+  let invalidToc = false;
+  for (const entry of tableOfContents) {
+    if (
+      !entry ||
+      tocIds.has(entry.id) ||
+      !paragraphIds.has(entry.paragraphId)
+    ) {
+      invalidToc = true;
+      break;
+    }
+    tocIds.add(entry.id);
+  }
+  if (
+    invalidToc ||
+    (value.sourceType === "epub" &&
+      (tableOfContents.length === 0 || tableOfContents.length !== value.chapterCount)) ||
+    (value.sourceType !== "epub" &&
+      (tableOfContents.length > 0 || value.chapterCount !== 1))
+  ) {
+    return { ok: false, message: "Mục lục sách tự nhập không hợp lệ." };
+  }
   return {
     ok: true,
-    book: { ...value, paragraphs } as unknown as ImportedBook
+    book: {
+      ...value,
+      paragraphs,
+      tableOfContents: tableOfContents as ImportedBookTocEntry[]
+    } as unknown as ImportedBook
   };
 }
 
@@ -235,7 +352,12 @@ export function normalizeImportedText(input: string): NormalizedImport {
     )
     .filter(Boolean);
   const text = paragraphs.join("\n\n");
-  return { text, paragraphs, characterCount: Array.from(text).length };
+  return {
+    text,
+    paragraphs,
+    characterCount: Array.from(text).length,
+    chapters: []
+  };
 }
 
 export function getImportValidationError(normalized: NormalizedImport): string | null {
