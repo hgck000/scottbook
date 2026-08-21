@@ -11,7 +11,8 @@ This list is intentionally release-blocking evidence, not a hidden backlog.
   retain complete offline assistance. The v0.41 audit removes known irrelevant
   dictionary senses and fixes reviewed pinyin/phrasing; v0.42 packs the same
   annotations more compactly and caches derived indexes without changing their
-  content. Concise automatic dictionary assistance is still not a replacement
+  content. v0.43 keeps those annotations unchanged while making the generated
+  payload reproducible across supported CI operating systems. Concise automatic dictionary assistance is still not a replacement
   for a full edited lexicon.
 - Character, word/phrase, and sentence assistance is available for all 75
   built-in readings. Paste/TXT/EPUB imports receive automatic offline pinyin
@@ -60,7 +61,7 @@ This list is intentionally release-blocking evidence, not a hidden backlog.
 
 - ScottBook now has a Capacitor Android project and CI-built debug APK. Android
   Back handling is implemented for reader sheets, internal history, direct deep
-  links, and root exit. A repeatable ADB runner can verify data-preserving debug
+  links, root exit, and protected imported-book commits. A repeatable ADB runner can verify data-preserving debug
   installation, app/version/permissions, foreground MainActivity, accessible
   WebView content, and screenshot capture. A clean physical-device run,
   airplane-mode launch, WebView persistence, Back behavior, backup

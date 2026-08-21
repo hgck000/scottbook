@@ -109,8 +109,8 @@ SOFTWARE.
 
 ## fflate
 
-ScottBook uses [`fflate`](https://github.com/101arrowz/fflate) 0.8.2 to unpack
-the offline dictionary inside the import worker.
+ScottBook uses [`fflate`](https://github.com/101arrowz/fflate) 0.8.2 to pack the
+generated reading library reproducibly and to unpack local compressed data.
 
 MIT License — copyright © 2023 Arjun Barrett.
 

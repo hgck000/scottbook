@@ -154,7 +154,7 @@ npm run android:sync
 npm run android:build:debug
 ```
 
-The final command writes `artifacts/ScottBook-v0.42.0-android-debug.apk` and
+The final command writes `artifacts/ScottBook-v0.43.0-android-debug.apk` and
 selects `gradlew.bat` automatically on Windows. `android:sync` proves that the
 native bundle contains local assets, has no browser service worker, and has no
 remote `server.url`; `android:build:debug` additionally runs Gradle. GitHub
@@ -165,7 +165,7 @@ After downloading or building the APK, connect one USB-debugging Android phone
 and run the reusable device check:
 
 ```bash
-npm run android:device:smoke -- /path/to/ScottBook-v0.42.0-android-debug.apk
+npm run android:device:smoke -- /path/to/ScottBook-v0.43.0-android-debug.apk
 ```
 
 On Windows, the APK path may be quoted normally. If more than one device is
@@ -182,7 +182,7 @@ npm run android:build:release
 
 It requires the owner-held keystore environment, verifies the resulting
 certificate with `apksigner`, and writes
-`artifacts/ScottBook-v0.42.0-android-release.apk` plus a checksum/fingerprint
+`artifacts/ScottBook-v0.43.0-android-release.apk` plus a checksum/fingerprint
 report. Create and configure the key only through
 [`docs/qa/ANDROID-RELEASE-SIGNING.md`](docs/qa/ANDROID-RELEASE-SIGNING.md); the
 keystore and passwords must never enter the repository or a patch.
@@ -673,6 +673,13 @@ also split from the larger offline library chunk so ScottBook can paint a local
 loading state immediately. See
 [`docs/release/SCOTTBOOK-v0.42.0.md`](docs/release/SCOTTBOOK-v0.42.0.md).
 
+Version 0.43 hardens that same release without adding content. It makes the
+generated library byte-stable across Linux, macOS, and Windows; waits for the
+authoritative IndexedDB snapshot before enabling interaction; and prevents
+Android Back from interrupting an imported-book commit. Browser journeys now
+follow the explicit cross-library context step before jumping to a sentence.
+See [`docs/release/SCOTTBOOK-v0.43.0.md`](docs/release/SCOTTBOOK-v0.43.0.md).
+
 ## Install ScottBook
 
 Chromium browsers on Android, Windows, macOS, and Linux can expose ScottBook's
@@ -689,8 +696,8 @@ pre-cached. Paste/TXT/EPUB books are analyzed once and stored in IndexedDB, so
 they reopen in airplane mode with EPUB chapter navigation intact.
 
 For a direct Android test install, open the successful **ScottBook CI** run for
-the v0.42 commit, download the `ScottBook-Android-debug-…` artifact, extract it,
-and install `ScottBook-v0.42.0-android-debug.apk`. Android may ask permission to
+the v0.43 commit, download the `ScottBook-Android-debug-…` artifact, extract it,
+and install `ScottBook-v0.43.0-android-debug.apk`. Android may ask permission to
 install apps from the browser or file manager used to open it. The debug APK is
 not Play Store signed and its runner-generated debug key is not a durable
 upgrade identity: if a later debug artifact reports a signature conflict,
