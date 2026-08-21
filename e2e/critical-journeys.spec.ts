@@ -571,10 +571,10 @@ test("compares a word across the offline library and opens another article", asy
     .getByRole("button", { name: "Xem 7 ngữ cảnh của 我" })
     .click();
   await page
-    .getByRole("button", { name: "Cả thư viện · 158" })
+    .getByRole("button", { name: "Cả thư viện · 159" })
     .click();
 
-  await expect(page.getByText("158 ngữ cảnh · 31 bài")).toBeVisible();
+  await expect(page.getByText("159 ngữ cảnh · 32 bài")).toBeVisible();
   const weekendContexts = page.getByRole("region", {
     name: "Ngữ cảnh trong bài Kế hoạch cuối tuần"
   });
@@ -750,7 +750,7 @@ test("filters Discover and reviews an article before starting to read", async ({
     .click();
   await page
     .getByRole("group", { name: "Lọc Khám phá theo độ dài bài đọc" })
-    .getByRole("button", { name: /Vừa · khoảng 4–5 phút/ })
+    .getByRole("button", { name: "Vừa · 3 phút" })
     .click();
   await expect(
     page.locator(".discover-filter-panel [role='status']")
