@@ -127,6 +127,22 @@ describe("offline article vocabulary", () => {
     ).toBe(45);
   });
 
+  it("finds additional library contexts for a single 喜欢 occurrence", () => {
+    const entry = getArticleVocabulary(morningArticle).find(
+      (item) => item.hanzi === "喜欢"
+    );
+    if (!entry) throw new Error("喜欢 fixture is missing");
+
+    const groups = getLibraryVocabularyContexts(builtInLibrary, entry);
+    const occurrenceCount = groups.reduce(
+      (total, group) => total + group.occurrences.length,
+      0
+    );
+
+    expect(entry.occurrences).toHaveLength(1);
+    expect(occurrenceCount).toBeGreaterThan(1);
+  });
+
   it("does not merge the same Hanzi with a different authored reading or meaning", () => {
     const entry = getArticleVocabulary(morningArticle).find(
       (item) => item.hanzi === "我"

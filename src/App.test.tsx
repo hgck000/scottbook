@@ -41,6 +41,16 @@ afterEach(() => {
 });
 
 describe("ScottBook routes", () => {
+  it("holds interaction until the authoritative IndexedDB snapshot is ready", () => {
+    installWindow("");
+    vi.stubGlobal("indexedDB", {});
+
+    const markup = renderToStaticMarkup(<App />);
+
+    expect(markup).toContain("Đang mở thư viện offline…");
+    expect(markup).not.toContain("Thư viện tham khảo");
+  });
+
   it("renders the reference library by default", () => {
     installWindow("");
 

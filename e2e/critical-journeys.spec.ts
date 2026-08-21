@@ -497,6 +497,15 @@ test("searches the offline article vocabulary and jumps to its sentence", async 
     .getByRole("button", { name: "Tìm thêm ngữ cảnh của 喜欢" })
     .click();
 
+  await expect(
+    page.getByRole("group", { name: "Phạm vi ngữ cảnh của 喜欢" })
+  ).toBeVisible();
+  await page
+    .getByRole("button", {
+      name: "Tới ngữ cảnh 1 của 喜欢 trong bài Buổi sáng của tôi"
+    })
+    .click();
+
   await expect(page).toHaveURL(/#\/read\/hsk1-my-morning$/);
   const targetSentence = page.locator(
     '.sentence[data-sentence-id="s4"][data-vocabulary-target="true"]'

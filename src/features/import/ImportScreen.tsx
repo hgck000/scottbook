@@ -4,6 +4,10 @@ import { NATIVE_BACK_EVENT } from "../native/androidBackNavigation";
 import { analyzeImportedBook } from "./importAnalysis";
 import { MAX_EPUB_FILE_BYTES, parseEpubFile } from "./epubParser";
 import {
+  getImportNativeBackAction,
+  type ImportNavigationStage
+} from "./importNavigation";
+import {
   createImportedBookId,
   decodeUtf8TxtFile,
   getImportValidationError,
@@ -15,7 +19,7 @@ import {
   type NormalizedImport
 } from "./importedBook";
 
-type ImportStage = "source" | "preview" | "analyzing" | "saving" | "error";
+type ImportStage = ImportNavigationStage;
 
 export function ImportScreen({
   theme,
@@ -58,8 +62,10 @@ export function ImportScreen({
 
   useEffect(() => {
     const handleNativeBack = (event: Event) => {
-      if (stage !== "analyzing" && stage !== "saving") return;
+      const action = getImportNativeBackAction(stage);
+      if (action === "continue-navigation") return;
       event.preventDefault();
+      if (action === "block-save") return;
       abortRef.current?.abort();
       setStage("preview");
       setMessage("Đã hủy phân tích; chưa có sách nào được lưu.");

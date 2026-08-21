@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import AppBootstrap from "./AppBootstrap";
 import { builtInLibrary } from "./content/builtInLibrary";
 import type {
   AnnotatedSentence,
@@ -165,6 +166,7 @@ import {
   loadLocalDataFallback,
   tryLoadPrimaryLocalData
 } from "./features/storage/localDataSnapshot";
+import { shouldWaitForLocalData } from "./features/storage/localDataReadiness";
 
 type Route =
   | { name: "library" }
@@ -744,6 +746,15 @@ function App() {
       setTheme
     ]
   );
+
+  if (
+    shouldWaitForLocalData(
+      localDataStatus.phase,
+      typeof globalThis.indexedDB !== "undefined"
+    )
+  ) {
+    return <AppBootstrap />;
+  }
 
   let content;
   if (route.name === "reader") {
