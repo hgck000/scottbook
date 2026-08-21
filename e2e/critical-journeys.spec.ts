@@ -144,7 +144,9 @@ test("imports pasted Chinese and reopens the analyzed book offline", async ({
   await expect(page.getByText("wǒ", { exact: true })).toBeVisible();
   await firstToken.click();
   await expect(page.locator(".assist-meaning")).not.toBeEmpty();
-  await page.getByRole("button", { name: "Đóng trợ giúp" }).click();
+  await page
+    .getByRole("button", { name: "Đóng trợ giúp", exact: true })
+    .click();
 
   await context.setOffline(true);
   await page.reload();
@@ -266,7 +268,9 @@ test("keeps sentence help in Reader but reviews only lexical items", async ({
   await expect(page.getByText("zǎo", { exact: true })).toBeVisible();
   await expect(page.getByText("tảo", { exact: true })).toBeVisible();
   await firstCharacter.click();
-  await expect(page.getByText("sớm", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText("sớm; buổi sáng", { exact: true })
+  ).toBeVisible();
   await page
     .getByRole("button", { name: "Đóng trợ giúp", exact: true })
     .click();
@@ -533,7 +537,7 @@ test("compares every authored context of a repeated article word", async ({
     contextList.getByText("Tôi nói: Có, con rất thích tiết tiếng Trung.", {
       exact: true
     })
-  ).toBeVisible();
+  ).toHaveCount(2);
 
   await contextList
     .getByRole("button", { name: "Tới ngữ cảnh 4 của 我" })
@@ -734,7 +738,7 @@ test("filters Discover and reviews an article before starting to read", async ({
   await dismissInstallNotice(page);
 
   await expect(
-    page.getByRole("heading", { name: /Chọn nhịp đọc/ })
+    page.getByRole("heading", { name: "Bài đọc cho buổi học này" })
   ).toBeVisible();
   await page
     .getByRole("group", { name: "Lọc Khám phá theo cấp độ HSK" })
