@@ -51,10 +51,6 @@ import {
   parseReaderHash
 } from "./features/reader/readerNavigation";
 import {
-  getNextReadingChoice,
-  type NextReadingChoice
-} from "./features/reader/readingSequence";
-import {
   getArticleSentenceIds,
   getSentenceProgressPercent,
   markArticleCompleted,
@@ -761,9 +757,6 @@ function App() {
     const builtInArticle = builtInLibrary.find((item) => item.id === route.articleId);
     const article: ReaderArticle | undefined =
       builtInArticle ?? importedBooks.find((item) => item.id === route.articleId);
-    const nextReading = builtInArticle
-      ? getNextReadingChoice(builtInLibrary, builtInArticle.id, libraryState)
-      : null;
     const readingProgress = article
       ? libraryState.progressByArticle[article.id]
       : undefined;
@@ -821,10 +814,6 @@ function App() {
           const sentenceIds = getArticleSentenceIds(article);
           const lastSentenceId = sentenceIds.at(-1);
           if (lastSentenceId) completeArticle(article.id, lastSentenceId);
-        }}
-        nextReading={nextReading}
-        openNextArticle={() => {
-          if (nextReading) openArticle(nextReading.article.id);
         }}
         saveAssistance={(sentence, unit, level) =>
           saveAssistance(article, sentence, unit, level)
@@ -2156,9 +2145,6 @@ function ReviewPracticeScreen({
                 </>
               )}
             </div>
-            <p className="practice-privacy-note">
-              Không chấm điểm, không gửi dữ liệu và không tự suy đoán lịch SRS.
-            </p>
           </section>
         ) : null}
       </main>
@@ -2261,37 +2247,15 @@ function ReviewScreen({
           </button>
         </header>
 
-        <section className="review-hero">
-          <div>
-            <h1>Những chỗ bạn đã thật sự cần trợ giúp.</h1>
-            <p>
-              ScottBook phân biệt lúc bạn chỉ cần cách đọc với lúc bạn cần cả
-              nghĩa. Mọi ngữ cảnh đều nằm trên thiết bị này.
-            </p>
-          </div>
-          <div className="review-stats" aria-label="Tóm tắt trợ giúp đọc">
-            <div>
-              <strong>
-                {reviewableItems.filter(
-                  (item) => item.knownAt === null && item.meaningCount === 0
-                ).length}
-              </strong>
-              <span>Cần cách đọc</span>
-            </div>
-            <div>
-              <strong>
-                {reviewableItems.filter(
-                  (item) => item.knownAt === null && item.meaningCount > 0
-                ).length}
-              </strong>
-              <span>Chưa hiểu nghĩa</span>
-            </div>
-          </div>
-        </section>
-
         <LearningProgressSection
           overview={learningProgress}
           continueArticle={continueArticle}
+          readingNeededCount={reviewableItems.filter(
+            (item) => item.knownAt === null && item.meaningCount === 0
+          ).length}
+          meaningNeededCount={reviewableItems.filter(
+            (item) => item.knownAt === null && item.meaningCount > 0
+          ).length}
           openArticle={openArticle}
         />
 
@@ -2369,10 +2333,14 @@ function ReviewScreen({
 function LearningProgressSection({
   overview,
   continueArticle,
+  readingNeededCount,
+  meaningNeededCount,
   openArticle
 }: {
   overview: LearningProgressOverview;
   continueArticle: BuiltInArticle | undefined;
+  readingNeededCount: number;
+  meaningNeededCount: number;
   openArticle: (articleId: string) => void;
 }) {
   return (
@@ -2387,38 +2355,50 @@ function LearningProgressSection({
       </div>
 
       <div className="learning-progress-layout">
-        <div className="learning-progress-summary">
-          <div className="learning-progress-percent" aria-hidden="true">
-            <strong>{overview.progressPercent}%</strong>
-            <span>đã đọc</span>
-          </div>
-          <div className="learning-progress-copy">
-            <p>
-              <strong>{overview.completed}</strong> hoàn thành ·{" "}
-              <strong>{overview.inProgress}</strong> đang đọc ·{" "}
-              <strong>{overview.unread}</strong> chưa đọc
-            </p>
-            <div
-              className="progress-track learning-overall-track"
-              role="progressbar"
-              aria-label="Tiến độ toàn thư viện"
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-valuenow={overview.progressPercent}
-            >
-              <span style={{ width: `${overview.progressPercent}%` }} />
+        <div className="learning-progress-overview">
+          <div className="learning-progress-summary">
+            <div className="learning-progress-percent" aria-hidden="true">
+              <strong>{overview.progressPercent}%</strong>
+              <span>đã đọc</span>
             </div>
-            {continueArticle ? (
-              <button
-                type="button"
-                onClick={() => openArticle(continueArticle.id)}
-                aria-label={`Tiếp tục ${continueArticle.titleTranslation}`}
+            <div className="learning-progress-copy">
+              <p>
+                <strong>{overview.completed}</strong> hoàn thành ·{" "}
+                <strong>{overview.inProgress}</strong> đang đọc ·{" "}
+                <strong>{overview.unread}</strong> chưa đọc
+              </p>
+              <div
+                className="progress-track learning-overall-track"
+                role="progressbar"
+                aria-label="Tiến độ toàn thư viện"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={overview.progressPercent}
               >
-                Tiếp tục · {continueArticle.titleTranslation}
-              </button>
-            ) : (
-              <a href="#/discover">Chọn bài để bắt đầu</a>
-            )}
+                <span style={{ width: `${overview.progressPercent}%` }} />
+              </div>
+              {continueArticle ? (
+                <button
+                  type="button"
+                  onClick={() => openArticle(continueArticle.id)}
+                  aria-label={`Tiếp tục ${continueArticle.titleTranslation}`}
+                >
+                  Tiếp tục · {continueArticle.titleTranslation}
+                </button>
+              ) : (
+                <a href="#/discover">Chọn bài để bắt đầu</a>
+              )}
+            </div>
+          </div>
+          <div className="learning-review-stats" aria-label="Tóm tắt trợ giúp đọc">
+            <div>
+              <strong>{readingNeededCount}</strong>
+              <span>Cần cách đọc</span>
+            </div>
+            <div>
+              <strong>{meaningNeededCount}</strong>
+              <span>Chưa hiểu nghĩa</span>
+            </div>
           </div>
         </div>
 
@@ -3732,8 +3712,6 @@ function ReaderScreen({
   saveReadingPosition,
   isCompleted,
   completeArticle,
-  nextReading,
-  openNextArticle,
   saveAssistance,
   openVocabularyContext
 }: {
@@ -3756,8 +3734,6 @@ function ReaderScreen({
   ) => void;
   isCompleted: boolean;
   completeArticle: () => void;
-  nextReading: NextReadingChoice | null;
-  openNextArticle: () => void;
   saveAssistance: (
     sentence: AnnotatedSentence,
     unit: ReaderAssistanceUnit,
@@ -4260,9 +4236,6 @@ function ReaderScreen({
           </div>
 
           <footer className="article-end">
-            <p className="article-end-note">
-              Hết bài · mọi chú thích của bài này đã nằm sẵn trên thiết bị.
-            </p>
             {isCompleted ? (
               <div className="completion-badge">
                 <span aria-hidden="true">✓</span>
@@ -4280,12 +4253,6 @@ function ReaderScreen({
             )}
           </footer>
 
-          {nextReading ? (
-            <NextReadingCard
-              choice={nextReading}
-              openArticle={openNextArticle}
-            />
-          ) : null}
         </article>
       </main>
 
@@ -4332,50 +4299,6 @@ function ReaderScreen({
         />
       ) : null}
     </div>
-  );
-}
-
-function NextReadingCard({
-  choice,
-  openArticle
-}: {
-  choice: NextReadingChoice;
-  openArticle: () => void;
-}) {
-  return (
-    <section
-      className="reader-next-card"
-      aria-labelledby="reader-next-heading"
-    >
-      <div className="reader-next-glyph" aria-hidden="true">
-        {choice.article.title.slice(0, 1)}
-      </div>
-      <div className="reader-next-copy">
-        <h2 id="reader-next-heading" lang="zh-Hans">
-          {choice.article.title}
-        </h2>
-        <p className="reader-next-pinyin">{choice.article.titlePinyin}</p>
-        <p className="reader-next-translation">
-          {choice.article.titleTranslation}
-        </p>
-        <span>
-          {choice.article.level} · {choice.article.topic} · khoảng{" "}
-          {choice.article.estimatedMinutes} phút
-        </span>
-      </div>
-      <button
-        type="button"
-        onClick={openArticle}
-        aria-label={`Đọc bài tiếp theo: ${choice.article.titleTranslation}`}
-      >
-        {choice.reason === "in-progress"
-          ? "Tiếp tục đọc"
-          : choice.reason === "revisit"
-            ? "Đọc lại"
-            : "Đọc tiếp"}
-        <span aria-hidden="true">→</span>
-      </button>
-    </section>
   );
 }
 

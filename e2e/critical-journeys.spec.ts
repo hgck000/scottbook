@@ -823,29 +823,6 @@ test("reads a newly authored article from the expanded content pack", async ({
   expect(pageErrors).toEqual([]);
 });
 
-test("continues into the next unfinished offline article", async ({ page }) => {
-  const pageErrors = collectPageErrors(page);
-  await page.goto("/#/read/hsk1-my-morning");
-  await dismissInstallNotice(page);
-
-  const nextReading = page.getByRole("region", {
-    name: "我的家"
-  });
-  await expect(nextReading).toContainText("Bài chưa đọc tiếp theo");
-  await expect(nextReading).toContainText("Wǒ de jiā");
-  await expect(nextReading).toContainText("Gia đình tôi");
-  await nextReading
-    .getByRole("button", { name: "Đọc bài tiếp theo: Gia đình tôi" })
-    .click();
-
-  await expect(page).toHaveURL(/#\/read\/hsk1-my-family$/);
-  await expect(
-    page.getByRole("heading", { name: "我的家", level: 1 })
-  ).toBeVisible();
-  await expect(page.getByText("Bài chưa đọc tiếp theo")).toBeVisible();
-  expect(pageErrors).toEqual([]);
-});
-
 test("migrates an anonymized v1 reading snapshot", async ({ page }) => {
   const pageErrors = collectPageErrors(page);
   await page.addInitScript(
