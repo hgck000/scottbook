@@ -1,6 +1,6 @@
 # HSK 1–5 reading pack provenance
 
-ScottBook v0.43 contains 75 built-in readings and 2,550 sentences. HSK 1 has
+ScottBook v0.44 contains 75 built-in readings and 2,550 sentences. HSK 1 has
 the original nine readings plus thirty long short stories; HSK 2 through HSK 5
 retain nine readings each. Every new HSK 1 story contains seventy sentences
 grouped under five connected sections. Fifteen of the thirty long stories cover

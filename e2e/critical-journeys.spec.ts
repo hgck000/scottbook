@@ -95,44 +95,27 @@ test("reads, reveals assistance, and keeps local preferences", async ({ page }) 
   expect(pageErrors).toEqual([]);
 });
 
-test("exports, restores, and undoes a local backup", async ({ page }) => {
-  const pageErrors = collectPageErrors(page);
-  await page.goto("/#/review");
-  await dismissInstallNotice(page);
-  await expect(page.getByText("IndexedDB v4", { exact: true })).toBeVisible();
+test(
+  "keeps advanced local-data controls out of the simplified review interface",
+  async ({ page }) => {
+    const pageErrors = collectPageErrors(page);
+    await page.goto("/#/review");
+    await dismissInstallNotice(page);
+    await expect(
+      page.getByRole("heading", { name: "Tiến độ học của bạn" })
+    ).toBeVisible();
 
-  const downloadPromise = page.waitForEvent("download");
-  await page.getByRole("button", { name: "Tải bản sao JSON" }).click();
-  const download = await downloadPromise;
-  const backupPath = await download.path();
-  if (!backupPath) throw new Error("Backup download did not expose a local path");
-
-  await page.getByRole("button", { name: "Bật giao diện tối" }).click();
-  await expect(page.locator("[data-theme]")).toHaveAttribute(
-    "data-theme",
-    "night"
-  );
-
-  await page.locator('input[type="file"]').setInputFiles(backupPath);
-  await expect(
-    page.getByRole("heading", { name: "Xem trước bản khôi phục" })
-  ).toBeVisible();
-  await expect(page.getByText("Checksum hợp lệ")).toBeVisible();
-  await page.getByRole("button", { name: "Xác nhận khôi phục" }).click();
-  await expect(page.getByText(/Đã khôi phục bản sao/)).toBeVisible();
-  await expect(page.locator("[data-theme]")).toHaveAttribute(
-    "data-theme",
-    "paper"
-  );
-
-  await page.getByRole("button", { name: "Hoàn tác lần khôi phục" }).click();
-  await expect(page.getByText(/Đã hoàn tác/)).toBeVisible();
-  await expect(page.locator("[data-theme]")).toHaveAttribute(
-    "data-theme",
-    "night"
-  );
-  expect(pageErrors).toEqual([]);
-});
+    const advancedCard = page.locator(".data-protection-card");
+    await expect(advancedCard).toBeHidden();
+    await expect(
+      advancedCard.getByRole("button", {
+        name: "Tải bản sao JSON",
+        includeHidden: true
+      })
+    ).toHaveCount(1);
+    expect(pageErrors).toEqual([]);
+  }
+);
 
 test("imports pasted Chinese and reopens the analyzed book offline", async ({
   page,

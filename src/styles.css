@@ -485,12 +485,13 @@ svg {
 }
 
 .hero {
-  min-height: 208px;
+  position: relative;
+  min-height: 190px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(130px, 185px);
+  grid-template-columns: minmax(0, 1fr) minmax(118px, 158px);
   align-items: center;
-  gap: 24px;
-  padding: clamp(26px, 4vw, 40px);
+  gap: clamp(18px, 3vw, 34px);
+  padding: clamp(27px, 4vw, 38px) clamp(30px, 4.8vw, 50px);
   overflow: hidden;
   border-radius: 32px;
   color: #f6f1e7;
@@ -498,21 +499,42 @@ svg {
     radial-gradient(circle at 82% 18%, rgb(255 255 255 / 12%), transparent 13rem),
     #193c35;
   box-shadow: var(--shadow);
+  isolation: isolate;
+}
+
+.hero-copy {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
 }
 
 .hero h1 {
-  max-width: 9ch;
   margin: 0;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(2.7rem, 5.2vw, 4.9rem);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  font-family: "Songti SC", "Noto Serif CJK SC", Georgia, serif;
+  font-size: clamp(2.5rem, 4.55vw, 4.2rem);
   font-weight: 500;
-  line-height: 1;
-  letter-spacing: -0.05em;
+  line-height: 0.98;
+  letter-spacing: -0.045em;
+}
+
+.hero h1 span {
+  display: block;
+  white-space: nowrap;
+}
+
+.hero h1 span:last-child {
+  margin-top: 0.13em;
+  margin-left: clamp(1.8rem, 7vw, 6.5rem);
+  color: #e6ca82;
 }
 
 .hero-glyph {
   position: relative;
-  width: min(100%, 178px);
+  z-index: 0;
+  width: min(100%, 152px);
   aspect-ratio: 1;
   justify-self: end;
   display: grid;
@@ -4532,23 +4554,27 @@ svg {
   }
 
   .hero {
-    min-height: 232px;
+    min-height: 184px;
     grid-template-columns: 1fr;
     align-content: center;
-    padding: 26px;
+    padding: 24px 22px;
     border-radius: 25px;
   }
 
   .hero h1 {
-    font-size: clamp(2.7rem, 13vw, 3.9rem);
+    font-size: clamp(2.4rem, 12vw, 3.45rem);
+  }
+
+  .hero h1 span:last-child {
+    margin-left: clamp(1.45rem, 12vw, 3.6rem);
   }
 
   .hero-glyph {
     position: absolute;
-    width: 148px;
-    opacity: 0.23;
+    width: 132px;
+    opacity: 0.18;
     pointer-events: none;
-    right: 16px;
+    right: 10px;
     top: 50%;
     transform: translateY(-50%) rotate(5deg);
   }

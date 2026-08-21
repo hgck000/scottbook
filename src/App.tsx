@@ -1299,8 +1299,11 @@ function LibraryScreen({
         </header>
 
         <section className="hero">
-          <div>
-            <h1 lang="zh-Hans">别急着翻译，<br />先理解。</h1>
+          <div className="hero-copy">
+            <h1 lang="zh-Hans">
+              <span>别急着翻译，</span>
+              <span>先理解。</span>
+            </h1>
           </div>
           <div className="hero-glyph" aria-hidden="true">
             <span>读</span>

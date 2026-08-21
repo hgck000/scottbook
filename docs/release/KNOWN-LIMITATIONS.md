@@ -11,9 +11,10 @@ This list is intentionally release-blocking evidence, not a hidden backlog.
   retain complete offline assistance. The v0.41 audit removes known irrelevant
   dictionary senses and fixes reviewed pinyin/phrasing; v0.42 packs the same
   annotations more compactly and caches derived indexes without changing their
-  content. v0.43 keeps those annotations unchanged while making the generated
-  payload reproducible across supported CI operating systems. Concise automatic dictionary assistance is still not a replacement
-  for a full edited lexicon.
+  content. v0.43 makes the generated payload reproducible across supported CI
+  operating systems, and v0.44 keeps that content unchanged while simplifying
+  the surrounding interface. Concise automatic dictionary assistance is still
+  not a replacement for a full edited lexicon.
 - Character, word/phrase, and sentence assistance is available for all 75
   built-in readings. Paste/TXT/EPUB imports receive automatic offline pinyin
   and word/character meanings, not authored sentence translations.
@@ -45,10 +46,8 @@ This list is intentionally release-blocking evidence, not a hidden backlog.
 - Search and Discover filters cover the authored offline library only. Imported
   books appear in their own Library section and are not mixed into HSK filters. Discover does
   not use personalized recommendations or a remote content feed. A saved
-  reading queue and user-authored topic taxonomy are not implemented. Reader's
-  end card now follows fixed authored order, skips completed articles, resumes
-  unfinished reading, and only falls back to a reread after the whole catalog
-  is complete; it is not a personalized recommendation system.
+  reading queue, user-authored topic taxonomy, and automatic next-reading card
+  are not implemented.
 - The learning overview derives lifetime progress from the current 75-article
   pack. Its per-article assistance insight uses the recent contexts retained by
   each local review record and distinct authored word/phrase coverage; it is not
@@ -64,8 +63,10 @@ This list is intentionally release-blocking evidence, not a hidden backlog.
   links, root exit, and protected imported-book commits. A repeatable ADB runner can verify data-preserving debug
   installation, app/version/permissions, foreground MainActivity, accessible
   WebView content, and screenshot capture. A clean physical-device run,
-  airplane-mode launch, WebView persistence, Back behavior, backup
-  download/restore, and system-inset behavior still need owner evidence.
+  airplane-mode launch, WebView persistence, Back behavior, and system-inset
+  behavior still need owner evidence. Backup/restore code remains retained but
+  its advanced Review card is intentionally hidden in v0.44 while the interface
+  is being simplified.
 - GitHub-hosted runners may generate different debug signing keys. Debug APKs
   remain fresh-install test artifacts; uninstalling without first exporting a
   JSON backup can remove the Android WebView's local ScottBook data.
