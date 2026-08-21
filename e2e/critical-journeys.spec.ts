@@ -44,7 +44,7 @@ test("reads, reveals assistance, and keeps local preferences", async ({ page }) 
   await dismissInstallNotice(page);
 
   await expect(
-    page.getByRole("heading", { name: /Đừng dịch vội/ })
+    page.getByRole("heading", { name: /别急着翻译/ })
   ).toBeVisible();
   await page
     .getByRole("button", { name: "Mở bài Buổi sáng của tôi" })

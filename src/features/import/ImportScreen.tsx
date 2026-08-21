@@ -221,7 +221,6 @@ export function ImportScreen({
 
       <main id="main-content" className="import-page" tabIndex={-1}>
         <header className="import-heading">
-          <p className="eyebrow">Paste / TXT / EPUB · không gửi dữ liệu</p>
           <h1>Đưa bài đọc riêng vào ScottBook</h1>
           <p>
             Pinyin và nghĩa từ/cụm được tạo tự động trên thiết bị. Kết quả có thể sai;
@@ -283,7 +282,6 @@ export function ImportScreen({
           {stage === "preview" || busy ? (
             <section className="import-preview" aria-labelledby="import-preview-heading">
               <div>
-                <p className="eyebrow">Xem trước sau chuẩn hóa</p>
                 <h2 id="import-preview-heading">{title.trim()}</h2>
                 {author.trim() ? <p>Tác giả: {author.trim()}</p> : null}
               </div>

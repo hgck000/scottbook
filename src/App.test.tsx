@@ -48,7 +48,7 @@ describe("ScottBook routes", () => {
     const markup = renderToStaticMarkup(<App />);
 
     expect(markup).toContain("Đang mở thư viện offline…");
-    expect(markup).not.toContain("Thư viện tham khảo");
+    expect(markup).not.toContain("Chọn một câu chuyện để bắt đầu");
   });
 
   it("renders the reference library by default", () => {
@@ -56,7 +56,7 @@ describe("ScottBook routes", () => {
 
     const markup = renderToStaticMarkup(<App />);
 
-    expect(markup).toContain("Thư viện tham khảo");
+    expect(markup).toContain("别急着翻译，");
     expect(markup).toContain("Chọn một câu chuyện để bắt đầu");
     expect(markup).toContain('href="#/review"');
     expect(markup).toContain('href="#/discover"');
@@ -88,14 +88,13 @@ describe("ScottBook routes", () => {
 
     const markup = renderToStaticMarkup(<App />);
 
-    expect(markup).toContain("Khám phá thư viện");
-    expect(markup).toContain("Chọn nhịp đọc");
-    expect(markup).toContain("2550</strong><span>Câu đã chú giải");
+    expect(markup).toContain("Bài đọc cho buổi học này");
+    expect(markup).not.toContain('class="discover-hero"');
     expect(markup).toContain('aria-label="Lọc Khám phá theo cấp độ HSK"');
     expect(markup).toContain('aria-label="Lọc Khám phá theo chủ đề"');
     expect(markup).toContain('aria-label="Lọc Khám phá theo độ dài bài đọc"');
     expect(markup).toContain("Xem thông tin Đi thư viện");
-    expect(markup).toContain("Chạm vào bài để xem thông tin trước khi đọc");
+    expect(markup).not.toContain("Chạm vào bài để xem thông tin trước khi đọc");
   });
 
   it("renders an article detail route before reading starts", () => {
@@ -303,7 +302,7 @@ describe("ScottBook routes", () => {
 
     const markup = renderToStaticMarkup(<App />);
 
-    expect(markup).toContain("Tiếp tục một bài còn dang dở");
+    expect(markup).not.toContain("Tiếp tục một bài còn dang dở");
     expect(markup).toContain('id="reader-next-heading"');
     expect(markup).toContain("我的家");
     expect(markup).toContain("Wǒ de jiā");

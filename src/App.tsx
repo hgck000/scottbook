@@ -1173,11 +1173,6 @@ function Sidebar({
           {reviewCount > 0 ? <small>{reviewCount}</small> : null}
         </a>
       </nav>
-      <div className="sidebar-note">
-        <span className="status-dot" />
-        <strong>Hoàn toàn offline</strong>
-        <p>Nội dung và lịch sử đọc chỉ nằm trên thiết bị này.</p>
-      </div>
     </aside>
   );
 }
@@ -1304,7 +1299,6 @@ function LibraryScreen({
           <div className="mobile-brand">
             <Brand />
           </div>
-          <p className="eyebrow">Thư viện tham khảo</p>
           <button
             className="icon-button theme-button"
             type="button"
@@ -1317,12 +1311,7 @@ function LibraryScreen({
 
         <section className="hero">
           <div>
-            <span className="hero-stamp">离线阅读 · Đọc ngoại tuyến</span>
-            <h1>Đừng dịch vội.<br />Hãy hiểu trước.</h1>
-            <p>
-              Chạm một lần để xem pinyin. Chạm thêm lần nữa khi bạn thật sự
-              cần nghĩa và bản dịch câu.
-            </p>
+            <h1 lang="zh-Hans">别急着翻译，<br />先理解。</h1>
           </div>
           <div className="hero-glyph" aria-hidden="true">
             <span>读</span>
@@ -1352,10 +1341,8 @@ function LibraryScreen({
         <section className="library-section" aria-labelledby="reference-heading">
           <div className="section-heading">
             <div>
-              <p className="eyebrow">Nội dung dựng sẵn</p>
               <h2 id="reference-heading">Chọn một câu chuyện để bắt đầu</h2>
             </div>
-            <span className="offline-pill">Không cần mạng</span>
           </div>
 
           <div className="library-discovery">
@@ -1518,7 +1505,6 @@ function ImportedBooksSection({
     <section className="imported-library-section" aria-labelledby="imported-library-heading">
       <div className="section-heading imported-library-heading">
         <div>
-          <p className="eyebrow">Nội dung của bạn</p>
           <h2 id="imported-library-heading">Sách tự nhập trên thiết bị</h2>
         </div>
         <button type="button" className="import-library-button" onClick={openImport}>
@@ -1609,16 +1595,6 @@ function DiscoverScreen({
     () => countArticlesByLength(builtInLibrary),
     []
   );
-  const catalogSummary = useMemo(
-    () => ({
-      levelCount: Object.values(levelCounts).filter((count) => count > 0).length,
-      sentenceCount: builtInLibrary.reduce(
-        (total, article) => total + getArticleMetadata(article).sentenceCount,
-        0
-      )
-    }),
-    [levelCounts]
-  );
   const visibleArticles = useMemo(
     () =>
       filterDiscoverArticles(builtInLibrary, {
@@ -1645,7 +1621,6 @@ function DiscoverScreen({
           <div className="mobile-brand">
             <Brand />
           </div>
-          <p className="eyebrow">Khám phá thư viện</p>
           <button
             className="icon-button theme-button"
             type="button"
@@ -1658,42 +1633,11 @@ function DiscoverScreen({
           </button>
         </header>
 
-        <section className="discover-hero">
-          <div>
-            <span className="hero-stamp">选择阅读 · Chọn bài phù hợp</span>
-            <h1>Chọn nhịp đọc,<br />rồi bắt đầu.</h1>
-            <p>
-              Lọc {builtInLibrary.length} bài đã được biên soạn theo cấp độ,
-              chủ đề và thời lượng. Mọi thông tin này có sẵn ngay cả khi thiết
-              bị không có mạng.
-            </p>
-            <a className="discover-library-link" href="#/">
-              Cần tìm một từ hoặc cụm? Mở Thư viện <span aria-hidden="true">→</span>
-            </a>
-          </div>
-          <div className="discover-hero-metrics" aria-label="Tóm tắt thư viện offline">
-            <div>
-              <strong>{builtInLibrary.length}</strong>
-              <span>Bài dựng sẵn</span>
-            </div>
-            <div>
-              <strong>{catalogSummary.levelCount}</strong>
-              <span>Cấp độ HSK</span>
-            </div>
-            <div>
-              <strong>{catalogSummary.sentenceCount}</strong>
-              <span>Câu đã chú giải</span>
-            </div>
-          </div>
-        </section>
-
         <section className="discover-section" aria-labelledby="discover-heading">
           <div className="section-heading">
             <div>
-              <p className="eyebrow">Bộ lọc offline</p>
               <h2 id="discover-heading">Bài đọc cho buổi học này</h2>
             </div>
-            <span className="offline-pill">Không cần mạng</span>
           </div>
 
           <div className="discover-filter-panel">
@@ -1790,9 +1734,7 @@ function DiscoverScreen({
                 <button type="button" onClick={resetFilters}>
                   Xóa bộ lọc
                 </button>
-              ) : (
-                <span>Chạm vào bài để xem thông tin trước khi đọc</span>
-              )}
+              ) : null}
             </div>
           </div>
 
@@ -1875,7 +1817,6 @@ function ArticleDetailScreen({
           <div className="mobile-brand">
             <Brand />
           </div>
-          <p className="eyebrow">Thông tin bài đọc</p>
           <button
             className="icon-button theme-button"
             type="button"
@@ -1897,9 +1838,6 @@ function ArticleDetailScreen({
           aria-labelledby="article-detail-title"
         >
           <div className="article-detail-copy">
-            <span className="hero-stamp">
-              {article.level} · {article.topic} · Offline
-            </span>
             <h1 id="article-detail-title" lang="zh-Hans">
               {article.title}
             </h1>
@@ -1940,7 +1878,6 @@ function ArticleDetailScreen({
 
         <section className="article-detail-overview" aria-labelledby="article-overview-heading">
           <div>
-            <p className="eyebrow">Trước khi đọc</p>
             <h2 id="article-overview-heading">Vừa đủ để bạn chọn đúng bài</h2>
             <p>
               Đây là thống kê từ dữ liệu đã biên soạn. Mở trang này không thay
@@ -1973,7 +1910,6 @@ function ArticleDetailScreen({
 
         <section className="article-reading-state" aria-labelledby="article-reading-state-heading">
           <div>
-            <p className="eyebrow">Tiến độ trên thiết bị này</p>
             <h2 id="article-reading-state-heading">{readingState}</h2>
             <p>
               {historyEntry
@@ -2100,7 +2036,6 @@ function ReviewPracticeScreen({
         </header>
 
         <section className="practice-heading" aria-labelledby="practice-heading">
-          <p className="eyebrow">复习 · Ôn từ dấu vết đọc</p>
           <h1 id="practice-heading">Luyện nhanh những chỗ từng vấp.</h1>
           <p>
             Tối đa {MAX_QUICK_REVIEW_ITEMS} mục chưa biết, ưu tiên mục đã ghim
@@ -2123,7 +2058,6 @@ function ReviewPracticeScreen({
         ) : finished ? (
           <section className="practice-finished" aria-live="polite">
             <span aria-hidden="true">✓</span>
-            <p className="eyebrow">Hoàn tất phiên</p>
             <h2>Đã đi qua {queue.length} mục.</h2>
             <div className="practice-result-stats">
               <div>
@@ -2290,9 +2224,6 @@ function ReviewScreen({
   historyItems.sort(
     (left, right) => right.entry.lastOpenedAt - left.entry.lastOpenedAt
   );
-  const completedCount = historyItems.filter(
-    ({ entry }) => entry.completedAt !== null
-  ).length;
   const learningProgress = getLearningProgressOverview(
     builtInLibrary,
     libraryState
@@ -2316,7 +2247,6 @@ function ReviewScreen({
           <div className="mobile-brand">
             <Brand />
           </div>
-          <p className="eyebrow">Ôn lại trên thiết bị</p>
           <button
             className="icon-button theme-button"
             type="button"
@@ -2333,7 +2263,6 @@ function ReviewScreen({
 
         <section className="review-hero">
           <div>
-            <span className="hero-stamp">学习记录 · Học từ lúc đọc</span>
             <h1>Những chỗ bạn đã thật sự cần trợ giúp.</h1>
             <p>
               ScottBook phân biệt lúc bạn chỉ cần cách đọc với lúc bạn cần cả
@@ -2396,12 +2325,8 @@ function ReviewScreen({
         <section className="history-section" aria-labelledby="history-heading">
           <div className="section-heading">
             <div>
-              <p className="eyebrow">Tiến độ</p>
               <h2 id="history-heading">Lịch sử đọc gần đây</h2>
             </div>
-            <span className="offline-pill">
-              {historyItems.length} bài · {completedCount} hoàn thành
-            </span>
           </div>
 
           {historyItems.length > 0 ? (
@@ -2457,10 +2382,8 @@ function LearningProgressSection({
     >
       <div className="section-heading">
         <div>
-          <p className="eyebrow">Toàn thư viện</p>
           <h2 id="learning-progress-heading">Tiến độ học của bạn</h2>
         </div>
-        <span className="offline-pill">Tính hoàn toàn trên thiết bị</span>
       </div>
 
       <div className="learning-progress-layout">
@@ -2550,11 +2473,6 @@ function LearningInsightsSection({
     builtInLibrary,
     assistanceHistory
   ).filter((insight) => insight.assistanceOpens > 0);
-  const totalAssistanceOpens = insights.reduce(
-    (total, insight) => total + insight.assistanceOpens,
-    0
-  );
-
   return (
     <section
       className="learning-insights-section"
@@ -2562,14 +2480,10 @@ function LearningInsightsSection({
     >
       <div className="section-heading learning-insights-heading">
         <div>
-          <p className="eyebrow">Dấu vết theo bài</p>
           <h2 id="learning-insights-heading">
             Bài nào từng cần trợ giúp nhiều?
           </h2>
         </div>
-        <span className="offline-pill">
-          {insights.length}/{builtInLibrary.length} bài · {totalAssistanceOpens} lượt mở
-        </span>
       </div>
 
       {insights.length === 0 ? (
@@ -2596,11 +2510,6 @@ function LearningInsightsSection({
         </div>
       )}
 
-      <p className="learning-insights-note">
-        Tỉ lệ chỉ tính các từ/cụm riêng biệt từng được mở trợ giúp so với từ/cụm
-        dựng sẵn trong bài. Đây là dấu vết đọc cục bộ, không phải điểm số hay
-        đánh giá trình độ.
-      </p>
     </section>
   );
 }
@@ -2708,7 +2617,6 @@ function AssistanceReviewSection({
     >
       <div className="section-heading assistance-review-heading">
         <div>
-          <p className="eyebrow">Dấu vết học tập</p>
           <h2 id="assistance-review-heading">
             Chữ và từ/cụm từng cần trợ giúp
           </h2>
@@ -3244,7 +3152,7 @@ function DataProtectionCard({
     >
       <div className="protection-icon" aria-hidden="true">◇</div>
       <div className="protection-copy">
-        <p className="eyebrow">An toàn dữ liệu local</p>
+        <p>An toàn dữ liệu local</p>
         <h2 id="protection-heading">Bảo vệ tiến độ trước khi cập nhật</h2>
         <p>
           Mỗi lần ghi, ScottBook giữ lại bản hợp lệ trước đó để tự phục hồi.
@@ -3420,7 +3328,6 @@ function StorageOverview({
     <section className="storage-overview" aria-labelledby="storage-overview-heading">
       <div className="storage-overview-heading">
         <div>
-          <p className="eyebrow">Kho dữ liệu trên thiết bị</p>
           <h3 id="storage-overview-heading">Dung lượng và vùng cache tách biệt</h3>
           <p>{sourceMessage}</p>
         </div>
@@ -3781,7 +3688,6 @@ function ContinueReadingCard({
         {article.title.slice(0, 1)}
       </div>
       <div className="continue-copy">
-        <p className="eyebrow">Đọc tiếp trên thiết bị này</p>
         <h2 id="continue-heading">{article.title}</h2>
         <p>
           {isCompleted
@@ -4129,12 +4035,6 @@ function ReaderScreen({
     }
   };
 
-  const scopeCopy = {
-    character: { glyph: "字", target: "một chữ", result: "nghĩa" },
-    word: { glyph: "词", target: "một từ hoặc cụm", result: "nghĩa" },
-    sentence: { glyph: "句", target: "một câu", result: "bản dịch" }
-  }[assistanceScope];
-
   const clampFontSize = (next: number) =>
     Math.min(MAX_READER_FONT_SIZE, Math.max(MIN_READER_FONT_SIZE, next));
 
@@ -4280,16 +4180,6 @@ function ReaderScreen({
                 Phân tích tự động offline · nghĩa từ/cụm có thể sai · chưa dịch cả câu
               </p>
             ) : null}
-            <div className="reader-instruction">
-              <span className="tap-demo">{scopeCopy.glyph}</span>
-              <p>
-                <strong>Chạm vào {scopeCopy.target}.</strong><br />
-                Lần một hiện {assistanceScope === "sentence"
-                  ? "pinyin"
-                  : "pinyin + âm Hán-Việt"} · lần hai hiện {scopeCopy.result} ·
-                lần ba đóng.
-              </p>
-            </div>
           </header>
 
           <ReaderScopeSelector
@@ -4370,12 +4260,9 @@ function ReaderScreen({
           </div>
 
           <footer className="article-end">
-            <div className="end-seal">
-              <span>完</span>
-              <p>
-                Hết bài · mọi chú thích của bài này đã nằm sẵn trên thiết bị.
-              </p>
-            </div>
+            <p className="article-end-note">
+              Hết bài · mọi chú thích của bài này đã nằm sẵn trên thiết bị.
+            </p>
             {isCompleted ? (
               <div className="completion-badge">
                 <span aria-hidden="true">✓</span>
@@ -4455,12 +4342,6 @@ function NextReadingCard({
   choice: NextReadingChoice;
   openArticle: () => void;
 }) {
-  const reasonCopy = {
-    new: "Bài chưa đọc tiếp theo",
-    "in-progress": "Tiếp tục một bài còn dang dở",
-    revisit: "Cả thư viện đã hoàn thành · đọc lại"
-  }[choice.reason];
-
   return (
     <section
       className="reader-next-card"
@@ -4470,7 +4351,6 @@ function NextReadingCard({
         {choice.article.title.slice(0, 1)}
       </div>
       <div className="reader-next-copy">
-        <p className="eyebrow">{reasonCopy}</p>
         <h2 id="reader-next-heading" lang="zh-Hans">
           {choice.article.title}
         </h2>
@@ -4568,7 +4448,6 @@ function ArticleVocabularyPanel({
     >
       <header>
         <div>
-          <p className="eyebrow">{article.level} · dữ liệu offline</p>
           <h2 id="reader-vocabulary-heading">Từ trong bài</h2>
           <span>
             {selectedEntry
@@ -4929,7 +4808,6 @@ function ReaderSettingsPanel({
     >
       <header>
         <div>
-          <p className="eyebrow">Hiển thị trên thiết bị này</p>
           <h2 id="reader-settings-heading">Cài đặt đọc</h2>
         </div>
         <button type="button" onClick={close} aria-label="Đóng cài đặt đọc">
