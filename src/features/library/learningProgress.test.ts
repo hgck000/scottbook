@@ -41,11 +41,11 @@ describe("local learning progress overview", () => {
     const overview = getLearningProgressOverview(builtInLibrary, state);
 
     expect(overview).toMatchObject({
-      total: 75,
+      total: 105,
       completed: 1,
       inProgress: 1,
-      unread: 73,
-      progressPercent: 2
+      unread: 103,
+      progressPercent: 1
     });
     expect(overview.byLevel).toEqual([
       {
@@ -58,18 +58,18 @@ describe("local learning progress overview", () => {
       },
       {
         level: "HSK 2",
-        total: 9,
+        total: 24,
         completed: 1,
         inProgress: 0,
-        unread: 8,
-        progressPercent: 11
+        unread: 23,
+        progressPercent: 4
       },
       {
         level: "HSK 3",
-        total: 9,
+        total: 24,
         completed: 0,
         inProgress: 0,
-        unread: 9,
+        unread: 24,
         progressPercent: 0
       },
       {

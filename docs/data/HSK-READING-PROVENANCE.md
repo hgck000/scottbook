@@ -1,10 +1,10 @@
 # HSK 1–5 reading pack provenance
 
-ScottBook v0.44 contains 75 built-in readings and 2,550 sentences. HSK 1 has
-the original nine readings plus thirty long short stories; HSK 2 through HSK 5
-retain nine readings each. Every new HSK 1 story contains seventy sentences
-grouped under five connected sections. Fifteen of the thirty long stories cover
-clothing, office work, fashion, or design.
+ScottBook v0.45 contains 105 built-in readings and 4,650 sentences. HSK 1 has
+the original nine readings plus thirty long short stories. HSK 2 and HSK 3 each
+retain their original nine readings and add fifteen long stories. Every long
+story in HSK 1–3 contains seventy sentences grouped under five connected
+sections. Clothing, office work, fashion, and design remain recurring topics.
 
 ## Level standard
 
@@ -36,15 +36,19 @@ translation, and offline Hán-Việt assistance.
 |---|---:|---:|---:|---:|---|
 | HSK 1 (original) | 9 | 10 | 2 | 3 | Jade |
 | HSK 1 (long stories) | 30 | 70 | 5 | 15 | Jade |
-| HSK 2 | 9 | 10 | 2 | 4 | Amber |
-| HSK 3 | 9 | 10 | 2 | 3 | Coral |
+| HSK 2 (original) | 9 | 10 | 2 | 4 | Amber |
+| HSK 2 (long stories) | 15 | 70 | 5 | 5 | Amber |
+| HSK 3 (original) | 9 | 10 | 2 | 3 | Coral |
+| HSK 3 (long stories) | 15 | 70 | 5 | 5 | Coral |
 | HSK 4 | 9 | 10 | 2 | 4 | Violet |
 | HSK 5 | 9 | 10 | 2 | 4 | Azure |
 
 The original source text is maintained in
 [`scripts/content/hsk-reading-source.mjs`](../../scripts/content/hsk-reading-source.mjs),
 with the long HSK 1 collection in
-[`scripts/content/hsk1-long-stories.mjs`](../../scripts/content/hsk1-long-stories.mjs).
+[`scripts/content/hsk1-long-stories.mjs`](../../scripts/content/hsk1-long-stories.mjs)
+and the long HSK 2–3 collection in
+[`scripts/content/hsk2-hsk3-long-stories.mjs`](../../scripts/content/hsk2-hsk3-long-stories.mjs).
 The generated library is committed so a release never depends on a network call
 at reading time. CI rejects stale generation, missing annotations, the wrong
 article/section/sentence counts, repeated sentences inside one long story, an

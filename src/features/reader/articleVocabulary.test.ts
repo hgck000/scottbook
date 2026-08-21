@@ -98,10 +98,10 @@ describe("offline article vocabulary", () => {
 
     const groups = getLibraryVocabularyContexts(builtInLibrary, entry);
 
-    expect(groups).toHaveLength(31);
+    expect(groups).toHaveLength(32);
     expect(
       groups.reduce((total, group) => total + group.occurrences.length, 0)
-    ).toBe(158);
+    ).toBe(159);
     expect(groups[0]).toMatchObject({
       articleId: "hsk1-my-morning",
       articleTitle: "我的早上",
@@ -121,10 +121,10 @@ describe("offline article vocabulary", () => {
     const groups = getLibraryVocabularyContexts(builtInLibrary, entry);
 
     expect(entry.occurrences).toHaveLength(1);
-    expect(groups).toHaveLength(14);
+    expect(groups).toHaveLength(25);
     expect(
       groups.reduce((total, group) => total + group.occurrences.length, 0)
-    ).toBe(45);
+    ).toBe(84);
   });
 
   it("finds additional library contexts for a single 喜欢 occurrence", () => {

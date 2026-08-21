@@ -701,7 +701,7 @@ test("searches and filters the authored offline library", async ({ page }) => {
   ).toBeVisible();
   await expect(
     page.locator(".discovery-results [role='status']")
-  ).toContainText("9 bài phù hợp");
+  ).toContainText("24 bài phù hợp");
 
   await page
     .getByRole("button", {
@@ -726,7 +726,7 @@ test("searches and filters the authored offline library", async ({ page }) => {
   ).toBeVisible();
   await expect(
     page.locator(".discovery-results [role='status']")
-  ).toContainText("75 bài phù hợp");
+  ).toContainText("105 bài phù hợp");
   expect(pageErrors).toEqual([]);
 });
 

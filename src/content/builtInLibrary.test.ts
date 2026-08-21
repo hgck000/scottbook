@@ -4,8 +4,8 @@ import type { BuiltInArticle } from "./types";
 import { formatValidationIssues, validateBuiltInLibrary } from "./validateLibrary";
 
 describe("built-in ScottBook library", () => {
-  it("ships the graded library and thirty long HSK 1 stories", () => {
-    expect(builtInLibrary).toHaveLength(75);
+  it("ships the graded library and long HSK 1–3 stories", () => {
+    expect(builtInLibrary).toHaveLength(105);
     const accentByLevel = {
       "HSK 1": "jade",
       "HSK 2": "amber",
@@ -15,8 +15,8 @@ describe("built-in ScottBook library", () => {
     } as const;
     const expectedCounts = {
       "HSK 1": 39,
-      "HSK 2": 9,
-      "HSK 3": 9,
+      "HSK 2": 24,
+      "HSK 3": 24,
       "HSK 4": 9,
       "HSK 5": 9
     } as const;
@@ -31,17 +31,24 @@ describe("built-in ScottBook library", () => {
       ).toBeGreaterThanOrEqual(3);
     }
     const longStories = builtInLibrary.filter((article) =>
-      article.id.startsWith("hsk1-story-")
+      /^hsk[123]-story-/u.test(article.id)
     );
-    expect(longStories).toHaveLength(30);
+    expect(longStories).toHaveLength(60);
+    expect(
+      Object.fromEntries(
+        ["HSK 1", "HSK 2", "HSK 3"].map((level) => [
+          level,
+          longStories.filter((article) => article.level === level).length
+        ])
+      )
+    ).toEqual({ "HSK 1": 30, "HSK 2": 15, "HSK 3": 15 });
     expect(
       longStories.filter((article) =>
+        article.level === "HSK 1" &&
         ["May mặc", "Công sở", "Thời trang", "Thiết kế"].includes(article.topic)
       )
     ).toHaveLength(15);
     for (const article of longStories) {
-      expect(article.level).toBe("HSK 1");
-      expect(article.accent).toBe("jade");
       expect(article.estimatedMinutes).toBe(20);
       expect(article.paragraphs).toHaveLength(5);
       expect(article.paragraphs.every((paragraph) => paragraph.sentences.length === 14)).toBe(true);
@@ -53,7 +60,7 @@ describe("built-in ScottBook library", () => {
     }
 
     for (const article of builtInLibrary.filter(
-      (candidate) => !candidate.id.startsWith("hsk1-story-")
+      (candidate) => !/^hsk[123]-story-/u.test(candidate.id)
     )) {
       expect(article.paragraphs).toHaveLength(2);
       const sentenceCount = article.paragraphs.reduce(

@@ -4,8 +4,8 @@ This list is intentionally release-blocking evidence, not a hidden backlog.
 
 ## Product gaps
 
-- The offline library contains 75 standards-informed readings: 39 for HSK 1
-  and nine each for HSK 2–5. It does not yet cover HSK 6. The texts are original
+- The offline library contains 105 standards-informed readings: 39 for HSK 1,
+  24 each for HSK 2 and HSK 3, and nine each for HSK 4–5. It does not yet cover HSK 6. The texts are original
   adaptations aligned to the official HSK 1–5 resources rather than copied test
   passages; a small number of topic-specific words go beyond the core level but
   retain complete offline assistance. The v0.41 audit removes known irrelevant
@@ -13,9 +13,10 @@ This list is intentionally release-blocking evidence, not a hidden backlog.
   annotations more compactly and caches derived indexes without changing their
   content. v0.43 makes the generated payload reproducible across supported CI
   operating systems, and v0.44 keeps that content unchanged while simplifying
-  the surrounding interface. Concise automatic dictionary assistance is still
+  the surrounding interface. v0.45 adds fifteen seventy-sentence stories to
+  each of HSK 2 and HSK 3 with the same authored offline assistance. Concise automatic dictionary assistance is still
   not a replacement for a full edited lexicon.
-- Character, word/phrase, and sentence assistance is available for all 75
+- Character, word/phrase, and sentence assistance is available for all 105
   built-in readings. Paste/TXT/EPUB imports receive automatic offline pinyin
   and word/character meanings, not authored sentence translations.
 - Character and word/phrase assistance now derives Hán-Việt readings entirely
@@ -26,7 +27,7 @@ This list is intentionally release-blocking evidence, not a hidden backlog.
 - Reader now derives a searchable **Từ trong bài** index from each authored
   article. Identical Hanzi are distinct entries when their contextual pinyin or
   meaning differs. Repeated entries can compare and jump to every exact authored
-  occurrence in the current article or across all 75 offline articles. There
+  occurrence in the current article or across all 105 offline articles. There
   is no custom vocabulary editor, saved personal word list, or fuzzy identity
   merging.
 - The authored translation language is Vietnamese. Choosing another target
@@ -48,7 +49,7 @@ This list is intentionally release-blocking evidence, not a hidden backlog.
   not use personalized recommendations or a remote content feed. A saved
   reading queue, user-authored topic taxonomy, and automatic next-reading card
   are not implemented.
-- The learning overview derives lifetime progress from the current 75-article
+- The learning overview derives lifetime progress from the current 105-article
   pack. Its per-article assistance insight uses the recent contexts retained by
   each local review record and distinct authored word/phrase coverage; it is not
   a complete lifetime analytics log or a difficulty score. Assistance records

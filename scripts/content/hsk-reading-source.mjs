@@ -1,4 +1,5 @@
 import { hsk1LongStories } from "./hsk1-long-stories.mjs";
+import { hsk2Hsk3LongStories } from "./hsk2-hsk3-long-stories.mjs";
 
 const sentence = (zh, vi) => ({ zh, vi });
 
@@ -236,6 +237,7 @@ export const hskReadingSource = [
     ]
   ),
   ...hsk1LongStories,
+  ...hsk2Hsk3LongStories,
 
   article(
     "hsk2-weekend-plan",
